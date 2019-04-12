@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialSubCaseMapper" >
+    <insert id="insert" parameterType="com.rds.judicial.model.RdsJudicialSubCaseInfoModel">
+        insert into tb_judicial_sub_case_info(case_code, sub_case_code, sample_code1,
+        sample_code2, sample_code3, result, up_case_code) values(#{case_code},#{sub_case_code},
+        #{sample_code1},#{sample_code2},#{sample_code3},#{result},#{up_case_code})
+    </insert>
+
+    <update id="update" parameterType="map">
+        update tb_judicial_sub_case_info set result = #{result}
+        <if test="pi!=null and pi!=''">
+            ,pi = #{pi}
+        </if>
+         <if test="parent1_pi!=null and parent1_pi!=''">
+            ,parent1_pi = #{parent1_pi}
+        </if>
+         <if test="parent2_pi!=null and parent2_pi!=''">
+            ,parent2_pi = #{parent2_pi}
+        </if>
+        <if test="rcp!=null and rcp!=''">
+            ,rcp = #{rcp}
+        </if>
+        <if test="laboratory_no!=null and laboratory_no!=''">
+            ,laboratory_no = #{laboratory_no}
+        </if>
+        where sub_case_code = #{sub_case_code}
+    </update>
+
+    <select id="queryAll" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSubCaseResultModel">
+        select a.case_code,a.sub_case_code,a.result,a.`pi`,a.`parent2_pi`,a.`parent1_pi`,'' as experiment_count,
+        <!-- 
+        <if test="negandext_flag != null and negandext_flag!=''">
+            experiment_count(a.sample_code1,a.sample_code2,a.sample_code3) as
+            experiment_count,
+        </if> -->
+        b.unmatched_count,b.unmatched_node,b.need_ext,b.last_compare_date,c.is_delete,c.case_id,c.laboratory_no,
+        (select concat(sample_username,' ',a.sample_code1) from tb_judicial_sample_info
+        where sample_code = a.sample_code1 and case_id=c.case_id) as username1,
+        (select concat(sample_username,' ',a.sample_code2) from tb_judicial_sample_info
+        where sample_code = a.sample_code2 and case_id=c.case_id) as username2,
+        (select concat(sample_username,' ',a.sample_code3) from tb_judicial_sample_info
+        where sample_code = a.sample_code3 and case_id=c.case_id) as username3 
+        from tb_judicial_sub_case_info a
+        left join (select need_ext,unmatched_count,f.unmatched_node,g.last_compare_date,f.case_code,compare_date,
+        f.`parent1`,f.`parent2`,f.`child` from tb_judicial_compare_result f
+        left join (
+        select max(compare_date) as last_compare_date,case_code from tb_judicial_compare_result
+        group by case_code) g
+        on f.case_code = g.case_code
+        where f.compare_date =g.last_compare_date
+        ) b
+        on a.sub_case_code = b.case_code
+        left join tb_judicial_case_info c
+        on a.case_code = c.case_code
+        where is_delete=0
+        and c.laboratory_no = #{laboratory_no}
+        and (select count(*) from tb_judicial_sub_case_info where
+        case_code = a.case_code
+        and (result is null or result='')!=0)
+        <if test="case_code != null and case_code != ''">
+            and a.case_code like '${case_code}%'
+        </if>
+        <if test="sub_case_code != null and sub_case_code != ''">
+            and a.sub_case_code like '${sub_case_code}%'
+        </if>
+        <if test="negandext_flag != null and negandext_flag!=''">
+            and (b.unmatched_count > 0 or b.need_ext = 'Y')
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and date(b.last_compare_date) >= date(#{starttime})
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  date(#{endtime}) >= date(b.last_compare_date)
+        </if>
+        order by case_code
+        limit #{start},#{limit};
+    </select>
+
+    <select id="queryAllCount" parameterType="map" resultType="int">
+        select count(*) from (select a.case_code,a.sub_case_code,a.result,
+       <!-- 
+        <if test="negandext_flag != null and negandext_flag!=''">
+            experiment_count(a.sample_code1,a.sample_code2,a.sample_code3) as
+            experiment_count,
+        </if> -->
+        b.unmatched_count,b.need_ext,b.last_compare_date,c.is_delete,c.laboratory_no
+        <!-- 
+        (select concat(sample_username,' ',a.sample_code1) from tb_judicial_sample_info
+        where sample_code = a.sample_code1 and case_id=c.case_id) as username1,
+        (select concat(sample_username,' ',a.sample_code2) from tb_judicial_sample_info
+        where sample_code = a.sample_code2 and case_id=c.case_id) as username2,
+        (select concat(sample_username,' ',a.sample_code3) from tb_judicial_sample_info
+        where sample_code = a.sample_code3 and case_id=c.case_id) as username3 -->
+        from tb_judicial_sub_case_info a
+        left join (select need_ext,unmatched_count,last_compare_date,f.case_code,compare_date from tb_judicial_compare_result f left join (
+        select max(compare_date) as last_compare_date,case_code from tb_judicial_compare_result
+        group by case_code) g
+        on f.case_code = g.case_code
+        where f.compare_date =g.last_compare_date
+        ) b
+        on a.sub_case_code = b.case_code
+        left join tb_judicial_case_info c
+        on a.case_code = c.case_code
+        where is_delete=0
+        and c.laboratory_no = #{laboratory_no}
+        and (select count(*) from tb_judicial_sub_case_info where
+        case_code = a.case_code
+        and (result is null or result='')!=0)
+        <if test="case_code != null and case_code != ''">
+            and a.case_code like '${case_code}%'
+        </if>
+        <if test="sub_case_code != null and sub_case_code != ''">
+            and a.sub_case_code like '${sub_case_code}%'
+        </if>
+        <if test="negandext_flag != null and negandext_flag!=''">
+            and (b.unmatched_count > 0 or b.need_ext = 'Y')
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and date(b.last_compare_date) >= date(#{starttime})
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  date(#{endtime}) >= date(b.last_compare_date)
+        </if>
+        ) z
+    </select>
+
+    <select id="querySubCase" parameterType="map" resultType="string">
+        select sub_case_code from tb_judicial_sub_case_info a
+        <if test="result!=null and result!=''">
+            left join tb_judicial_compare_result b on a.sub_case_code = b.case_code
+        </if>
+        where a.case_code = #{case_code}
+        and (a.result is null or a.result='')
+        <if test="result!=null and result!=''">
+            and b.final_result_flag is not null and b.final_result_flag != ''
+        </if>
+        order by sub_case_code
+    </select>
+
+    <select id="querySubCaseForWord" parameterType="map" resultType="string">
+        select sub_case_code from tb_judicial_sub_case_info a
+        <if test="result!=null and result!=''">
+            left join tb_judicial_compare_result b on a.sub_case_code = b.case_code
+        </if>
+        where a.case_code = #{case_code}
+        <if test="result!=null and result!=''">
+            and b.final_result_flag is not null and b.final_result_flag != ''
+        </if>
+        order by sub_case_code
+    </select>
+    
+    <select id="queryALLcaseForWord" parameterType="map" resultType="map">
+        select a.`sub_case_code`, a.`result` ,b.`final_result_flag` ,
+        a.`sample_code1`,b.`unmatched_node` ,
+        b.`unmatched_count`,a.`sample_code3` ,
+	    b.`parent1`,b.`parent2`,b.`child` ,
+        c.`sample_call`
+		from tb_judicial_sub_case_info a
+        <if test="result!=null and result!=''">
+            left join tb_judicial_compare_result b on a.sub_case_code = b.case_code
+        </if>
+          LEFT JOIN `tb_judicial_sample_info` c
+         ON c.`sample_code`=a.`sample_code1` 
+        where a.case_code = #{case_code}
+        <if test="result!=null and result!=''">
+            and b.final_result_flag is not null and b.final_result_flag != ''
+        </if>
+        AND a.`sample_code2` IS NULL
+        order by sub_case_code
+    </select>
+
+    <select id="querySubCaseRecord" parameterType="string" resultType="com.rds.judicial.model.RdsJudicialSubCaseInfoModel">
+        select * from tb_judicial_sub_case_info
+        where sub_case_code = #{sub_case_code}
+    </select>
+
+    <select id="queryMainCaseCode" parameterType="string" resultType="string">
+        select distinct case_code from tb_judicial_sub_case_info
+        where sub_case_code = #{sub_case_code}
+    </select>
+
+    <select id="queryCountForGen" parameterType="string" resultType="int">
+        select count(*) from tb_judicial_sub_case_info where 1
+        and case_code = #{case_code}
+        and (result is null or result='')
+    </select>
+
+    <delete id="deleteSubCaseInfo" parameterType="map" >
+        delete from tb_judicial_sub_case_info where case_code = #{case_code}
+    </delete>
+
+    <select id="verifySampleCode" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_experiment a
+        where places like '%A%=${sample_code}%' and
+        experiment_no != #{experiment_no}
+    </select>
+
+    <select id="queryCaseIdBySubCaseCode" parameterType="string" resultType="string">
+        select case_id from tb_judicial_sub_case_info a
+        left join tb_judicial_case_info b
+        on a.case_code = b.case_code
+        where sub_case_code=#{sub_case_code}
+    </select>
+
+<select id="queryCaseIdBySubCaseCode1" parameterType="map" resultType="map" >
+		 select case_id from tb_judicial_sub_case_info a
+        left join tb_judicial_case_info b
+        on a.case_code = b.case_code
+        where sub_case_code IN
+			<foreach item="item" index="index" collection="sub_case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+
+    <insert id="insertCheckNegReport" parameterType="map">
+        insert into tb_judicial_checknegreport (case_code, sub_case_code, check_flag)
+        values(#{case_code},#{sub_case_code},#{check_flag})
+    </insert>
+
+    <update id="updateCheckNegReport" parameterType="string">
+        update tb_judicial_checknegreport set check_flag = 'Y'
+        where case_code = #{case_code}
+    </update>
+
+    <delete id="deleteData" statementType="CALLABLE" parameterType="string">
+        {call deletedata(#{case_code,mode=IN,jdbcType=VARCHAR})}
+    </delete>
+
+    <select id="queryCaseInfoByCaseCode" parameterType="string"
+            resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+        select * from tb_judicial_case_info where case_code = #{case_code};
+    </select>
+
+    <update id="updateCaseReagentName" parameterType="map">
+        update tb_judicial_case_info set reagent_name = #{reagent_name}
+         <if test="compare_date != null and compare_date != ''">
+            , compare_date = #{compare_date}
+        </if>
+          <if test="laboratory_no != null and laboratory_no != ''">
+            ,laboratory_no = #{laboratory_no}
+        </if>
+        where case_code = #{case_code}
+    </update>
+
+       <update id="updatePi1Formz" parameterType="map">
+	        update tb_judicial_sub_case_info set parent1_pi = #{parent1_pi} 
+	        where sub_case_code = #{sub_case_code}
+	    </update>
+	    
+	      <update id="updatePi1ForUnPaent" parameterType="map">
+	        update tb_judicial_sub_case_info set con_pi = #{con_pi} 
+	        where sub_case_code = #{sub_case_code}
+	    </update>
+	    
+	    
+	    <update id="updatePi2Formz" parameterType="map">
+	        update tb_judicial_sub_case_info set parent2_pi=#{parent2_pi}
+	        where sub_case_code = #{sub_case_code}
+	    </update>
+	    
+    <update id="updateCaseReagentNameExt" parameterType="map">
+        update tb_judicial_case_info set reagent_name_ext = #{reagent_name}
+        <if test="compare_date != null and compare_date != ''">
+            , compare_date = #{compare_date}
+        </if>
+        where case_code = #{case_code}
+    </update>
+
+    <select id="queryReagentNameByCaseId" parameterType="string"
+            resultType="string">
+        select reagent_name from tb_judicial_case_info where case_id = #{case_id}
+    </select>
+    
+    <select id="queryReagentNameEXTByCaseId" parameterType="string"
+            resultType="string">
+        select reagent_name_ext from tb_judicial_case_info where case_id = #{case_id}
+    </select>
+
+    <select id="querySubCaseCode" parameterType="string" resultType="string">
+        select sub_case_code from tb_judicial_sub_case_info
+        where case_code = #{case_code}
+    </select>
+
+    <select id="querySubCaseCompareResult" parameterType="string"
+            resultType="com.rds.judicial.model.RdsJudicialCompareResultModel">
+        select * from tb_judicial_compare_result where case_code = #{sub_case_code}
+        and final_result_flag is not null;
+    </select>
+
+    <!--正泰加位点为1的确认查询，直接出报告-->
+    <select id="queryAllForZhengTaiExt" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSubCaseResultModel">
+        select a.case_code,a.sub_case_code,a.result,
+        b.unmatched_count,b.need_ext,b.last_compare_date,c.is_delete,c.case_id,c.laboratory_no,
+        (select concat(sample_username,' ',a.sample_code1) from tb_judicial_sample_info
+        where sample_code = a.sample_code1 and case_id=c.case_id) as username1,
+        (select concat(sample_username,' ',a.sample_code2) from tb_judicial_sample_info
+        where sample_code = a.sample_code2 and case_id=c.case_id) as username2,
+        (select concat(sample_username,' ',a.sample_code3) from tb_judicial_sample_info
+        where sample_code = a.sample_code3 and case_id=c.case_id) as username3
+        from tb_judicial_sub_case_info a
+        left join (select need_ext,unmatched_count,g.last_compare_date,f.case_code,compare_date from tb_judicial_compare_result f
+        left join (
+        select max(compare_date) as last_compare_date,case_code from tb_judicial_compare_result
+        group by case_code) g
+        on f.case_code = g.case_code
+        where f.compare_date =g.last_compare_date
+        ) b
+        on a.sub_case_code = b.case_code
+        left join tb_judicial_case_info c
+        on a.case_code = c.case_code
+        where is_delete=0
+        and c.laboratory_no = #{laboratory_no}
+        and (a.result is null or a.result='')
+        and b.unmatched_count = 1
+        <if test="case_code != null and case_code != ''">
+            and a.case_code like '${case_code}%'
+        </if>
+        <if test="sub_case_code != null and sub_case_code != ''">
+            and a.sub_case_code like '${sub_case_code}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and date(b.last_compare_date) >= date(#{starttime})
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  date(#{endtime}) >= date(b.last_compare_date)
+        </if>
+        order by case_code
+        limit #{start},#{limit};
+    </select>
+
+    <select id="queryAllCountForZhengTaiExt" parameterType="map" resultType="int">
+        select count(*) from (select a.case_code,a.sub_case_code,a.result,
+        b.unmatched_count,b.need_ext,b.last_compare_date,c.is_delete,c.laboratory_no,
+        (select concat(sample_username,' ',a.sample_code1) from tb_judicial_sample_info
+        where sample_code = a.sample_code1 and case_id=c.case_id) as username1,
+        (select concat(sample_username,' ',a.sample_code2) from tb_judicial_sample_info
+        where sample_code = a.sample_code2 and case_id=c.case_id) as username2,
+        (select concat(sample_username,' ',a.sample_code3) from tb_judicial_sample_info
+        where sample_code = a.sample_code3 and case_id=c.case_id) as username3
+        from tb_judicial_sub_case_info a
+        left join (select need_ext,unmatched_count,last_compare_date,f.case_code,compare_date from tb_judicial_compare_result f left join (
+        select max(compare_date) as last_compare_date,case_code from tb_judicial_compare_result
+        group by case_code) g
+        on f.case_code = g.case_code
+        where f.compare_date =g.last_compare_date
+        ) b
+        on a.sub_case_code = b.case_code
+        left join tb_judicial_case_info c
+        on a.case_code = c.case_code
+        where is_delete=0
+        and c.laboratory_no = #{laboratory_no}
+        and (a.result is null or a.result='')
+        and b.unmatched_count = 1
+        <if test="case_code != null and case_code != ''">
+            and a.case_code like '${case_code}%'
+        </if>
+        <if test="sub_case_code != null and sub_case_code != ''">
+            and a.sub_case_code like '${sub_case_code}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and date(b.last_compare_date) >= date(#{starttime})
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  date(#{endtime}) >= date(b.last_compare_date)
+        </if>
+        ) z
+    </select>
+    <select id="querySampleType" parameterType="String" resultType="map">
+         SELECT 
+		  si.sample_type ,si.sample_code 
+			FROM
+			  tb_judicial_sample_info si 
+			WHERE si.case_id = 
+		  (SELECT 
+		    ci.case_id 
+		  FROM
+		    tb_judicial_case_info ci 
+		  WHERE ci.case_code = #{case_code})
+    </select>
+    <update id="updateCaseinfofinalbycode" parameterType="String">
+          UPDATE tb_judicial_sub_case_info
+           SET result = NULL,PI=NULL,rcp=NULL 
+           WHERE case_code = #{case_code}
+    </update>
+    
+    <update id="updateCaseLaboratoryNo" parameterType="map">
+          UPDATE tb_judicial_case_info
+           SET laboratory_no = #{laboratory_no}
+           WHERE case_code = #{case_code}
+    </update>
+    
+       <select id="querySampleResult" parameterType="String" resultType="map">
+          SELECT   pi  as pi, sample_code1 as samplecode FROM  tb_judicial_sub_case_info  
+			WHERE  case_code  = #{case_code}
+			AND  result ='failed' 
+			 AND  sample_code2 IS  NULL 
+			 AND  pi IS NOT NULL ;
+    </select>
+    
+        <select id="querysamplecallBySamplecode" parameterType="string"
+            resultType="string">
+       SELECT  f.`sample_call`  FROM `tb_judicial_sample_info` f 
+           WHERE f.`sample_code`= #{sample_code};
+    </select>
+    
+    <select id="querysampleunmathcodeBySamplecode" parameterType="map"
+            resultType="string">
+      SELECT t.`unmatched_node` FROM `tb_judicial_compare_result` t 
+		WHERE t.`case_code` LIKE '${case_code}%' 
+		AND t.`parent2` IS NULL 
+		AND t.`final_result_flag`='failed'
+		AND t.`sample_code1`= #{sample_code} limit 1;  
+    </select>
+    
+    <select id="querySampleResultAlierts" parameterType="map"
+            resultType="map">
+      SELECT p.`param_type` as type ,p.`parent` as mother,p.`parent2` as father,
+      p.`child` as child
+  FROM `tb_judicial_pi_info`p 
+  WHERE p.`sub_case_code` LIKE '${case_code}%' 
+  AND p.`parent2`IS NOT NULL 
+    GROUP BY  p.`param_type`;
+    </select>
+    
+    <select id="querySampleResultAliertsExt" parameterType="map"
+            resultType="map">
+		 SELECT d.`sample_call` AS scall ,d.`sample_code`AS scall_code FROM `tb_judicial_sample_info` d WHERE d.`sample_code` IN (   
+			SELECT 
+			f.`sample_code1`
+			FROM
+			  `tb_judicial_compare_result` f 
+			WHERE f.`case_code` LIKE '${case_code}%' 
+			  AND f.`parent2` IS NULL 
+			 AND f.`need_ext`='Y'
+			  GROUP BY f.`sample_code1`);
+    </select>
+    
+     <select id="querySampleResultpiinfoAliertsExt" parameterType="map"
+            resultType="map">
+		 SELECT p.`parent` as parent,p.`child` as child,
+		  p.`param_type` AS typeext,p.`pi` AS piext
+		  FROM `tb_judicial_pi_info`p 
+		  WHERE p.`sub_case_code` LIKE '${case_code}%' 
+		  AND p.`parent2`IS NULL 
+		    GROUP BY  p.`param_type`;
+    </select>
+    
+    <delete id="allDelete" parameterType="map" >
+        DELETE  a FROM  tb_judicial_case_to_identify a  INNER JOIN  (SELECT   case_id  FROM  tb_judicial_case_info   WHERE case_code IN <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>) b  ON a.case_id = b.case_id 
+    </delete>
+     <delete id="allDelete1" parameterType="map" > 
+        DELETE FROM tb_judicial_checknegreport WHERE case_code IN <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+    </delete>
+     <delete id="allDelete2" parameterType="map" >
+        DELETE FROM tb_judicial_exception WHERE case_code IN <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+    </delete>
+     <delete id="allDelete3" parameterType="map" >
+        DELETE FROM tb_judicial_case_attachment WHERE case_code IN <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach> AND attachment_type = '6'
+    </delete>
+     <delete id="allDelete4" parameterType="map" >
+        DELETE FROM tb_judicial_sub_case_info WHERE case_code IN <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach> AND sub_case_code LIKE '%\_%\_%'  AND case_code NOT LIKE '%\_%'
+    </delete>
+    <delete id="deleteOne" parameterType="map" >
+             DELETE FROM tb_judicial_compare_result WHERE case_code LIKE CONCAT(#{case_code},'%')
+    </delete>
+        <delete id="deleteTwo" parameterType="map" >
+             DELETE FROM tb_judicial_pi_info WHERE sub_case_code LIKE CONCAT(#{case_code},'%')
+    </delete>
+    <delete id="deleteSamples" parameterType="map" >
+          DELETE FROM tb_judicial_sample_result_data WHERE sample_code IN
+            <foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+    </delete>
+    <delete id="deleteSampless" parameterType="map" >
+           DELETE FROM tb_judicial_sample_result WHERE sample_code  IN
+            <foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+    </delete>
+    <select id="querySampleCodes" parameterType="map" resultType="map" >
+		SELECT 
+  c.sample_code 
+FROM
+  (SELECT 
+    * 
+  FROM
+    tb_judicial_sample_result 
+  WHERE sample_code IN 
+    (SELECT 
+      sample_code 
+    FROM
+      (SELECT 
+        case_code,
+        case_id 
+      FROM
+        tb_judicial_case_info 
+      WHERE case_code IN
+              <foreach item="item" index="index" collection="case_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>) a 
+      LEFT JOIN tb_judicial_sample_info b 
+        ON a.case_id = b.case_id)) c 
+  LEFT JOIN 
+    (SELECT 
+      sample_code,
+      COUNT(sample_code) ct 
+    FROM
+      tb_judicial_sample_info 
+    GROUP BY sample_code) d 
+    ON c.sample_code = d.sample_code 
+WHERE ct = 1
+	</select>
+	<update id="updatesubcase" parameterType="string">
+        UPDATE tb_judicial_sub_case_info s SET s.result = NULL,s.PI=NULL,s.rcp=NULL 
+        where s.case_code = #{case_code}
+    </update>
+</mapper>

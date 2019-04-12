@@ -1,0 +1,674 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.alcohol.mapper.RdsAlcoholRegisterMapper">
+
+	<select id="getIdentificationPer" resultType="com.rds.alcohol.model.RdsAlcoholDicValueModel">
+		select per_id as 'key',per_name as 'value' from
+		tb_alcohol_identify_per where delstatus=0
+	</select>
+
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		SELECT ci.*,da.county,da.city,da.province
+		FROM
+		(
+		SELECT
+		ci.case_id,
+		ci.case_code,
+		ci.client,
+		ci.checkper,
+		ci.checkper_phone,
+		ci.area_code,
+		ci.event_desc,
+		ci.remark,
+		ci.address,
+		ci.sample_id,
+		ci.receiver_id,
+		ci.client_time,
+		ci.close_time,
+		ci.sample_remark,
+		ci.sample_result,
+		ci.isDoubleTube,
+		ci.sample_remark2,
+		ci.is_detection,
+		ci.accept_time,
+		ci.mail_address,
+		ci.mail_per,
+		ci.mail_phone,
+		ci.attachment,
+		ci.report_model,
+		ci.state,
+		ci.case_intr,
+		ci.case_det,
+		ci.bloodnumA,
+		ci.bloodnumB,
+		ci.is_check,
+		cf.real_sum,
+		cf.stand_sum,
+		si.`sample_time`,
+		pr.text AS report_modelnames,
+		ai.`username` AS receiver,
+		ai.`areaname` AS receiver_area,
+		u.username AS case_in_pername,
+		(select GROUP_CONCAT(t1.per_name) from tb_alcohol_identify_per t1 
+			left join tb_alcohol_case_info_identify t2
+			on t1.per_id = t2.pid and t1.delstatus=0
+			where t2.cid=ci.case_id ) as case_checkper
+		FROM
+		tb_alcohol_case_info ci
+		LEFT JOIN tb_alcohol_sample_info si ON
+		ci.`sample_id`=si.`sample_id`
+		LEFT JOIN `tb_charge_standard` ai ON
+		ci.`receiver_id` = ai.id
+		LEFT JOIN tb_dic_print_model pr ON ci.report_model=pr.code
+		LEFT JOIN tb_upc_users u on u.userid=ci.case_in_per
+		left join  tb_judicial_casefee    cf on ci.case_id=cf.case_id
+		WHERE ci.state!=6 AND
+		pr.type='alcohol' and ci.case_in_per is not null
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" sample_time_start != null and  sample_time_start != '' and  sample_time_start!=sample_time_end ">
+			and si.sample_time > #{sample_time_start}
+		</if>
+		<if test=" sample_time_end != null and sample_time_end != ''  and  sample_time_start!=sample_time_end ">
+			and (SELECT DATE_ADD(#{sample_time_end}, INTERVAL 1 DAY)) > si.sample_time
+		</if>
+		<if test=" sample_time_start==sample_time_end ">
+			and   si.sample_time like '${sample_time_end}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" client_starttime != null and  client_starttime != '' ">
+			and ci.client_time>=#{client_starttime}
+		</if>
+		<if test=" client_endtime != null and client_endtime != ''">
+			and #{client_endtime}>=ci.client_time
+		</if>
+		<if test=" client != null and client != ''">
+			and ci.client like '%${client}%'
+		</if>
+		<if test=" checkper != null and checkper != ''">
+			and ci.checkper like '%${checkper}%'
+		</if>
+		<if test=" checkper_phone != null and checkper_phone != ''">
+			and ci.checkper_phone like '%${checkper_phone}%'
+		</if>
+		<if test=" receiver != null and receiver != ''">
+			and ai.`username` like '%${receiver}%'
+		</if>
+		<if test="state!=-1 and state!=-7">
+			and ci.state=#{state}
+		</if>
+		<if test="state==-7">
+			and ci.state != 7
+		</if>
+		<if test="state==-1">
+			and ci.state != 1
+		</if>
+		<if test="areacode != '' and areacode != null">
+			AND ci.`area_code`= #{areacode}
+		</if>
+		<if test=" mail_address != null and mail_address != ''">
+			and ci.mail_address like '%${mail_address}%'
+		</if>
+		<if test=" mail_per != null and mail_per != ''">
+			and ci.mail_per like '%${mail_per}%'
+		</if>
+		<if test=" mail_phone != null and mail_phone != ''">
+			and ci.mail_phone like '%${mail_phone}%'
+		</if>
+		<if test=" isDoubleTube != null and isDoubleTube != ''">
+			and ci.isDoubleTube = #{isDoubleTube}
+		</if>
+		<if test=" receiver_area != null and receiver_area != ''">
+			and ai.`areaname` LIKE '%${receiver_area}%'
+		</if>
+		<if test=" case_in_pername != null and case_in_pername != ''">
+			and u.`username` LIKE '%${case_in_pername}%'
+		</if>
+		<if test=" case_in_per !=null and case_in_per != ''">
+			AND ci.case_in_per=#{case_in_per}
+		</if>
+		LIMIT
+		#{start},#{limit}
+		) ci
+		LEFT JOIN
+		(
+		SELECT
+			da.id,
+		(case when da3. NAME is not null and da2. NAME is not null then da.name when da3. NAME is null then null  end) as county,
+		(case when da3. NAME is not null then da2. NAME when da3. NAME is null and da2. NAME is not null then da.name when da2. NAME is null and da3. NAME is null then null end) as city,
+		(case when da3. NAME is not null then da3. NAME WHEN da3. NAME is null and da2. NAME is not null THEN da2. NAME else da.name end) as province
+		FROM
+			tb_dic_area_info da
+		left join 
+			tb_dic_area_info da2
+		on
+			da2.id = da.parentID
+		left join
+			tb_dic_area_info da3
+		on da3.id = da2.parentID
+		) da
+		ON
+		da.id =
+		ci.`area_code`
+		ORDER BY ci.sample_time desc
+	</select>
+	
+	<select id="exsitcase_code" resultType="int" parameterType="String">
+		select count(*) from tb_alcohol_case_info where case_code=#{case_code}  
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		tb_alcohol_case_info ci
+		LEFT JOIN
+		tb_alcohol_sample_info si ON ci.`sample_id`=si.`sample_id`
+		LEFT JOIN
+		`tb_charge_standard` ai ON ci.`receiver_id` = ai.id
+		LEFT JOIN tb_dic_print_model pr ON ci.report_model=pr.code
+		left join
+		tb_upc_users u on u.userid=ci.case_in_per
+		WHERE
+		ci.state!=6 AND
+		pr.type='alcohol' and
+		ci.case_in_per is not null
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" sample_time_start != null and  sample_time_start != '' and  sample_time_start!=sample_time_end ">
+			and si.sample_time > #{sample_time_start}
+		</if>
+		<if test=" sample_time_end != null and sample_time_end != ''  and  sample_time_start!=sample_time_end ">
+			and (SELECT DATE_ADD(#{sample_time_end}, INTERVAL 1 DAY)) > si.sample_time
+		</if>
+		<if test=" sample_time_start==sample_time_end ">
+			and   si.sample_time like '${sample_time_end}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" client_starttime != null and  client_starttime != '' ">
+			and ci.client_time>=#{client_starttime}
+		</if>
+		<if test=" client_endtime != null and client_endtime != ''">
+			and #{client_endtime}>=ci.client_time
+		</if>
+		<if test="state!=-1 and state!=-7">
+			and ci.state=#{state}
+		</if>
+			<if test="state==-7">
+			and ci.state != 7
+		</if>
+		<if test="state==-1">
+			and ci.state != 1
+		</if>
+		<if test=" client != null and client != ''">
+			and ci.client like '%${client}%'
+		</if>
+		<if test=" checkper != null and checkper != ''">
+			and ci.checkper like '%${checkper}%'
+		</if>
+		<if test=" checkper_phone != null and checkper_phone != ''">
+			and ci.checkper_phone like '%${checkper_phone}%'
+		</if>
+		<if test=" receiver != null and receiver != ''">
+			and ai.`username` like '%${receiver}%'
+		</if>
+		<if test="areacode != '' and areacode != null">
+			AND ci.`area_code`= #{areacode}
+		</if>
+		<if test=" receiver_area != null and receiver_area != ''">
+			and ai.`areaname` LIKE '%${receiver_area}%'
+		</if>
+		<if test=" mail_address != null and mail_address != ''">
+			and ci.mail_address like '%${mail_address}%'
+		</if>
+		<if test=" mail_per != null and mail_per != ''">
+			and ci.mail_per like '%${mail_per}%'
+		</if>
+		<if test=" mail_phone != null and mail_phone != ''">
+			and ci.mail_phone like '%${mail_phone}%'
+		</if>
+		<if test=" isDoubleTube != null and isDoubleTube != ''">
+			and ci.isDoubleTube = #{isDoubleTube}
+		</if>
+		<if test=" case_in_pername != null and case_in_pername != ''">
+			and u.`username` LIKE '%${case_in_pername}%'
+		</if>
+		<if test=" case_in_per !=null and case_in_per != ''">
+			AND ci.case_in_per=#{case_in_per}
+		</if>
+	</select>
+
+	<update id="deleteCaseInfo" parameterType="map">
+		update
+		tb_alcohol_case_info set state=7 where case_id=#{case_id}
+	</update>
+
+	<select id="exsitCaseCode" resultType="int" parameterType="map">
+		select count(*) from tb_alcohol_case_info where case_code=#{case_code}
+	</select>
+
+	<select id="getSampleInfo" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholSampleInfoModel">
+		select * from tb_alcohol_sample_info AS si
+		RIGHT JOIN tb_alcohol_case_info as ci on
+		ci.sample_id=si.sample_id
+		where si.sample_id=#{sample_id}
+
+	</select>
+	<insert id="addCaseInfo" parameterType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		insert into
+		tb_alcohol_case_info
+		(case_id,
+		case_code,case_num,
+		client,
+		checkper,
+		checkper_phone,
+		area_code,
+		event_desc,
+		remark,
+		address,
+		sample_id,
+		bloodnumA,
+		bloodnumB,
+		accept_time,
+		close_time,
+		mail_address,
+		mail_per,
+		mail_phone,
+		case_in_per,
+		attachment,receiver_id,
+		report_model,client_time,sample_remark,isDoubleTube,sample_result,sample_remark2,is_detection,case_intr,
+		case_det,is_check)
+		values(#{case_id},#{case_code},#{case_num},#{client},#{checkper},#{checkper_phone},#{area_code},#{event_desc},
+		#{remark},#{address},#{sample_id},#{bloodnumA},#{bloodnumB},
+		#{accept_time},#{close_time},#{mail_address},#{mail_per},#{mail_phone},#{case_in_per},#{attachment},#{receiver_id},#{report_model},
+		#{client_time},#{sample_remark},#{isDoubleTube},#{sample_result},#{sample_remark2},#{is_detection},#{case_intr},#{case_det},#{is_check})
+	</insert>
+
+	<insert id="addSampleInfo" parameterType="com.rds.alcohol.model.RdsAlcoholSampleInfoModel">
+		insert into
+		tb_alcohol_sample_info
+		(sample_id,sample_name,
+		id_number,
+		sample_ml,sample_time)
+		values(#{sample_id},#{sample_name},#{id_number},
+		#{sample_ml},now())
+	</insert>
+
+	<update id="updateCaseCode" parameterType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		update
+		tb_alcohol_case_info set
+		<if test="case_code != null">
+			case_code=#{case_code}
+		</if>
+		<if test="client != null">
+			,client=#{client}
+		</if>
+		<if test="checkper != null">
+			,checkper=#{checkper}
+		</if>
+		<if test="is_check != null">
+			,is_check=#{is_check}
+		</if>
+		<if test="bloodnumA != null">
+			,bloodnumA=#{bloodnumA}
+		</if>
+		<if test="bloodnumB != null">
+			,bloodnumB=#{bloodnumB}
+		</if>
+		<if test="checkper_phone != null">
+			,checkper_phone=#{checkper_phone}
+		</if>
+		<if test="area != null">
+			,area_code=#{area}
+		</if>
+		<if test="event_desc != null">
+			,event_desc=#{event_desc}
+		</if>
+		<if test="remark != null">
+			,remark=#{remark}
+		</if>
+		<if test="address != null">
+			,address=#{address}
+		</if>
+		<if test="case_intr != null">
+			,case_intr=#{case_intr}
+		</if>
+		<if test="case_det != null">
+			,case_det=#{case_det}
+		</if>
+		<if test="mail_address != null">
+			,mail_address=#{mail_address}
+		</if>
+		,state=0
+		<if test="mail_per != null">
+			,mail_per=#{mail_per}
+		</if>
+		<if test="accept_time != null">
+			,accept_time=#{accept_time}
+		</if>
+		<if test="close_time != null">
+			,close_time=#{close_time}
+		</if>
+		<if test="mail_phone != null">
+			,mail_phone=#{mail_phone}
+		</if>
+		<if test="attachment != null">
+			,attachment=#{attachment}
+		</if>
+		<if test="report_model != null">
+			,report_model=#{report_model}
+		</if>
+		<if test="receiver_id != null">
+			,receiver_id=#{receiver_id}
+		</if>
+		<if test="client_time != null">
+			,client_time=#{client_time}
+		</if>
+		<if test="sample_remark != null">
+			,sample_remark=#{sample_remark}
+		</if>
+		<if test="isDoubleTube != null">
+			,isDoubleTube=#{isDoubleTube}
+		</if>
+		<if test="sample_result != null">
+			,sample_result=#{sample_result}
+		</if>
+		<if test="sample_remark2 != null">
+			,sample_remark2=#{sample_remark2}
+		</if>
+		<if test="is_detection != null">
+			,is_detection=#{is_detection}
+		</if>
+		where
+		case_id=#{case_id}
+	</update>
+	<update id="updateCasefee" parameterType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		update
+		tb_judicial_casefee set
+		<if test="stand_sum != null">
+			stand_sum=#{stand_sum}
+		</if>
+		<if test="real_sum != null">
+			,real_sum=#{real_sum}
+		</if>
+		where
+		case_id=#{case_id}
+	</update>
+
+	<update id="updateSampleCode" parameterType="com.rds.alcohol.model.RdsAlcoholSampleInfoModel">
+		update
+		tb_alcohol_sample_info set
+		<if test="sample_name != null">
+			sample_name=#{sample_name}
+		</if>
+		<if test="id_number != null">
+			,id_number=#{id_number}
+		</if>
+		<if test="sample_ml != null">
+			,sample_ml=#{sample_ml}
+		</if>
+		where
+		sample_id=#{sample_id}
+	</update>
+	 <select id="getAllCaseInfo" parameterType="com.rds.alcohol.model.RdsAlcoholQueryParam"
+		resultType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		SELECT
+		ci.case_id,ci.case_code,ci.client,ci.checkper,ci.checkper_phone,ci.area_code,
+		ci.event_desc,ci.remark,ci.address,ci.sample_id,
+		ci.accept_time,ci.mail_address,ci.mail_per,ci.mail_phone,ci.attachment,ci.report_model,ci.state,
+		u.username AS case_in_pername,pr.text AS
+		report_modelnames,ci.county,ci.city,ci.province,e.username as
+		receiver,e.areaname as receiver_area
+		FROM
+		(SELECT a.*,ai.* FROM
+		tb_alcohol_case_info a LEFT JOIN(SELECT aa.id,aa.name AS
+		county,aa.city,bb.name AS
+		province,aa.initials
+		FROM
+		(SELECT
+		a.id,a.name,i.name AS city,i.parentID
+		,a.initials FROM
+		(SELECT *
+		FROM
+		tb_dic_area_info
+		WHERE
+		SUBSTR(id,5,6)!='00')a,tb_dic_area_info i
+		WHERE
+		a.parentID=i.id)aa
+		,tb_dic_area_info bb WHERE
+		aa.parentID=bb.id)ai ON
+		a.area_code=ai.id) ci,
+		tb_upc_users u,( SELECT * FROM
+		tb_dic_print_model WHERE
+		TYPE='alcohol')pr,(SELECT
+		a.area_id,a.userid,i.areaname,i.print_copies,u.username
+		FROM
+		tb_upc_area a,
+		tb_upc_users u,tb_upc_area_info i WHERE
+		a.userid=u.userid AND
+		i.areacode=a.areacode ) e WHERE
+		ci.report_model=pr.code AND ci.receiver_id=e.area_id
+		AND
+		u.userid=ci.case_in_per
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="state!=-1">
+			and ci.state=#{state}
+		</if>
+		<if test=" client != null and client != ''">
+			and ci.client like '%${client}%'
+		</if>
+		group by ci.case_id
+	</select>
+
+	<insert id="addCaseFee" parameterType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,discount,status,update_date,type,case_type)
+		values(#{id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},'1.0',3,now(),0,'alcohol')
+	</insert>
+	<select id="getClient" resultType="com.rds.alcohol.model.RdsAlcoholDicValueModel">
+		SELECT
+		aci.`client` AS `key`,
+		CONCAT(u.`username`, '-', aci.`client`) AS `value`
+		FROM
+		`tb_alcohol_case_info` aci
+		LEFT JOIN `tb_upc_users` u
+		ON
+		aci.`case_in_per` = u.`userid`
+		GROUP BY aci.`client`
+	</select>
+
+	<select id="getClient2" resultType="com.rds.alcohol.model.RdsAlcoholDicValueModel">
+		select per_name as 'key'
+		,CONCAT(user_name, '-', per_name) as 'value' from
+		tb_alcohol_identify_per where delstatus=0
+	</select>
+
+	<select id="exportCaseInfo" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholCaseExportModel">
+		select * from (SELECT
+		ci.case_id,
+		ci.case_code,
+		ci.client,
+		ci.checkper,
+		ci.checkper_phone,
+		ci.area_code,
+		ci.event_desc,
+		ci.remark,
+		ci.address,
+		ci.sample_id,
+		ci.receiver_id,
+		ci.client_time,
+		ci.close_time,
+		ci.sample_remark,
+		ci.sample_result,
+		ci.isDoubleTube,
+		ci.sample_remark2,
+		ci.is_detection,
+		ci.accept_time,
+		ci.mail_address,
+		ci.mail_per,
+		ci.mail_phone,
+		ci.attachment,
+		ci.report_model,
+		ci.state,
+		ci.bloodnumA,
+		ci.bloodnumB,
+		ci.case_intr,
+		ci.case_det,
+		ci.is_check,
+		ai.`username` AS receiver,
+		ai.`areaname` AS receiver_area,
+		u.username AS case_in_per,
+		pr.text AS report_modelname,
+		si.`sample_name`,
+		si.`id_number`,
+		si.`sample_time`,
+		c.`real_sum`,
+		c.`stand_sum`,
+		c.`return_sum`,
+		c.`paragraphtime`,
+		c.`account`,
+		c.`remittanceName`,
+		c.`remittanceDate`,
+		c.`discountPrice`,
+		c.`finance_remark`,
+		 (select GROUP_CONCAT(t1.per_name) from tb_alcohol_identify_per t1 
+			left join tb_alcohol_case_info_identify t2
+			on t1.per_id = t2.pid
+			where t2.cid=ci.case_id ) as case_checkper
+		 FROM
+		tb_alcohol_case_info ci
+		LEFT JOIN tb_alcohol_sample_info si ON
+		ci.`sample_id`=si.`sample_id`
+		LEFT JOIN tb_dic_print_model pr ON ci.report_model=pr.code
+		LEFT JOIN tb_judicial_casefee c ON
+		ci.`case_id`=c.`case_id`
+		LEFT JOIN
+		tb_charge_standard ai
+		ON ci.`receiver_id` = ai.id
+		LEFT JOIN tb_upc_users u
+		ON
+		u.userid=ci.case_in_per
+		LEFT JOIN
+		tb_upc_department dept
+		ON u.`deptcode` =
+		dept.`deptcode`) cii
+		 LEFT JOIN
+		(SELECT da.id,
+		(case when da3. NAME is not null and da2. NAME is not null then da.name when da3. NAME is null then null  end) as county,
+		(case when da3. NAME is not null then da2. NAME when da3. NAME is null and da2. NAME is not null then da.name when da2. NAME is null and da3. NAME is null then null end) as city,
+		(case when da3. NAME is not null then da3. NAME WHEN da3. NAME is null and da2. NAME is not null THEN da2. NAME else da.name end) as province
+		FROM
+			tb_dic_area_info da
+		left join 
+			tb_dic_area_info da2
+		on
+			da2.id = da.parentID
+		left join
+			tb_dic_area_info da3
+		on da3.id = da2.parentID
+		) da
+		ON
+		da.id =
+		cii.`area_code`
+		WHERE
+		cii.state!=6  and
+		cii.case_in_per IS NOT NULL
+		 <if test=" case_code!=null and case_code != ''">
+			and (lower(cii.case_code) LIKE '%${case_code}%' or
+			upper(cii.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" sample_time_start != null and  sample_time_start != '' and  sample_time_start!=sample_time_end ">
+			and cii.sample_time > #{sample_time_start}
+		</if>
+		<if test=" sample_time_end != null and sample_time_end != ''  and  sample_time_start!=sample_time_end ">
+			and (SELECT DATE_ADD(#{sample_time_end}, INTERVAL 1 DAY)) > cii.sample_time
+		</if>
+		<if test="sample_time_end != null and  sample_time_start==sample_time_end ">
+			and   cii.sample_time like '${sample_time_end}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and cii.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=cii.accept_time
+		</if>
+		<if test=" client_starttime != null and  client_starttime != '' ">
+			and cii.client_time>=#{client_starttime}
+		</if>
+		<if test=" client_endtime != null and client_endtime != ''">
+			and #{client_endtime}>=cii.client_time
+		</if>
+		<if test=" client != null and client != ''">
+			and cii.client like '%${client}%'
+		</if>
+		<if test=" checkper != null and checkper != ''">
+			and cii.checkper like '%${checkper}%'
+		</if>
+		<if test=" checkper_phone != null and checkper_phone != ''">
+			and cii.checkper_phone like '%${checkper_phone}%'
+		</if>
+		<if test=" receiver != null and receiver != ''">
+			and cii.`username` like '%${receiver}%'
+		</if>
+		<if test="area_code!=null and area_code != ''">
+			 and cii.area_code=#{area_code}
+		</if>
+		<if test=" mail_address != null and mail_address != ''">
+			and cii.mail_address like '%${mail_address}%'
+		</if>
+		<if test=" mail_per != null and mail_per != ''">
+			and cii.mail_per like '%${mail_per}%'
+		</if>
+		<if test=" mail_phone != null and mail_phone != ''">
+			and cii.mail_phone like '%${mail_phone}%'
+		</if>
+		<if test=" isDoubleTube != null and isDoubleTube != ''">
+			and cii.isDoubleTube = #{isDoubleTube}
+		</if>
+		<if test=" receiver_area != null and receiver_area != ''">
+			and cii.`areaname` LIKE '%${receiver_area}%'
+		</if>
+		<if test="state!=-1 and state!=-7">
+			and cii.state=#{state}
+		</if>
+		<if test="state==-7">
+			and cii.state != 7
+		</if>
+		<if test="state==-1">
+			and cii.state != 1
+		</if>
+		<if test=" case_in_pername != null and case_in_pername != ''">
+			and cii.`username` LIKE '%${case_in_pername}%'
+		</if>
+		<if test=" case_in_per !=null and case_in_per != ''">
+			AND cii.case_in_per=#{case_in_per}
+		</if>
+		ORDER BY cii.sample_time desc
+	</select>
+
+</mapper>

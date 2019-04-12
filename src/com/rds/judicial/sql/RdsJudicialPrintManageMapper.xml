@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialPrintManageMapper">
+    <select id="getPrintCaseInfo" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialPrintCompanyAreaModel">
+        SELECT CODE as print_code,TEXT as print_name
+            FROM tb_dic_print_model
+        where 1=1
+        <if test="print_name!=null and print_name!=''">
+            and text LIKE '%${print_name}%'
+        </if>
+        GROUP BY CODE
+        LIMIT
+        #{start},#{limit}
+    </select>
+
+    <select id="countPrintCaseInfo" parameterType="map" resultType="int">
+        SELECT count(DISTINCT CODE) FROM tb_dic_print_model where 1=1
+        <if test="print_name!=null and print_name!=''">
+            and text LIKE '%${print_name}%'
+        </if>
+    </select>
+    
+    
+    <select id="getPrintInfoFoModel" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialPrintCompanyAreaModel">
+        SELECT CODE as print_code,TEXT as print_name,reagent_name as reagent_name,
+          reagent_name_ext as reagent_name_ext FROM tb_dic_print_model
+        where 1=1
+        <if test="print_name!=null and print_name!=''">
+            and text LIKE '%${print_name}%'
+        </if>
+        ORDER BY CODE
+        LIMIT
+        #{start},#{limit}
+    </select>
+
+    <select id="countPrintCaseInfoForModel" parameterType="map" resultType="int">
+        SELECT count(CODE) FROM tb_dic_print_model where 1=1
+        <if test="print_name!=null and print_name!=''">
+            and text LIKE '%${print_name}%'
+        </if>
+    </select>
+
+    <select id="getCompany" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select companyid as
+		'key',companyname as value from tb_upc_company
+	</select>
+
+    <select id="getArea" resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+		SELECT 
+		  ar.id,
+		  CONCAT(ar.name, '(', ar.id, ')') AS TEXT,
+		  ar.parentID AS parentId,
+		  IF(
+		    pca.`id` IS NULL 
+		    OR pca.`id` = '',
+		    FALSE,
+		    TRUE
+		  ) AS checked,
+		  (SELECT 
+		    CASE
+		      WHEN COUNT(*) > 0 
+		      THEN 'false' 
+		      ELSE 'true' 
+		    END 
+		  FROM
+		    tb_dic_area_info a 
+		  WHERE a.parentID = ar.id) AS leaf 
+		FROM
+		  tb_dic_area_info ar 
+		  LEFT JOIN 
+		    (SELECT 
+		      cr.`area_code`,
+		      cr.`id` 
+		    FROM
+		      tb_dic_print_company_area cr,
+		      tb_dic_print_company pc 
+		    WHERE cr.`print_company_id` = pc.`id` 
+		      AND companyid=#{companyid}
+		      AND pmodel_code=#{pmodel_code}) pca 
+		    ON pca.`area_code` = ar.`id` 
+		WHERE ar.parentID=#{node}
+		
+		<!-- 
+		SELECT ar.id ,CONCAT(ar.name,'(',ar.id,')') AS
+		TEXT,ar.parentID AS
+		parentId,IF(pca.`id` IS NULL OR
+		pca.`id`
+		='',FALSE,TRUE) AS checked
+		FROM
+		tb_dic_area_info ar LEFT
+		JOIN (SELECT
+		cr.`area_code`,cr.`id` FROM tb_dic_print_company_area
+		cr,tb_dic_print_company pc WHERE cr.`print_company_id`=pc.`id` AND
+		companyid=#{companyid} and pmodel_code=#{pmodel_code} )pca ON
+		pca.`area_code`=ar.`id`
+		WHERE ar.parentID=#{node} -->
+	</select>
+
+    <insert id="savePrintCompany" parameterType="map">
+		insert into
+		tb_dic_print_company(id,companyid,pmodel_code)
+		values(#{print_company_id},#{companyid},#{pmodel_code})
+	</insert>
+
+    <delete id="delPrintCompany" parameterType="map">
+		delete from
+		tb_dic_print_company where companyid=#{companyid} and
+		pmodel_code=#{pmodel_code}
+	</delete>
+
+    <delete id="delPrintArea" parameterType="map">
+		delete from tb_dic_print_company_area where
+		print_company_id=#{print_company_id}
+	</delete>
+
+    <insert id="savePrintArea" parameterType="map">
+        insert into tb_dic_print_company_area(id,print_company_id,area_code)
+        values
+        <foreach collection="list" item="item" index="index"
+                 separator=",">
+            (#{item.id},#{item.print_company_id},#{item.area_code})
+        </foreach>
+    </insert>
+
+    <select id="getAllCity" resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+        SELECT ar.id ,CONCAT(ar.name,'(',ar.id,')') AS
+        TEXT,ar.parentID AS
+        parentId,IF(pca.`id` IS NULL OR
+        pca.`id`
+        ='',FALSE,TRUE) AS checked
+        FROM
+        (SELECT b.* FROM
+        (SELECT * FROM tb_dic_area_info WHERE parentid = 0)a
+        INNER JOIN (SELECT * FROM tb_dic_area_info WHERE parentid != 0)b ON a.id = b.parentid) ar LEFT
+        JOIN (SELECT
+        cr.`area_code`,cr.`id` FROM tb_dic_print_company_area
+        cr,tb_dic_print_company pc WHERE cr.`print_company_id`=pc.`id` AND
+        companyid=#{companyid} and pmodel_code=#{pmodel_code} )pca ON
+        pca.`area_code`=ar.`id`
+    </select>
+
+    <select id="getAllZone" resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+        SELECT ar.id ,CONCAT(ar.name,'(',ar.id,')') AS
+        TEXT,ar.parentID AS
+        parentId,IF(pca.`id` IS NULL OR
+        pca.`id`
+        ='',FALSE,TRUE) AS checked
+        FROM
+        (SELECT b.* FROM
+        (SELECT * FROM tb_dic_area_info WHERE parentid = 0)c
+        INNER JOIN (SELECT * FROM tb_dic_area_info WHERE parentid != 0)a ON c.id = a.parentid
+        INNER JOIN tb_dic_area_info b ON a.id = b.`parentID`) ar LEFT
+        JOIN (SELECT
+        cr.`area_code`,cr.`id` FROM tb_dic_print_company_area
+        cr,tb_dic_print_company pc WHERE cr.`print_company_id`=pc.`id` AND
+        companyid=#{companyid} and pmodel_code=#{pmodel_code} )pca ON
+        pca.`area_code`=ar.`id`
+    </select>
+    
+    
+    <delete id="delDicPrintModel" parameterType="map">
+		delete from tb_dic_print_company_area where
+		print_company_id=#{print_company_id}
+	</delete>
+
+    <insert id="saveDicPrintModel" parameterType="map">
+        insert into tb_dic_print_company_area(id,print_company_id,area_code)
+        values
+        <foreach collection="list" item="item" index="index"
+                 separator=",">
+            (#{item.id},#{item.print_company_id},#{item.area_code})
+        </foreach>
+    </insert>
+</mapper>

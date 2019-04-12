@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialReportMapper">
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.case_areacode,
+		ci.`receiver_id`,
+		ci.`urgent_state`,
+		m.`url` AS report_url,
+		ci.`accept_time`,
+		ci.`print_count`,
+		ci.`client`,
+		DATE_FORMAT(ci.`close_time`,'%Y-%m-%d %H:%i:%s') as close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		m.`text` AS `report_modelname`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.`case_in_per`,
+		DATE_FORMAT(ci.`sample_in_time`,'%Y-%m-%d %H:%i:%s') as sample_in_time,
+		ai.case_receiver,
+		ai.receiver_area
+		FROM
+		(SELECT ci.*
+		FROM (SELECT ci.*
+		FROM tb_judicial_case_info ci ,(SELECT case_code
+		FROM
+		tb_judicial_sub_case_info GROUP BY case_code)mi WHERE
+		ci.case_code=mi.case_code AND ci.is_archived=0
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		AND ci.`case_in_per` IS
+		NOT NULL
+		AND ci.is_delete=0)ci
+		LEFT JOIN (SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info WHERE result IS NULL OR result
+		= '' GROUP BY
+		case_code) mi
+		ON mi.case_code =ci.case_code WHERE
+		mi.case_code IS
+		NULL)ci
+		LEFT JOIN
+		(SELECT
+		ar.`area_id`,
+		users.`username` AS
+		case_receiver,
+		ai.`areaname` AS
+		receiver_area,
+		dept.companyid,
+		users.userid,
+		users.deptcode
+		FROM
+		tb_upc_area ar,
+		tb_upc_area_info ai,
+		tb_upc_users
+		users,
+		tb_upc_department dept
+		WHERE ar.areacode =
+		ai.`areacode`
+		AND
+		ar.userid =
+		users.userid
+		AND users.`deptcode` =
+		dept.`deptcode`
+		AND (
+		dept.delstatus = 0
+		OR
+		dept.delstatus IS NULL
+		)
+		)
+		ai
+		ON
+		ci.`receiver_id` = ai.area_id
+		LEFT JOIN
+		tb_dic_print_model m
+		ON
+		ci.`report_model` = m.`code`
+		WHERE m.`type` =
+		'dna'
+		<if test=" receiver!=null and receiver != ''">
+			AND ai.case_receiver LIKE '%${receiver}%'
+		</if>
+		ORDER BY ci.accept_time DESC
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		(SELECT ci.* FROM (SELECT ci.* FROM
+		tb_judicial_case_info ci
+		,(SELECT case_code
+		FROM
+		tb_judicial_sub_case_info GROUP BY case_code)mi
+		WHERE
+		ci.case_code=mi.case_code AND ci.is_archived=0
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		AND
+		ci.`case_in_per` IS NOT NULL
+		AND ci.is_delete=0)ci
+		LEFT JOIN (SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info WHERE result IS NULL OR result
+		= '' GROUP BY case_code) mi
+		ON mi.case_code =ci.case_code WHERE
+		mi.case_code IS NULL)ci
+		LEFT JOIN
+		(SELECT
+		ar.`area_id`,
+		users.`username`
+		AS case_receiver,
+		ai.`areaname` AS
+		receiver_area,
+		dept.companyid,
+		users.userid,
+		users.deptcode
+		FROM
+		tb_upc_area ar,
+		tb_upc_area_info ai,
+		tb_upc_users users,
+		tb_upc_department dept
+		WHERE ar.areacode =
+		ai.`areacode`
+		AND ar.userid =
+		users.userid
+		AND users.`deptcode` =
+		dept.`deptcode`
+		AND (
+		dept.delstatus = 0
+		OR
+		dept.delstatus IS NULL
+		)
+		) ai
+		ON
+		ci.`receiver_id` = ai.area_id
+		LEFT JOIN
+		tb_dic_print_model m
+		ON
+		ci.`report_model` = m.`code`
+		WHERE m.`type` =
+		'dna'
+		<if test=" receiver!=null and receiver != ''">
+			AND ai.case_receiver LIKE '%${receiver}%'
+		</if>
+	</select>
+
+	<select id="getCaseReport" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseReportModel">
+
+		SELECT ss.*,sii.`sample_username` AS sample_name2,hr.report_path FROM
+		(SELECT
+		cii.*,s.`sample_username` AS sample_name3 FROM
+
+		(SELECT
+		ci.`case_code`,ci.`sub_case_code`,si.`sample_username` AS
+		sample_name1,ci.`sample_code1`,ci.`sample_code2`,ci.sample_code3,ci.result
+		FROM tb_judicial_sub_case_info ci,tb_judicial_sample_info si WHERE
+		ci.`sample_code1`=si.`sample_code` and ci.case_code=#{case_code}
+		<if test="is_new !=1">
+			AND ci.result IS NOT NULL
+		</if>
+		) cii,
+		tb_judicial_sample_info s WHERE
+		cii.`sample_code3`=s.`sample_code`) ss
+		LEFT
+		JOIN
+		tb_judicial_sample_info
+		sii ON ss.sample_code2
+		=sii.`sample_code`
+		LEFT JOIN (SELECT
+		sub_case_code,report_path FROM
+		tb_judicial_hand_report
+		WHERE
+		is_delete=0)hr ON
+		ss.sub_case_code=hr.sub_case_code GROUP BY
+		ss.sub_case_code
+	</select>
+
+	<insert id="updateReport" parameterType="com.rds.judicial.model.RdsJudicialHeadReportModel">
+		insert into
+		tb_judicial_hand_report(report_id,sub_case_code,report_path,time,upload_per)
+		values(#{report_id},#{sub_case_code},#{report_path},now(),#{upload_per})
+	</insert>
+
+	<update id="delReport" parameterType="com.rds.judicial.model.RdsJudicialHeadReportModel">
+		update
+		tb_judicial_hand_report set is_delete=1 where
+		sub_case_code=#{sub_case_code}
+	</update>
+
+	<update id="updateCaseResult" parameterType="com.rds.judicial.model.RdsJudicialHeadReportModel">
+		update
+		tb_judicial_sub_case_info set result=#{result} where
+		sub_case_code=#{sub_case_code}
+	</update>
+</mapper>

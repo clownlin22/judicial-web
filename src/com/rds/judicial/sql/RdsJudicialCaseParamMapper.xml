@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseParamMapper" >
+    <select id="queryGen" parameterType="map" resultType="string">
+        select param_value from tb_judicial_case_param where
+        param_type = #{param_type} and param_name = #{param_name}
+        and reagent_name = #{reagent_name}
+    </select>
+    <select id="queryGenMin" parameterType="map" resultType="string">
+        select min(param_value) from tb_judicial_case_param where
+        param_type = #{param_type} and reagent_name = #{reagent_name}
+    </select>
+    <insert id="insertPiInfo" parameterType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+        insert into tb_judicial_pi_info(sub_case_code,param_type, parent,parent2,
+        child, gene1, gene2, function, pi) values(#{sub_case_code},#{param_type},
+        #{parent},#{parent2},#{child},#{gene1},#{gene2},#{function},#{pi})
+    </insert>
+    <select id="queryPiInfo" parameterType="string" resultType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+        select * from tb_judicial_pi_info where sub_case_code = #{sub_case_code}
+    </select>
+    
+      <select id="queryPiInfobyalient" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+        select * from tb_judicial_pi_info where sub_case_code = #{sub_case_code} and param_type=#{param_type}
+    </select>
+    
+    <select id="queryPiByKey" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+        select * from tb_judicial_pi_info where sub_case_code like '%${sub_case_code}%'
+        and param_type =#{param_type};
+    </select>
+    
+     <select id="queryPiByKeybyone" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+        select * from tb_judicial_pi_info where sub_case_code like '${sub_case_code}%'
+        and param_type =#{param_type} ;
+    </select>
+    
+     <select id="queryregientgByKey" parameterType="map" resultType="string">
+        SELECT reagent_name FROM  tb_judicial_case_info  
+        WHERE  case_code=#{case_code};
+    </select>
+    
+        <select id="queryValuebycode" parameterType="map" resultType="string">
+				SELECT 
+		  a.`value`
+		FROM
+		  tb_judicial_sample_result_data a  
+		  LEFT JOIN `tb_judicial_sample_info` f 
+		  ON a.`sample_code`=f.`sample_code`
+		WHERE F.`case_id`  =(SELECT d.`case_id` FROM `tb_judicial_case_info` d 
+		WHERE d.`case_code`=#{case_code})
+		AND a.`name`=#{param_type}
+		AND f.`sample_call`=#{sample_call} 
+		 LIMIT 1
+    </select>
+</mapper>

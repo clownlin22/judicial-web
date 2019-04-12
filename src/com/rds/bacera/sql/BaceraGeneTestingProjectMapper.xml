@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.BaceraGeneTestingProjectMapper">
+ <select id="queryAllPage" parameterType="map"
+            resultType="com.rds.bacera.model.BaceraGeneTestingProjectModel">
+            SELECT
+            a.`id`,
+            a.`add_time`,
+            a.`consumer_name`,
+            a.`consumer_sex`,
+            a.`consumer_birthday`,
+            a.`consumer_phone`,
+            a.`sample_number`,
+            a.`test_number`,
+            a.`report_date`,
+            a.`report_date`,
+            a.`test_package_name`,
+            a.`agency_id`,
+            a.`agency_name`,
+            a.`test_item_ids`,
+            a.`test_item_names`,
+            a.`charge_standard_id`,
+            a.`charge_standard_name`,
+            a.`remark`,
+            a.`price`,
+            g.age,
+            g.hospital,
+            g.office,
+            g.sample_type,
+            g.admission_num,
+            g.sample_status,
+            g.doctor,
+            g.bed_num,
+            g.genetic_test_id,
+              fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+		      fi.remarks,
+		   	  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.`oa_num`,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  i.expressremark
+	            from tb_bioms_genetic_test a
+	             left join tb_finance_info fi
+		     on fi.`id`=a.`id`
+		       left join tb_express_info i 
+		        on a.`id`=i.`id`
+		        left join tb_bioms_genetic_test_extend g
+		        on a.id=g.id
+	            where 1=1
+            <if test="consumer_name != '' and consumer_name != null">
+						and a.consumer_name like concat('%', #{consumer_name}, '%') 
+				</if>	
+				 <if test="test_item_names != '' and test_item_names != null">
+						and a.test_item_names like concat('%', #{test_item_names}, '%') 
+				</if>
+				<if test="consumer_phone != '' and consumer_phone != null">
+					 and a.consumer_phone like concat('%', #{consumer_phone}, '%') 
+				</if>	
+				<if test="sample_number != '' and sample_number != null">
+					and a.sample_number like concat('%', #{sample_number}, '%') 
+				</if>	
+					<if test="test_number != '' and test_number != null">
+						and a.test_number like concat('%', #{test_number}, '%') 
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expresstype` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expresstype` IS NULL
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expressnum` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expressnum` IS NULL
+					</if>	
+					<if test="test_package_name != '' and test_package_name != null">
+						and a.test_package_name = #{test_package_name}
+					</if>
+					<if test="agency_name != '' and agency_name != null">
+						and a.agency_name like concat('%', #{agency_name}, '%') 
+					</if>	
+					<if test="gene_starttime != '' and gene_starttime != null">
+						and a.add_time >= #{gene_starttime}
+					</if>	
+					<if test="gene_endtime != '' and gene_endtime != null">
+						and #{gene_endtime} >= a.add_time
+					</if>			
+					<if test="consumer_sex != '' and consumer_sex != null">
+						and a.consumer_sex = #{consumer_sex}
+					</if>	
+						<if test="receivables != '' and receivables != null">
+						and  fi.`receivables`like concat('%', #{receivables}, '%') 
+					</if>	
+					<if test="price != '' and price != null">
+						and  a.price = #{price}
+					</if>	
+					<if test="charge_standard_name != '' and charge_standard_name != null">
+						and a.`charge_standard_name` like concat('%', #{charge_standard_name}, '%') 
+					</if>	
+					<if test="confirm_flag != '' and confirm_flag != null">
+						and fi.confirm_flag = #{confirm_flag}
+					</if>
+					 order by a.`test_number` desc
+           <if test="start!=null and limit!=null">
+           
+            limit #{start},#{limit}
+        </if>
+            </select>
+            
+             <select id="queryAll" parameterType="map"
+            resultType="com.rds.bacera.model.BaceraGeneTestingProjectModel">
+            SELECT
+            a.`id`,
+            a.`add_time`,
+            a.`consumer_name`,
+            a.`consumer_sex`,
+            a.`consumer_birthday`,
+            a.`consumer_phone`,
+            a.`sample_number`,
+            a.`test_number`,
+            a.`report_date`,
+            a.`report_date`,
+            a.`test_package_name`,
+            a.`agency_id`,
+            a.`agency_name`,
+            a.`test_item_ids`,
+            a.`test_item_names`,
+            a.`charge_standard_id`,
+            a.`charge_standard_name`,
+            a.`remark`,
+            a.`price`,
+            g.age,
+            g.hospital,
+            g.office,
+            g.sample_type,
+            g.admission_num,
+            g.sample_status,
+            g.doctor,
+            g.bed_num,
+            g.genetic_test_id,
+              fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+		      fi.remarks,
+		   	  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.`oa_num`,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  i.expressremark
+	            from tb_bioms_genetic_test a
+	             left join tb_finance_info fi
+		     on fi.`id`=a.`id`
+		       left join tb_express_info i 
+		        on a.`id`=i.`id`
+		        left join tb_bioms_genetic_test_extend g
+		        on a.id=g.id
+	            where 1=1
+            <if test="consumer_name != '' and consumer_name != null">
+						and a.consumer_name like concat('%', #{consumer_name}, '%') 
+				</if>	
+				 <if test="test_item_names != '' and test_item_names != null">
+						and a.test_item_names like concat('%', #{test_item_names}, '%') 
+				</if>
+				<if test="consumer_phone != '' and consumer_phone != null">
+					 and a.consumer_phone like concat('%', #{consumer_phone}, '%') 
+				</if>	
+				<if test="sample_number != '' and sample_number != null">
+					and a.sample_number like concat('%', #{sample_number}, '%') 
+				</if>	
+					<if test="test_number != '' and test_number != null">
+						and a.test_number like concat('%', #{test_number}, '%') 
+					</if>	
+					<if test="test_package_name != '' and test_package_name != null">
+						and a.test_package_name = #{test_package_name}
+					</if>
+					<if test="agency_name != '' and agency_name != null">
+						and a.agency_name like concat('%', #{agency_name}, '%') 
+					</if>	
+					<if test="gene_starttime != '' and gene_starttime != null">
+						and a.add_time >= #{gene_starttime}
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expresstype` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expresstype` IS NULL
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expressnum` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expressnum` IS NULL
+					</if>	
+					<if test="gene_endtime != '' and gene_endtime != null">
+						and #{gene_endtime} >= a.add_time
+					</if>			
+					<if test="consumer_sex != '' and consumer_sex != null">
+						and a.consumer_sex = #{consumer_sex}
+					</if>	
+						<if test="receivables != '' and receivables != null">
+						and  fi.`receivables`like concat('%', #{receivables}, '%') 
+					</if>	
+					<if test="confirm_flag != '' and confirm_flag != null">
+						and fi.confirm_flag = #{confirm_flag}
+					</if>
+					<if test="price != '' and price != null">
+						and  a.price = #{price}
+					</if>	
+					<if test="charge_standard_name != '' and charge_standard_name != null">
+						and a.`charge_standard_name` like concat('%', #{charge_standard_name}, '%') 
+					</if>	
+            </select>
+     <select id="queryAllCount" parameterType="map"
+            resultType="int">
+             SELECT COUNT(1)
+		 from tb_bioms_genetic_test a
+	             left join tb_finance_info fi
+		     on fi.`id`=a.`id`
+		       left join tb_express_info i 
+		        on a.`id`=i.`id`
+	            where 1=1
+           <if test="consumer_name != '' and consumer_name != null">
+						and a.consumer_name like concat('%', #{consumer_name}, '%') 
+				</if>	
+				 <if test="test_item_names != '' and test_item_names != null">
+						and a.test_item_names like concat('%', #{test_item_names}, '%') 
+				</if>
+				<if test="consumer_phone != '' and consumer_phone != null">
+					 and a.consumer_phone like concat('%', #{consumer_phone}, '%') 
+				</if>	
+				<if test="sample_number != '' and sample_number != null">
+					and a.sample_number like concat('%', #{sample_number}, '%') 
+				</if>	
+				<if test="confirm_flag != '' and confirm_flag != null">
+					and fi.confirm_flag = #{confirm_flag}
+				</if>
+					<if test="test_number != '' and test_number != null">
+						and a.test_number like concat('%', #{test_number}, '%') 
+					</if>	
+					<if test="test_package_name != '' and test_package_name != null">
+						and a.test_package_name = #{test_package_name}
+					</if>
+					<if test="agency_name != '' and agency_name != null">
+						and a.agency_name like concat('%', #{agency_name}, '%') 
+					</if>	
+					<if test="gene_starttime != '' and gene_starttime != null">
+						and a.add_time >= #{gene_starttime}
+					</if>	
+					<if test="gene_endtime != '' and gene_endtime != null">
+						and #{gene_endtime} >= a.add_time
+					</if>			
+					<if test="consumer_sex != '' and consumer_sex != null">
+						and a.consumer_sex = #{consumer_sex}
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expresstype` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expresstype` IS NULL
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expressnum` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expressnum` IS NULL
+					</if>	
+						<if test="receivables != '' and receivables != null">
+						and  fi.`receivables`like concat('%', #{receivables}, '%') 
+					</if>	
+					<if test="price != '' and price != null">
+						and  a.price = #{price}
+					</if>	
+					<if test="charge_standard_name != '' and charge_standard_name != null">
+						and a.`charge_standard_name` like concat('%', #{charge_standard_name}, '%') 
+					</if>	
+
+            </select>
+</mapper>

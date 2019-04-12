@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.appraisal.mapper.RdsAppraisalInfoMapper">
+	<resultMap id="infoModel" type="com.rds.appraisal.model.RdsAppraisalInfoModel">
+	</resultMap>
+	<resultMap id="attachmentModel" type="com.rds.appraisal.model.RdsAppraisalAttachmentModel">
+	</resultMap>
+	<resultMap id="keyValueModel" type="com.rds.appraisal.model.RdsAppraisalKeyValueModel">
+	</resultMap>
+	<resultMap id="standardModel" type="com.rds.appraisal.model.RdsAppraisalStandardModel">
+	</resultMap>
+	
+	<resultMap id="templateModel"
+		type="com.rds.appraisal.model.RdsAppraisalTemplateModel">
+		<result property="template_id" column="template_id" />
+		<result property="keyword" column="keyword" />
+		<result property="process_check" column="process_check" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="analysis_text" column="analysis_text" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="advice_text" column="advice_text" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="case_abstract" column="case_abstract" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="sickness_abstract" column="sickness_abstract" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="process_method" column="process_method" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+		<result property="process_read" column="process_read" jdbcType="BLOB"
+			javaType="[B" typeHandler="com.rds.appraisal.common.MyBlobTypeHandler" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		INSERT INTO tb_appraisal_base_info (
+			  case_id,
+			  entrust_per,
+			  entrust_num,
+			  entrust_matter,
+			  identify_stuff,
+			  accept_date,
+			  identify_date_start,
+			  identify_place,
+			  identify_date_end,
+			  create_time,
+			  create_per,
+			  recrive_id,
+			  case_number,
+			  judgename
+			) 
+			VALUES
+			  (
+			    #{case_id},
+			    #{entrust_per},
+			    #{entrust_num},
+			    #{entrust_matter},
+			    #{identify_stuff},
+			    #{accept_date},
+			    #{identify_date_start},
+			    #{identify_place},
+			    #{identify_date_end},
+			    sysdate(),
+			    #{create_per},
+			    #{recrive_id},
+			    #{case_number},
+			    #{judgename}
+			  )
+	</insert>
+	
+	<select id="queryBaseCount" parameterType="map" resultType="Integer">
+		SELECT count(1) from tb_appraisal_base_info
+	</select>
+	
+	<insert id="insertInfo" parameterType="map">
+		insert into
+		tb_appraisal_identify_info(case_id,identify_per_name,identify_per_sex,identify_per_both,identify_per_idcard,identify_per_address)
+		values (#{case_id},#{identify_per_name},#{identify_per_sex},#{identify_per_both},#{identify_per_idcard},#{identify_per_address})
+	</insert>
+	
+	<insert id="insertMechanism" parameterType="map">
+		insert into
+		tb_appraisal_mechanism(id,name)
+		values
+		(#{id},#{name})
+	</insert>
+	
+	<insert id="insertAdvice" parameterType="map">
+		insert into
+		tb_appraisal_advice_info(case_id,advice_text,create_time) values
+		(#{case_id},#{advice_text},sysdate())
+	</insert>
+	
+	<insert id="insertAbstract" parameterType="map">
+		insert into
+		tb_appraisal_abstract_info(case_id,case_abstract,sickness_abstract,create_time) values
+		(#{case_id},#{case_abstract},#{sickness_abstract},sysdate())
+	</insert>
+	
+	<insert id="insertAnalysis" parameterType="map">
+		insert into
+		tb_appraisal_analysis_info(case_id,analysis_text,create_time) values
+		(#{case_id},#{analysis_text},sysdate())
+	</insert>
+	
+	<insert id="insertProcess" parameterType="map">
+		insert into
+		tb_appraisal_process_info(case_id,process_method,process_check,process_read,read_flag,create_time) values
+		(#{case_id},#{process_method},#{process_check},#{process_read},#{read_flag},sysdate())
+	</insert>
+
+	<insert id="insertAttachment" parameterType="com.rds.appraisal.model.RdsAppraisalAttachmentModel">
+		insert into
+		tb_appraisal_attachment_info(case_id,attachment_id,attachment_type,attachment_filename,attachment_name,attachment_order,creat_time)
+		values
+		(#{case_id},#{attachment_id},#{attachment_type},#{attachment_filename},#{attachment_name},#{attachment_order},sysdate())
+	</insert>
+	
+	<update id="updateAttachment" parameterType="com.rds.appraisal.model.RdsAppraisalAttachmentModel">
+		update tb_appraisal_attachment_info set 
+		attachment_id = #{attachment_id},attachment_type = #{attachment_type},attachment_filename = #{attachment_filename}
+		,attachment_name = #{attachment_name},attachment_order = #{attachment_order},creat_time = sysdate()
+		where case_id = #{case_id}
+	</update>
+	
+	<insert id="insertRelation" parameterType="map">
+		insert into tb_appraisal_relation (id,case_id,type_id) values(#{id},#{case_id},#{type_id})
+	</insert>
+	
+	<update id="updateAbstract" parameterType="map">
+		update tb_appraisal_abstract_info set
+		case_abstract=#{case_abstract},sickness_abstract=#{sickness_abstract},create_time=sysdate()
+		where case_id=#{case_id}
+	</update>
+	
+	<update id="updateAdvice" parameterType="map">
+		update tb_appraisal_advice_info set
+		advice_text=#{advice_text},create_time=sysdate() where
+		case_id=#{case_id}
+	</update>
+	
+	<update id="updateAnalysis" parameterType="map">
+		update tb_appraisal_analysis_info set
+		analysis_text=#{analysis_text},create_time=sysdate() where
+		case_id=#{case_id}
+	</update>
+	
+	<update id="updateProcess" parameterType="map">
+		update tb_appraisal_process_info set process_method =
+		#{process_method},process_check = #{process_check},process_read =
+		#{process_read},read_flag = #{read_flag},create_time = sysdate() where
+		case_id=#{case_id}
+	</update>
+	
+	<update id="updateBaseInfo" parameterType="map">
+		update tb_appraisal_base_info t set 
+			t.entrust_per = #{entrust_per} ,
+			t.entrust_num= #{entrust_num},
+			t.case_number= #{case_number},
+			t.entrust_matter =#{entrust_matter},
+			t.accept_date=#{accept_date},
+			t.identify_stuff=#{identify_stuff},
+			t.identify_date_start =#{identify_date_start},
+			t.identify_place =#{identify_place},
+			t.identify_date_end=#{identify_date_end},
+			t.recrive_id=#{recrive_id},
+		<if test="flag_status != null and flag_status != '' ">
+			t.flag_status=#{flag_status},
+		</if>
+			t.judgename=#{judgename},
+		t.create_time=sysdate(),
+		t.create_per = #{create_per}
+		where t.case_id=#{case_id}
+	</update>
+	
+	<update id="updateIdentifyInfo" parameterType="map">
+		update tb_appraisal_identify_info set 
+		identify_per_name=#{identify_per_name},
+		identify_per_sex=#{identify_per_sex},
+		identify_per_both=#{identify_per_both},
+		identify_per_idcard=#{identify_per_idcard},
+		identify_per_address=#{identify_per_address}
+		where case_id = #{case_id}
+	</update>
+
+	<update id="updateExamineBaseInfo" parameterType="map">
+		update tb_appraisal_base_info set flag_status = #{flag_status} where case_id=#{case_id}
+	</update>
+	
+	<delete id="delete" parameterType="map">
+	</delete>
+	
+	<delete id="deleteType" parameterType="map">
+		delete from tb_appraisal_relation where case_id=#{case_id}
+	</delete>
+	
+	<select id="queryCaseType" parameterType="map" resultMap="keyValueModel">
+	SELECT t.`type_id` AS 'key',tp.`standard_name` AS 'value' FROM
+	tb_appraisal_relation t LEFT JOIN `tb_appraisal_standard_type` tp ON
+	t.`type_id` = tp.`type_id` where 1=1
+	<if test="case_id != null || case_id != '' ">
+		and t.case_id=#{case_id}
+	</if>
+		
+	</select>
+	
+	<select id="queryStandard" parameterType="map" resultMap="standardModel">
+		SELECT t.`standard_id`,t.`content`,t.`series` FROM
+		`tb_appraisal_standard_content` t where 1=1
+		<if test="type_id !=null and type_id != '' ">
+			and t.type_id=#{type_id}
+		</if>
+		<if test="keyword != null and keyword !='' ">
+			and t.`content` like '%${keyword}%'
+		</if>
+	</select>
+
+	<select id="queryAllPage" parameterType="map" resultMap="infoModel">
+		SELECT
+		bi.`case_id`,
+		bi.`entrust_per`,
+		bi.`entrust_num`,
+		bi.`entrust_matter`,
+		bi.`accept_date`,
+		bi.`identify_date_start`,
+		bi.`identify_date_end`,
+		bi.`flag_status`,
+		bi.`identify_stuff`,
+		bi.`identify_place`,
+		bi.`judgename`,
+		bi.`recrive_id`,
+ 		bi.`case_number`,
+		ii.`identify_per_sex`,
+		ii.`identify_per_both`,
+		ii.`identify_per_address`,
+		ii.`identify_per_name`,
+		ii.`identify_per_idcard`,
+		cs.username as case_in_person,
+		cs.areaname as case_in_area
+		FROM
+		tb_appraisal_base_info bi
+		left join tb_charge_standard cs on cs.id=  bi.`recrive_id`
+		LEFT JOIN tb_appraisal_identify_info ii ON bi.`case_id` = ii.case_id
+		LEFT JOIN `tb_appraisal_advice_info` ad ON bi.`case_id` = ad.`case_id`
+		where 1=1
+		<if test="case_id != null and case_id != ''">
+			and bi.case_id = #{case_id}
+		</if>
+		<if test="usercode == 'subo_xuym' ">
+			and cs.username like '%${recrive_name}%'
+		</if>
+		<if test="username != null and username != ''">
+			and cs.username like '%${username}%'
+		</if>
+		<if test="flag_status != null and flag_status != ''">
+			and bi.flag_status = #{flag_status}
+		</if>
+		<if test="entrust_per != null and entrust_per != ''">
+			and bi.entrust_per like '%${entrust_per}%'
+		</if>
+		<if test="entrust_num != null and entrust_num != ''">
+			and bi.entrust_num like '%${entrust_num}%'
+		</if>
+		<if test="case_number != null and case_number != ''">
+			and bi.case_number like '%${case_number}%'
+		</if>
+		<if test="accept_date_starttime != null and accept_date_starttime != ''">
+			and bi.accept_date >= #{accept_date_starttime}
+		</if>
+		<if test="accept_date_endtime != null and accept_date_endtime != ''">
+			and #{accept_date_endtime} >= bi.accept_date
+		</if>
+		<if test="identify_date_start != null and identify_date_start != ''">
+			and bi.identify_date_start >= #{identify_date_start}
+		</if>
+		<if test="identify_date_end != null and identify_date_end != ''">
+			and #{identify_date_end} >= bi.identify_date_end
+		</if>
+		<if test="name != null and name != ''">
+			and (ii.identify_per_name like '%${name}%' or ii.identify_per_idcard like
+			'%${name}%')
+		</if>
+		<if test="advice != null and advice != '' ">
+			and ad.`advice_text` LIKE '%${advice}%'
+		</if>
+		ORDER BY bi.`create_time` DESC
+		<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+
+	<select id="queryAll" parameterType="map" resultMap="keyValueModel">
+		SELECT t.`case_id` AS 'key' , CONCAT(
+		t.`entrust_num`,';',i.`identify_per_name`) AS 'value' FROM
+		`tb_appraisal_base_info` t 
+		LEFT JOIN `tb_appraisal_identify_info` i ON t.`case_id`= i.`case_id` 
+		LEFT JOIN `tb_appraisal_advice_info` ad ON t.`case_id`=ad.`case_id`
+		where 1=1
+		<if test="search != null and search != '' ">
+			and (t.`entrust_num` LIKE '%${search}%' OR i.`identify_per_name` LIKE '%${search}%')
+		</if>
+		<if test="flag_status !=null and flag_status != '' ">
+			and t.flag_status = #{flag_status}
+		</if>
+		<if test="advice != null and advice != '' ">
+			and ad.`advice_text` LIKE '%${advice}%'
+		</if>
+	</select>
+
+	<select id="queryModel" parameterType="map" resultMap="infoModel">
+	SELECT
+		bi.`case_id`,
+		bi.`entrust_per`,
+		bi.`entrust_num`,
+		bi.`entrust_matter`,
+		bi.`accept_date`,
+		bi.`identify_date_start`,
+		bi.`identify_date_end`,
+		bi.`flag_status`,
+		bi.`identify_stuff`,
+		bi.`identify_place`,
+		bi.`recrive_id`,
+		bi.`case_number`,
+		bi.`judgename`,
+		ii.`identify_per_sex`,
+		ii.`identify_per_both`,
+		ii.`identify_per_address`,
+		ii.`identify_per_name`,
+		ii.`identify_per_idcard`,
+		cs.username as case_in_person,
+		cs.areaname as case_in_area
+		FROM
+		tb_appraisal_base_info bi
+		left join tb_charge_standard cs on cs.id=  bi.`recrive_id`
+		LEFT JOIN tb_appraisal_identify_info ii
+		ON bi.`case_id` =
+		ii.case_id
+		LEFT JOIN tb_upc_users u
+		ON u.userid = ar.userid
+		where 1=1
+		<if test="case_id != null and case_id != ''">
+			and bi.case_id = #{case_id}
+		</if>
+		limit 1
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT count(1)
+		FROM
+		tb_appraisal_base_info bi
+		left join tb_charge_standard cs on cs.id=  bi.`recrive_id`
+		LEFT JOIN tb_appraisal_identify_info ii ON bi.`case_id` = ii.case_id
+		LEFT JOIN `tb_appraisal_advice_info` ad
+		ON bi.`case_id` = ad.`case_id`
+		where 1=1
+		<if test="username != null and username != ''">
+			and cs.username like '%${username}%'
+		</if>
+		<if test="usercode == 'subo_xuym' ">
+			and cs.username like '%${recrive_name}%'
+		</if>
+		<if test="flag_status != null and flag_status != ''">
+			and bi.flag_status = #{flag_status}
+		</if>
+		<if test="entrust_per != null and entrust_per != ''">
+			and bi.entrust_per like '%${entrust_per}%'
+		</if>
+		<if test="entrust_num != null and entrust_num != ''">
+			and bi.entrust_num like '%${entrust_num}%'
+		</if>
+		<if test="accept_date_starttime != null and accept_date_starttime != ''">
+			and bi.accept_date >= #{accept_date_starttime}
+		</if>
+		<if test="accept_date_endtime != null and accept_date_endtime != ''">
+			and #{accept_date_endtime} >= bi.accept_date
+		</if>
+		<if test="identify_date_start != null and identify_date_start != ''">
+			and bi.identify_date_start >= #{identify_date_start}
+		</if>
+		<if test="identify_date_end != null and identify_date_end != ''">
+			and #{identify_date_end} >= bi.identify_date_end
+		</if>
+		<if test="name != null and name != ''">
+			and (ii.identify_per_name like '%${name}%' or ii.identify_per_idcard like
+			'%${name}%')
+		</if>
+		<if test="advice != null and advice != '' ">
+			and ad.`advice_text` LIKE '%${advice}%'
+		</if>
+	</select>
+	<select id="queryAttachment" parameterType="map" resultMap="attachmentModel">
+		SELECT * FROM `tb_appraisal_attachment_info` t WHERE t.`case_id` = #{case_id} ORDER BY t.`attachment_order`
+	</select>
+	
+	<select id="queryTemplate" parameterType="map" resultMap="templateModel">
+		SELECT
+		t.`template_id`,t.keyword,t.`process_check`,t.`analysis_text`,t.`advice_text`,t.`case_abstract`,
+		t.`process_method`,t.`process_read`,t.`read_flag`,t.`sickness_abstract`,t.`standard_explain`
+		FROM tb_appraisal_template t where 1=1
+		<if test="query != null and query != ''">
+			and t.keyword like '%${query}%'
+		</if>
+	</select>
+	
+	<delete id="deleteAttachment" parameterType="map">
+		delete from tb_appraisal_attachment_info where case_id = #{case_id}
+	</delete>
+	
+	<select id="queryHistoryInfo" parameterType="map" resultMap="templateModel">
+		SELECT 
+		  i.`case_id`,
+		  i.`case_abstract`,
+		  i.`sickness_abstract`,
+		  a.`advice_text` ,
+		  info.`analysis_text`,
+		  p.`process_check`,
+		  p.`process_method`,
+		  p.`process_read`,
+		  p.`read_flag`
+		FROM
+		  `tb_appraisal_abstract_info` i,
+		  `tb_appraisal_advice_info` a ,
+		  `tb_appraisal_analysis_info` info,
+		  `tb_appraisal_process_info` p
+		WHERE i.`case_id` = a.`case_id` 
+		      AND i.`case_id`=info.`case_id`
+		      AND i.`case_id`=p.`case_id`
+		   <if test="case_id != null and case_id != '' ">
+			  AND i.`case_id` = #{case_id}
+		   </if>   
+		limit 1
+	</select>
+	
+	<insert id="insertTemplate" parameterType="map">
+		insert into
+		tb_appraisal_template(template_id,keyword,process_check,analysis_text,advice_text)
+		values
+		(#{template_id},#{keyword},#{process_check},#{analysis_text},#{advice_text})
+	</insert>
+	
+	<insert id="insertCaseFee" parameterType="map">
+	    insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,discount,status,update_date,type,case_type)
+		values(#{fee_id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},'1.0',3,now(),0,'appraisal')
+	</insert>
+	
+	<select id="queryExportInfo" parameterType="map" resultType="map">
+		SELECT
+		bi.`case_id`,
+		bi.`entrust_per`,
+		bi.`entrust_num`,
+		bi.`entrust_matter`,
+		bi.`accept_date`,
+		bi.`identify_date_start`,
+		bi.`identify_date_end`,
+		bi.`flag_status`,
+		bi.`identify_stuff`,
+		bi.`identify_place`,
+		bi.`judgename`,
+		bi.`recrive_id`,
+ 		bi.`case_number`,
+		ii.`identify_per_sex`,
+		ii.`identify_per_both`,
+		ii.`identify_per_address`,
+		ii.`identify_per_name`,
+		ii.`identify_per_idcard`,
+		cs.username AS case_in_person,
+		cs.areaname AS case_in_area,
+		c.`stand_sum`,c.`real_sum`,c.`return_sum`,c.`paragraphtime`,c.`confirm_date`,c.`finance_remark`
+		FROM
+		tb_appraisal_base_info bi
+		INNER JOIN `tb_judicial_casefee` c ON bi.`case_id`=c.`case_id`
+		LEFT JOIN tb_charge_standard cs ON cs.id=  bi.`recrive_id`
+		LEFT JOIN tb_appraisal_identify_info ii ON bi.`case_id` = ii.case_id
+		WHERE 1=1 
+		<if test="accept_date_starttime != null and accept_date_starttime != ''">
+			and bi.accept_date >= #{accept_date_starttime}
+		</if>
+		<if test="accept_date_endtime != null and accept_date_endtime != ''">
+			and #{accept_date_endtime} >= bi.accept_date
+		</if>
+	</select>
+</mapper>

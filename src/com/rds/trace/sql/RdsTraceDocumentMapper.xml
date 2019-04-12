@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceDocumentMapper">
+    <insert id="insertDocument" parameterType="map">
+        insert into tb_trace_document_dic (document_id, document_name,create_time)
+        values(#{document_id},#{document_name},#{create_time});
+    </insert>
+
+    <select id="queryDocument" parameterType="map"
+            resultType="com.rds.trace.model.RdsTraceDocumentModel">
+        select * from tb_trace_document_dic
+        where 1
+        <if test="document_name!=null and document_name!=''">
+            and document_name like '%${document_name}%'
+        </if>
+        <if test="document_id!=null and document_id!=''">
+            and document_id = #{document_id}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountDocument" parameterType="map" resultType="int">
+        select count(*) from tb_trace_document_dic
+        where 1
+        <if test="document_name!=null and document_name!=''">
+            and document_name like '%${document_name}%'
+        </if>
+        <if test="document_id!=null and document_id!=''">
+            and document_id = #{document_id}
+        </if>
+    </select>
+
+    <update id="updateDocument" parameterType="map">
+        update tb_trace_document_dic
+        set document_name = #{document_name}
+        where document_id = #{document_id}
+    </update>
+
+    <delete id="deleteDocument" parameterType="map">
+        delete from tb_trace_document_dic
+        where document_id = #{document_id}
+    </delete>
+</mapper>

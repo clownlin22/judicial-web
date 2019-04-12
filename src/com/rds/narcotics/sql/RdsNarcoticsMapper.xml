@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.narcotics.mapper.RdsNarcoticsMapper">
+
+    <select id="getIdentificationPer" resultType="com.rds.narcotics.model.RdsNarcoticsDicValueModel">
+        select per_id as 'key',per_name as 'value' from
+        tb_narcotics_identify_per where delstatus=0
+    </select>
+
+    <insert id="addCaseInfo" parameterType="com.rds.narcotics.model.RdsNarcoticsModel">
+		INSERT INTO tb_narcotics_case_info (
+			case_id,
+			case_num,
+			client,
+			client_time,
+			person_name,
+			person_sex,
+			person_card,
+			identification_materials,
+			identification_start,
+			identification_end,
+			identification_site,
+			case_card,
+			case_basic,
+			instrument_type,
+			entrusted_matters,
+			materials_totals,
+			materials_color,
+			materials_length,
+			materials_weight,
+			partial_weight,
+			liquid_color,
+			ifleakage,
+			appraisal_opinion,
+			case_in_per,
+			case_in_time,
+			report_time
+		)
+		VALUES
+			(
+			#{case_id},
+			#{case_num},
+			#{client},
+			#{client_time},
+			#{person_name},
+			#{person_sex},
+			#{person_card},
+			#{identification_materials},
+			#{identification_start},
+			#{identification_end},
+			#{identification_site},
+			#{case_card},
+			#{case_basic},
+			#{instrument_type},
+			#{entrusted_matters},
+			#{materials_totals},
+			#{materials_color},
+			#{materials_length},
+			#{materials_weight},
+			#{partial_weight},
+			#{liquid_color},
+			#{ifleakage},
+			#{appraisal_opinion},
+			#{case_in_per},
+			now(),
+			#{report_time}
+			)
+    </insert>
+
+    <select id="getCaseInfo" parameterType="map"
+            resultType="com.rds.narcotics.model.RdsNarcoticsModel">
+        select n.*,u.username,group_concat( p.per_id ORDER BY c.create_sort) as identification_per
+        from tb_narcotics_case_info n
+        LEFT JOIN tb_upc_users u on u.userid=n.case_in_per
+        LEFT JOIN tb_narcotics_caseinfo_identify c on c.cid=n.case_id
+        LEFT JOIN tb_narcotics_identify_per p on p.per_id=c.pid
+        where 1=1
+        <if test=" case_id != null and case_id != ''">
+            and n.case_id = #{case_id}
+        </if>
+        <if test=" state != null and state != ''">
+            and n.state = #{state}
+        </if>
+        <if test=" case_num != null and case_num != ''">
+            and n.case_num like '%${case_num}%'
+        </if>
+        <if test=" client != null and client != ''">
+            and n.client like '%${client}%'
+        </if>
+        <if test=" person_name != null and person_name != ''">
+            and n.person_name like '%${person_name}%'
+        </if>
+        <if test=" person_sex != null and person_sex != ''">
+            and n.person_sex = #{person_sex}
+        </if>
+        <if test=" person_card != null and person_card != ''">
+            and n.person_card like '%${person_card}%'
+        </if>
+        <if test=" identification_materials != null and identification_materials != ''">
+            and n.identification_materials = #{identification_materials}
+        </if>
+        <if test=" case_card != null and case_card != ''">
+            and n.case_card like '%${case_card}%'
+        </if>
+        <if test=" client_time_start!=null and  client_time_start != '' ">
+            and n.client_time_start>=#{client_time_start}
+        </if>
+        <if test=" client_time_end!=null and client_time_end != ''">
+            and #{client_time_end}>=n.client_time_end
+        </if>
+        <if test=" identification_start!=null and  identification_start != '' ">
+            and n.identification_start>=#{identification_start}
+        </if>
+        <if test=" identification_end!=null and identification_end != ''">
+            and #{identification_end}>=n.identification_end
+        </if>
+        GROUP BY n.case_id
+        ORDER BY n.case_in_time desc
+        LIMIT
+        #{start},#{limit}
+    </select>
+
+    <select id="countCaseInfo" parameterType="map" resultType="int">
+        select 	count(DISTINCT case_id) from tb_narcotics_case_info n
+        LEFT JOIN tb_upc_users u on u.userid=n.case_in_per
+        LEFT JOIN tb_narcotics_caseinfo_identify c on c.cid=n.case_id
+        LEFT JOIN tb_narcotics_identify_per p on p.per_id=c.pid
+        where 1=1
+        <if test=" state != null and state != ''">
+            and n.state = #{state}
+        </if>
+        <if test=" case_num != null and case_num != ''">
+            and n.case_num like '%${case_num}%'
+        </if>
+        <if test=" client != null and client != ''">
+            and n.client like '%${client}%'
+        </if>
+        <if test=" person_name != null and person_name != ''">
+            and n.person_name like '%${person_name}%'
+        </if>
+        <if test=" person_sex != null and person_sex != ''">
+            and n.person_sex = #{person_sex}
+        </if>
+        <if test=" person_card != null and person_card != ''">
+            and n.person_card like '%${person_card}%'
+        </if>
+        <if test=" identification_materials != null and identification_materials != ''">
+            and n.identification_materials = #{identification_materials}
+        </if>
+        <if test=" case_card != null and case_card != ''">
+            and n.case_card like '%${case_card}%'
+        </if>
+        <if test=" client_time_start!=null and  client_time_start != '' ">
+            and n.client_time_start>=#{client_time_start}
+        </if>
+        <if test=" client_time_end!=null and client_time_end != ''">
+            and #{client_time_end}>=n.client_time_end
+        </if>
+        <if test=" identification_start!=null and  identification_start != '' ">
+            and n.identification_start>=#{identification_start}
+        </if>
+        <if test=" identification_end!=null and identification_end != ''">
+            and #{identification_end}>=n.identification_end
+        </if>
+    </select>
+
+    <insert id="addCaseIdentify" parameterType="com.rds.narcotics.model.RdsNarcoticsCaseIdentify">
+        INSERT INTO tb_narcotics_caseinfo_identify ( id,cid,pid,create_sort)
+        VALUES ( #{id},#{cid},#{pid},#{create_sort} )
+    </insert>
+
+    <select id="exsitCaseNum" resultType="int" parameterType="string">
+      select count(*) from tb_narcotics_case_info i where
+        i.case_num=#{case_num}  and i.state=1
+    </select>
+
+    <update id="updateCaseInfo" parameterType="com.rds.narcotics.model.RdsNarcoticsModel">
+        update
+        tb_narcotics_case_info set
+        <if test=" case_num != null and case_num != ''">
+            case_num = #{case_num},
+        </if>
+        <if test=" client != null and client != ''">
+            client = #{client},
+        </if>
+        <if test=" client_time != null and client_time != ''">
+            client_time = #{client_time},
+        </if>
+        <if test=" report_time != null and report_time != ''">
+            report_time = #{report_time},
+        </if>
+        <if test=" person_name != null and person_name != ''">
+            person_name = #{person_name},
+        </if>
+        <if test=" person_sex != null  ">
+            person_sex = #{person_sex},
+        </if>
+        <if test=" person_card != null and person_card != ''">
+            person_card = #{person_card},
+        </if>
+        <if test=" identification_materials != null ">
+            identification_materials = #{identification_materials},
+        </if>
+        <if test=" identification_start != null and identification_start != ''">
+            identification_start = #{identification_start},
+        </if>
+        <if test=" identification_end != null and identification_end != ''">
+            identification_end = #{identification_end},
+        </if>
+        <if test=" identification_site != null and identification_site != ''">
+            identification_site = #{identification_site},
+        </if>
+        <if test=" case_card != null and case_card != ''">
+            case_card = #{case_card},
+        </if>
+        <if test=" case_basic != null and case_basic != ''">
+            case_basic = #{case_basic},
+        </if>
+        <if test=" instrument_type != null and instrument_type != ''">
+            instrument_type = #{instrument_type},
+        </if>
+        <if test=" entrusted_matters != null ">
+            entrusted_matters = #{entrusted_matters},
+        </if>
+        <choose>
+            <when test=" materials_totals != null and materials_totals != ''">
+                materials_totals = #{materials_totals},
+            </when>
+            <otherwise>
+                materials_totals = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" materials_color != null and materials_color != ''">
+                materials_color = #{materials_color},
+            </when>
+            <otherwise>
+                materials_color = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" materials_length != null and materials_length != ''">
+                materials_length = #{materials_length},
+            </when>
+            <otherwise>
+                materials_length = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" materials_weight != null and materials_weight != ''">
+                materials_weight = #{materials_weight},
+            </when>
+            <otherwise>
+                materials_weight = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" partial_weight != null and partial_weight != ''">
+                partial_weight = #{partial_weight},
+            </when>
+            <otherwise>
+                partial_weight = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" liquid_color != null and liquid_color != ''">
+                liquid_color = #{liquid_color},
+            </when>
+            <otherwise>
+                liquid_color = null,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" ifleakage != null  ">
+                ifleakage = #{ifleakage},
+            </when>
+            <otherwise>
+                ifleakage = null,
+            </otherwise>
+        </choose>
+        <if test=" appraisal_opinion != null and appraisal_opinion != ''">
+            appraisal_opinion = #{appraisal_opinion},
+        </if>
+        <if test=" case_id != null and case_id != ''">
+            case_id = #{case_id}
+        </if>
+        where
+        case_id=#{case_id}
+    </update>
+
+    <update id="deletecaseInfo" parameterType="map">
+        update
+        tb_narcotics_case_info
+        set state=0
+        where case_id in
+        <foreach collection="list" item="case_id" index="index" open="(" separator="," close=")">
+            #{case_id}
+        </foreach>
+    </update>
+
+    <select id="getIdentificationPerByCaseId" parameterType="map" resultType="com.rds.narcotics.model.RdsNarcoticsIdentifyModel">
+        SELECT
+            p.per_name,p.per_code
+        FROM
+            tb_narcotics_identify_per p
+        LEFT JOIN tb_narcotics_caseinfo_identify c ON c.pid = p.per_id
+        WHERE
+            c.cid = #{case_id}
+        ORDER BY
+            c.create_sort
+    </select>
+
+    <select id="getCaseInfoByCaseId"  parameterType="map"  resultType="com.rds.narcotics.model.RdsNarcoticsModel">
+        select n.*
+        from tb_narcotics_case_info n
+        where 1=1
+        <if test=" case_id != null and case_id != ''">
+            and n.case_id = #{case_id}
+        </if>
+        GROUP BY n.case_id
+        ORDER BY n.case_in_time desc
+    </select>
+
+    <delete id="deleteCaseIdentifyByCaseId" parameterType="com.rds.narcotics.model.RdsNarcoticsModel">
+          delete from tb_narcotics_caseinfo_identify  where cid=#{case_id}
+    </delete>
+
+
+</mapper>

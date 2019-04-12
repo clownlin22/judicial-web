@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.narcotics.mapper.RdsNarcoticsIdentifyMapper">
+
+    <select id="getIdentifyInfo" parameterType="map"
+            resultType="com.rds.narcotics.model.RdsNarcoticsIdentifyModel">
+        select * from tb_narcotics_identify_per where 1=1
+        <if test=" starttime != null and  starttime != '' and  starttime!=endtime ">
+            and per_sys > #{starttime}
+        </if>
+        <if test=" endtime != null and endtime != ''  and starttime!=endtime ">
+            and (SELECT DATE_ADD(#{endtime}, INTERVAL 1 DAY)) > per_sys
+        </if>
+        <if test=" starttime==endtime ">
+            and per_sys like '${endtime}%'
+        </if>
+        <if test=" per_name!=null and  per_name != ''">
+            and per_name like '${per_name}%'
+        </if>
+        <if test=" per_code!=null and  per_code != ''">
+            and per_code like '${per_code}%'
+        </if>
+        and delstatus=0  ORDER BY per_sys DESC
+        LIMIT
+        #{start},#{limit}
+    </select>
+
+    <select id="getcount" resultType="Integer">
+        select count(*) from
+        tb_narcotics_identify_per where  delstatus=0
+    </select>
+
+    <insert id="insertinfo" parameterType="com.rds.narcotics.model.RdsNarcoticsIdentifyModel">
+        insert into
+        tb_narcotics_identify_per(
+        per_id,
+        per_name,
+        per_code,
+        per_sys,
+        user_name,
+        user_id)
+        values(
+        #{per_id},
+        #{per_name},
+        #{per_code},
+        #{per_sys},
+        #{user_name},
+        #{user_id}
+        );
+    </insert>
+
+    <update id="update" parameterType="map">
+        UPDATE tb_narcotics_identify_per
+        SET per_name = #{per_name},
+        per_code = #{per_code}
+        WHERE
+        per_id = (#{per_id})
+    </update>
+
+    <update id="delete" parameterType="map">
+        update  tb_narcotics_identify_per  set delstatus='1' where per_id in (${per_id})
+    </update>
+
+    <select id="exsitper_code" resultType="int" parameterType="map">
+        select count(*) from tb_narcotics_identify_per where
+        per_code=#{per_code}  and delstatus=0
+    </select>
+
+    <select id="exsitper_name" resultType="int" parameterType="map">
+        select count(*) from tb_narcotics_identify_per where
+        per_name=#{per_name}  and delstatus=0
+    </select>
+
+</mapper>

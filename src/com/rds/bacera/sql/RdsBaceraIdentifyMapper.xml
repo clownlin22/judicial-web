@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraIdentifyMapper">
+	<select id="queryCaseInfo" parameterType="map"
+		resultType="com.rds.bacera.model.RdsBaceraIdentifyInfoModel">
+		SELECT
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`accept_time`,
+		  ci.`client`,
+		  ci.`close_time`,
+		  ci.`is_delete`,
+		  ci.`phone`,
+		  ci.`remark`,
+		  ci.`case_in_per`,
+		  ci.case_type,
+		  ci.typeid,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  st.`username` AS 'case_receiver',
+		  st.`areaname` AS 'receiver_area',
+		  u.`username` AS 'case_in_pername',
+		  st.`agentname`,
+		  tt.`stand_sum`,
+		  tt.`real_sum`,
+		  tt.`return_sum`,
+		  tt.`status`,
+		  tt.`paragraphtime`,
+		  tt.`discountPrice`,
+		  tt.`remittanceDate`,
+		  tt.`remittanceName`,
+		  tt.`account`,
+		  tt.`finance_remark`,
+		  i.`expressnum`,
+		  i.`expresstype`,
+		  i.`recive`,
+		  i.expresstime,
+		  i.`expressremark`,
+		  ci.type,
+		  ci.entrustment_matter,
+		  ci.entrustment_time,
+		   ci.`birth_date`,ci.`child`,ci.`sample_count`,ci.`fandm`,ci.`id_card`
+  		 FROM
+		tb_upc_identify_info ci
+		LEFT JOIN tb_judicial_casefee tt ON ci.`case_id`=tt.`case_id`
+		LEFT JOIN tb_charge_standard st ON ci.`receiver_id`=st.`id` 
+		LEFT JOIN tb_upc_users u ON ci.`case_in_per` = u.`userid`
+		LEFT JOIN tb_express_info i  ON ci.`case_id` = i.`id`
+		where 1=1
+		<if test=" case_code!=null and case_code != ''">
+			AND (LOWER(ci.case_code) LIKE '%${case_code}%' OR
+			UPPER(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			AND ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=ci.accept_time
+		</if>
+		<if test=" is_delete!=-1 ">
+			AND ci.is_delete=#{is_delete}
+		</if>
+		<if test="case_in_per != '' and case_in_per != null">
+			AND u.username LIKE CONCAT('%', #{case_in_per}, '%') 
+		</if>
+		<if test="agent != '' and agent != null">
+			AND st.`agentname` LIKE CONCAT('%', #{agent}, '%') 
+		</if>
+		<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+			AND tt.`paragraphtime` >= #{paragraphtime_starttime}
+		</if>	
+		<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+			AND #{paragraphtime_endtime} >= tt.`paragraphtime`
+		</if>
+		<if test="expressnum != '' and expressnum != null">
+			AND i.`expressnum` LIKE CONCAT('%', #{expressnum}, '%') 
+		</if>
+		<if test="express_endtime != '' and express_endtime != null">
+			AND #{express_endtime} >= i.`expresstime`
+		</if>
+		<if test="express_starttime != '' and express_starttime != null">
+			AND i.`expresstime` >= #{express_starttime}
+		</if>
+		<if test=" client != null and  client != '' ">
+			AND ci.`client` LIKE CONCAT('%', #{client}, '%') 
+		</if>	
+		<if test=" type !=null and  type != '' ">
+			AND ci.`type` LIKE CONCAT('%', #{type}, '%') 
+		</if>
+		<if test=" samplename !=null and  samplename != '' ">
+			AND ( ci.`fandm` LIKE CONCAT('%', #{samplename}, '%') or ci.`child` like concat('%', #{samplename}, '%') )
+		</if>
+		<if test=" type != null and type != ''">
+			AND ci.`type` = #{type}
+		</if>
+		<if test=" companyid != null and companyid != ''">
+			AND st.`companyid` = #{companyid}
+		</if>
+		<if test=" receiver != null and receiver != ''">
+			AND st.`username` LIKE '%${receiver}%'
+		</if>
+		<if test="areacode != '' and areacode != null">
+			AND st.`areacode`= #{areacode}
+		</if>
+		 <if test="reportif == 1 ">
+			AND i.`expresstype` IS NOT NULL
+		</if>	
+		<if test="reportif == 2 ">
+			AND i.`expresstype` IS NULL
+		</if>
+		ORDER BY ci.case_code ASC
+		<if test="start != null and limit != null ">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="Integer">
+		SELECT count(1)
+		FROM
+		tb_upc_identify_info ci
+		LEFT JOIN tb_judicial_casefee tt ON ci.`case_id`=tt.`case_id`
+		LEFT JOIN `tb_charge_standard` st ON ci.`receiver_id`=st.`id` 
+		LEFT JOIN tb_upc_users u ON ci.`case_in_per` = u.`userid`
+		LEFT JOIN tb_express_info i  ON ci.`case_id` = i.`id`
+		WHERE 1=1 
+		<if test=" case_code!=null and case_code != ''">
+			AND (LOWER(ci.case_code) LIKE '%${case_code}%' OR
+			UPPER(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			AND ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=ci.accept_time
+		</if>
+		<if test=" is_delete!=-1 ">
+			AND ci.is_delete=#{is_delete}
+		</if>
+		<if test="case_in_per != '' and case_in_per != null">
+			AND u.username LIKE CONCAT('%', #{case_in_per}, '%') 
+		</if>
+		<if test="agent != '' and agent != null">
+			AND st.`agentname` LIKE CONCAT('%', #{agent}, '%') 
+		</if>
+		<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+			AND tt.`paragraphtime` >= #{paragraphtime_starttime}
+		</if>	
+		<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+			AND #{paragraphtime_endtime} >= tt.`paragraphtime`
+		</if>
+		<if test="expressnum != '' and expressnum != null">
+			AND i.`expressnum` LIKE CONCAT('%', #{expressnum}, '%') 
+		</if>
+		<if test="express_endtime != '' and express_endtime != null">
+			AND #{express_endtime} >= i.`expresstime`
+		</if>
+		<if test="express_starttime != '' and express_starttime != null">
+			AND i.`expresstime` >= #{express_starttime}
+		</if>
+		<if test=" client != null and  client != '' ">
+			AND ci.`client` LIKE CONCAT('%', #{client}, '%') 
+		</if>	
+		<if test=" type !=null and  type != '' ">
+			AND ci.`type` LIKE CONCAT('%', #{type}, '%') 
+		</if>
+		<if test=" samplename !=null and  samplename != '' ">
+			AND ( ci.`fandm` LIKE CONCAT('%', #{samplename}, '%') or ci.`child` like concat('%', #{samplename}, '%') )
+		</if>
+		<if test=" type != null and type != ''">
+			AND ci.`type` = #{type}
+		</if>
+		<if test=" companyid != null and companyid != ''">
+			AND st.`companyid` = #{companyid}
+		</if>
+		<if test=" receiver != null and receiver != ''">
+			AND st.`username` LIKE '%${receiver}%'
+		</if>
+		<if test="areacode != '' and areacode != null">
+			AND st.`areacode`= #{areacode}
+		</if>
+		 <if test="reportif == 1 ">
+			AND i.`expresstype` IS NOT NULL
+		</if>	
+		<if test="reportif == 2 ">
+			AND i.`expresstype` IS NULL
+		</if>
+	</select>
+
+	<update id="deleteCaseInfo" parameterType="map">
+		<if test="flag == 1">
+			update tb_upc_identify_info set is_delete = 1 where case_id = #{case_id}
+		</if>
+		<if test="flag == 2">
+			delete from tb_upc_identify_info where case_id = #{case_id}
+		</if>
+	</update>
+
+	<delete id="deleteSampleInfo" parameterType="map">
+		delete from tb_upc_sample_info where case_id=#{case_id}
+	</delete>
+
+	<select id="getSampleInfo" resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+			SELECT 
+			  s.sample_id,
+			  s.sample_code,
+			  s.sample_call,
+			  s.sample_username,
+			  s.id_number,
+			  s.birth_date,
+			  s.case_id,
+			  v2.value AS sample_callname,
+			  v1.value AS sample_typename,
+			  s.sample_type 
+			FROM
+			  tb_upc_sample_info s,
+			  (SELECT 
+			    * 
+			  FROM
+			    tb_dic_values 
+			  WHERE keycode = '000000004') v1,
+			  (SELECT 
+			    * 
+			  FROM
+			    tb_dic_values 
+			  WHERE keycode = 'call') v2 
+			WHERE s.sample_type = v1.key1 
+			  AND s.sample_call = v2.key1 
+			  AND s.case_id = #{case_id} 
+	</select>
+
+	<update id="updateCaseInfo" parameterType="com.rds.bacera.model.RdsBaceraIdentifyInfoModel">
+		update
+		tb_upc_identify_info set
+		case_code=#{case_code},
+		case_areacode=#{case_areacode},
+		receiver_id=#{receiver_id},
+		fandm=#{fandm},
+		child=#{child},
+		id_card=#{id_card},
+		birth_date=#{birth_date},
+		phone=#{phone},
+		sample_in_time=#{sample_in_time},
+		client=#{client},
+		accept_time=#{accept_time},
+		remark=#{remark},
+		case_type=#{case_type},
+		typeid=#{typeid},
+		type=#{type},
+		entrustment_time=#{entrustment_time},
+		entrustment_matter=#{entrustment_matter},
+		sample_count=#{sample_count}
+		where
+		case_id=#{case_id}
+	</update>
+
+	<insert id="insertCaseInfo" parameterType="com.rds.bacera.model.RdsBaceraIdentifyInfoModel">
+		insert into
+		tb_upc_identify_info(
+		case_id,case_code,case_areacode,receiver_id,fandm,child,id_card,birth_date,
+		accept_time,case_in_per,phone,client,remark,sample_in_time,type,
+		entrustment_matter,entrustment_time,case_type,typeid)
+		values(#{case_id},#{case_code},#{case_areacode},#{receiver_id},#{fandm},#{child},#{id_card},#{birth_date},
+		#{accept_time},#{case_in_per},#{phone},#{client},#{remark},#{sample_in_time},
+		#{type},#{entrustment_matter},#{entrustment_time},#{case_type},#{typeid})
+	</insert>
+	
+	<insert id="insertSampleInfo" parameterType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		insert into
+		tb_upc_sample_info(
+		sample_id,sample_code,sample_type,sample_call,sample_username,id_number,birth_date,case_id)
+		values(#{sample_id},#{sample_code},#{sample_type},#{sample_call},#{sample_username},#{id_number},#{birth_date},#{case_id})
+	</insert>
+
+	<update id="updateVerifyinfo" parameterType="map">
+		UPDATE
+		`tb_upc_identify_info` SET `check_state` = #{check_state} ,
+		`check_remark` = #{check_remark} WHERE `case_id` = #{case_id};
+	</update>
+	
+	<update id="updateIsBill" parameterType="map">
+		update
+		`tb_upc_identify_info` set is_bill = #{is_bill} where case_id =
+		#{case_id}
+	</update>
+
+	<update id="updateIsArchived" parameterType="map">
+		UPDATE
+		`tb_upc_identify_info` SET `is_archived` = 1 WHERE `case_code` =
+		#{case_code} ;
+	</update>
+
+	<update id="updateSampleVerifyinfo" parameterType="map">
+		update tb_upc_identify_info set check_state = #{check_state}
+		<if test="isnull!=null and isnull!=''">
+			,set isnull = #{isnull}
+		</if>
+		where case_id = #{case_id}
+	</update>
+	
+	<select id="exsitCaseCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_identify_info where
+		case_code=#{case_code}
+	</select>
+
+	<select id="exsitSampleCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_sample_info where
+		sample_code=#{sample_code}
+	</select>
+
+	<select id="exsitBlackNumber" resultType="int" parameterType="string">
+		select count(*) from tb_upc_black_list where cardId=#{id_number}
+	</select>
+</mapper>

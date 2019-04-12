@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsAllCaseInfoMapper">
+
+	<select id="queryAll" parameterType="map" resultType="com.rds.statistics.model.RdsAllCaseInfoModel">
+		select * from tb_all_case_info
+		<where>
+			<if test="case_code != null and case_code != ''">
+				and case_code like '%${case_code}%'
+			</if>
+			<if test="ptype!=null and ptype!=''">
+				and ptype like '%${ptype}%'
+			</if>
+			<if test="receiver!=null and receiver!=''">
+				and receiver like '%${receiver}%'
+			</if>
+			<if test="parentDeptname !=null and parentDeptname !=''">
+				and parentDeptname like '%${parentDeptname}%'
+			</if>
+			<if test="deptname!=null and deptname!=''">
+				and deptname like '%${deptname}%'
+			</if>
+			<if test="agent!=null and agent!=''">
+				and agent like '%${agent}%'
+			</if>
+			<if test="client !=null and client !=''">
+				and client like '%${client}%'
+			</if>
+			<if test="start_time!=null and start_time!=''">
+				and accept_time>=#{start_time}
+			</if>
+			<if test="end_time!=null and end_time!=''">
+				and #{end_time}>=accept_time
+			</if>
+		</where>
+		ORDER by ptype,accept_time
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		select count(*) from tb_all_case_info
+		<where>
+			<if test="case_code != null and case_code != ''">
+				and case_code like '%${case_code}%'
+			</if>
+			<if test="ptype!=null and ptype!=''">
+				and ptype like '%${ptype}%'
+			</if>
+			<if test="receiver!=null and receiver!=''">
+				and receiver like '%${receiver}%'
+			</if>
+			<if test="deptname!=null and deptname!=''">
+				and deptname like '%${deptname}%'
+			</if>
+			<if test="agent!=null and agent!=''">
+				and agent like '%${agent}%'
+			</if>
+				<if test="client !=null and client !=''">
+				and client like '%${client}%'
+			</if>
+			<if test="start_time!=null and start_time!=''">
+				and accept_time>=#{start_time}
+			</if>
+			<if test="end_time!=null and end_time!=''">
+				and #{end_time}>=accept_time
+			</if>
+		</where>
+	</select>
+	
+	<select id="queryAllOld" parameterType="map" resultType="com.rds.statistics.model.RdsAllCaseInfoModelOld">
+		select * from tb_all_case_info_Old
+		<where>
+			<if test="case_code != null and case_code != ''">
+				and case_code like '%${case_code}%'
+			</if>
+			<if test="ptype!=null and ptype!=''">
+				and ptype like '%${ptype}%'
+			</if>
+			<if test="receiver!=null and receiver!=''">
+				and receiver like '%${receiver}%'
+			</if>
+			<if test="parentDeptname !=null and parentDeptname !=''">
+				and parentDeptname like '%${parentDeptname}%'
+			</if>
+			<if test="deptname!=null and deptname!=''">
+				and deptname like '%${deptname}%'
+			</if>
+			<if test="agent!=null and agent!=''">
+				and agent like '%${agent}%'
+			</if>
+			<if test="client !=null and client !=''">
+				and client like '%${client}%'
+			</if>
+			<if test="start_time!=null and start_time!=''">
+				and accept_time>=#{start_time}
+			</if>
+			<if test="end_time!=null and end_time!=''">
+				and #{end_time}>=accept_time
+			</if>
+		</where>
+		ORDER by ptype,accept_time
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryAllCountOld" parameterType="map" resultType="int">
+		select count(*) from tb_all_case_info_Old
+		<where>
+			<if test="case_code != null and case_code != ''">
+				and case_code like '%${case_code}%'
+			</if>
+			<if test="ptype!=null and ptype!=''">
+				and ptype like '%${ptype}%'
+			</if>
+			<if test="receiver!=null and receiver!=''">
+				and receiver like '%${receiver}%'
+			</if>
+			<if test="deptname!=null and deptname!=''">
+				and deptname like '%${deptname}%'
+			</if>
+			<if test="agent!=null and agent!=''">
+				and agent like '%${agent}%'
+			</if>
+				<if test="client !=null and client !=''">
+				and client like '%${client}%'
+			</if>
+			<if test="start_time!=null and start_time!=''">
+				and accept_time>=#{start_time}
+			</if>
+			<if test="end_time!=null and end_time!=''">
+				and #{end_time}>=accept_time
+			</if>
+		</where>
+	</select>
+	
+	<delete id="callCollect" statementType="CALLABLE">
+		{CALL `case_info_collect`}
+	</delete>
+	
+	<update id="callExportCaseInof"  statementType="CALLABLE">
+		{CALL `case_export_info`}
+	</update>
+	
+	 <delete id="callCaseDetailInfo" statementType="CALLABLE" parameterType="string">
+        {CALL all_casefee_collect(#{sys_date,mode=IN,jdbcType=VARCHAR})}
+     </delete>
+     
+     <update id="callStat_finance"  statementType="CALLABLE">
+		{CALL `stat_finance`}
+	 </update>
+</mapper>

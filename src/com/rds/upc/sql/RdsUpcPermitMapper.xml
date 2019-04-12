@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcPermitMapper" >
+	<resultMap id="permit" type="com.rds.upc.model.RdsUpcPermitNodeModel">
+		<result column="modulecode" property="id"/>
+		<result column="moduleparentcode" property="moduleparentcode"/>
+		<result column='modulename' property="text"/>
+		<result column='moduletype' property="type"/>
+		<result column='moduleurl' property="url"/>
+		<result column='modulesqe' property="sort"/>
+		<result column='checked' property="checked" javaType="Boolean" jdbcType="VARCHAR"/>
+		<result column='leaf' property="leaf" javaType="Boolean" jdbcType="VARCHAR"/>
+	</resultMap>
+
+	<select id="queryAll" parameterType="map" resultType="com.rds.upc.model.RdsUpcPermitModel">
+		select * from tb_upc_permit
+		where 1=1
+			<if test="permitname != null">  
+	           and permitname like '%'||#{permitname}||'%' 
+	        </if> 
+	        <if test="companyid != null">  
+	           and companyid = #{companyid}
+	        </if> 
+		
+	</select>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_permit(permitcode,permitname,permitdesc,companyid) values(#{permitcode},#{permitname},#{permitdesc},#{companyid})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_upc_permit set permitname = #{permitname},permitdesc=#{permitdesc} where permitcode = #{permitcode}
+	</update>
+	
+	
+	<select id="queryUserPermitModel" parameterType="map" resultMap="permit">
+		select tt.modulecode,
+	       tt.modulename,
+	       tt.moduleurl,
+       		tt.moduletype,
+	       (select case
+	                 when count(*) > 1 then
+	                  'false'
+	                 else
+	                  'true'
+	               end
+	          from tb_upc_module m
+	         start with modulecode = tt.modulecode
+	        connect by prior modulecode = moduleparentcode) leaf
+	         from (select distinct *
+	  from tb_upc_module
+	 start with modulecode in
+	            (select modulecode
+	               from tb_upc_permit_module_rl
+	              where permitcode in
+	                    (select permitcodes
+	                       from tb_upc_user_permit up
+	                      where up.userid = #{userid}))
+	connect by prior moduleparentcode = modulecode ) tt 
+	where tt.moduleparentcode = #{parentcode}
+		   order by tt.modulesqe
+	</select>
+	
+	<select id="queryPermitModelByParentCode" parameterType="map" resultMap="permit">
+		select tt.modulecode,
+		       tt.modulename,
+		       decode(p.permitcode, null, 'false', 'true') checked,
+		       (select case
+		                 when count(*) > 1 then
+		                  'false'
+		                 else
+		                  'true'
+		               end
+		          from tb_upc_module m
+		         start with modulecode = tt.modulecode
+		        connect by prior modulecode = moduleparentcode) leaf
+		  from ( select * from tb_upc_permit_module_rl where permitcode = #{permitcode}) p,
+		       (select t.*
+		          from tb_upc_module t
+		         start with moduleparentcode = '0'
+		        connect by prior modulecode = moduleparentcode) tt
+		 where p.modulecode(+) = tt.modulecode
+		   and moduleparentcode = #{parentcode}
+	</select>
+	
+	<delete id="delete" parameterType="map">
+		begin 
+			delete from tb_upc_permit_module_rl where permitcode in (${permitcode});
+			delete from tb_upc_permit where permitcode in (${permitcode});
+		end;
+	</delete>
+	
+	<delete id="deletePermitModule" parameterType="map">
+		delete from tb_upc_permit_module_rl where permitcode = #{permitcode}
+	</delete>
+	
+	<insert id="insertPermitModule" parameterType="ArrayList" useGeneratedKeys="false">
+		INSERT INTO tb_upc_permit_module_rl(permitcode , modulecode)
+		SELECT A.* FROM (   
+		<foreach collection="list" item="item" index="index" separator="UNION"> 
+  			SELECT '${item.permitcode}' , '${item.modulecode}' FROM DUAL
+  		</foreach>  
+  		)A
+	</insert>
+	
+	<select id="queryModule" resultMap="permit">
+	<!-- 
+	  SELECT m.modulecode,m.modulesqe,m.modulename,m.moduleurl 
+	  FROM tb_upc_module m,tb_upc_permit p WHERE m.modulecode = p.modulecode AND p.permittype=#{permittype} 
+	   -->
+	  
+	   SELECT t.modulecode,
+	       t.modulename,
+	       t.moduleico,
+	       t.moduleurl,
+	       t.moduletype,
+	       t.modulesqe,
+	       t.moduleparentcode,
+	       t.moduledesc,
+	       (SELECT CASE
+	                 WHEN COUNT(*) >= 1 THEN
+	                  'false'
+	                 ELSE
+	                  'true'
+	               END
+	          FROM tb_upc_module m
+	          WHERE m.moduleparentcode = t.modulecode) leaf
+	  FROM tb_upc_module t 
+	 WHERE t.moduleparentcode  = #{parentcode,jdbcType=VARCHAR} AND t.modulecode IN (SELECT DISTINCT m.modulecode
+	  FROM tb_upc_module m,tb_upc_permit p WHERE m.modulecode = p.modulecode AND p.permittype=#{permittype} 	)
+	 ORDER BY t.modulesqe ASC
+	</select>
+</mapper>

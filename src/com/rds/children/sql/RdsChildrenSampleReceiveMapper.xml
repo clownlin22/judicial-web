@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenSampleReceiveMapper">
+	<select id="getSampleReceiveInfo" parameterType="map" resultType="com.rds.children.model.RdsChildrenSampleReceiveModel">
+		SELECT 
+		  ri.*,sr.`transfer_num`,sr.`transfer_time`,su.`username` AS transfer_pername,ur.`username` AS receive_pername,
+		  rr.`receive_time`,rr.receive_remark,sr.`remark`
+		FROM
+		  tb_children_sample_receive_info ri 
+		  INNER JOIN `tb_children_sample_receive` sr 
+		    ON ri.`receive_id` = sr.`receive_id` 
+		    LEFT JOIN `tb_children_relay_receive` rr
+		    ON ri.`receive_id`=rr.`receive_id`
+		    LEFT JOIN tb_upc_users su
+		    ON su.`userid`=sr.`transfer_per`
+		    LEFT JOIN tb_upc_users ur
+		    ON ur.`userid`=rr.`receive_per`
+		    where 1=1
+		    <if test=" sample_code !=null and sample_code != '' ">
+				and ri.sample_code like '%${sample_code}%'
+			</if> 
+			<if test=" transfer_num !=null and transfer_num != '' ">
+				and sr.transfer_num like '%${transfer_num}%'
+			</if> 
+			<if test=" receive_per !=null and receive_per != '' ">
+				and rr.receive_per=#{receive_per}
+			</if>
+			<if test=" transfer_time_start !=null and transfer_time_start != '' ">
+				and sr.transfer_time >= #{transfer_time_start}
+			</if>
+			<if test=" transfer_time_end !=null and transfer_time_end != '' ">
+				and #{transfer_time_end} >= sr.transfer_time
+			</if>
+			<if test=" receive_time_start !=null and receive_time_start != '' ">
+				and rr.receive_time >= #{receive_time_start}
+			</if>
+			<if test=" receive_time_end !=null and receive_time_end != '' ">
+				and #{receive_time_end} >= rr.receive_time
+			</if>
+			<if test=" transfer_per !=null and transfer_per != '' ">
+				and sr.transfer_per=#{transfer_per}
+			</if>
+			<if test=" confirm_state !=null and confirm_state != '' ">
+				and ri.confirm_state=#{confirm_state}
+			</if>
+			order by sr.transfer_time desc
+			<if test=" limit !=null and limit != ''">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="getCountSampleReceiveInfo" parameterType="map" resultType="int">
+		SELECT count(1)
+		FROM
+		  tb_children_sample_receive_info ri 
+		  INNER JOIN `tb_children_sample_receive` sr 
+		    ON ri.`receive_id` = sr.`receive_id` 
+		    LEFT JOIN `tb_children_relay_receive` rr
+		    ON ri.`receive_id`=rr.`receive_id`
+		    where 1=1
+		    <if test=" sample_code !=null and sample_code != '' ">
+				and ri.sample_code like '%${sample_code}%'
+			</if> 
+			<if test=" transfer_num !=null and transfer_num != '' ">
+				and sr.transfer_num like '%${transfer_num}%'
+			</if> 
+			<if test=" receive_per !=null and receive_per != '' ">
+				and rr.receive_per=#{receive_per}
+			</if>
+			<if test=" transfer_time_start !=null and transfer_time_start != '' ">
+				and sr.transfer_time >= #{transfer_time_start}
+			</if>
+			<if test=" transfer_time_end !=null and transfer_time_end != '' ">
+				and #{transfer_time_end} >= sr.transfer_time
+			</if>
+			<if test=" receive_time_start !=null and receive_time_start != '' ">
+				and rr.receive_time >= #{receive_time_start}
+			</if>
+			<if test=" receive_time_end !=null and receive_time_end != '' ">
+				and #{receive_time_end} >= rr.receive_time
+			</if>
+			<if test=" transfer_per !=null and transfer_per != '' ">
+				and sr.transfer_per=#{transfer_per}
+			</if>
+			<if test=" confirm_state !=null and confirm_state != '' ">
+				and ri.confirm_state=#{confirm_state}
+			</if>
+	</select>
+	
+	<select id="getTransferInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenSampleReceiveModel">
+		SELECT 
+		  sr.`receive_id`,
+		  sr.`transfer_num`,
+		  sr.`state`,
+		  sr.`transfer_time`,
+		  sr.`remark`,
+		  su.`username` AS transfer_pername,
+		  ur.`username` AS receive_pername,
+		  rr.`receive_time`,
+		  rr.`receive_remark` 
+		FROM
+		  `tb_children_sample_receive` sr 
+		  LEFT JOIN `tb_children_relay_receive` rr 
+		    ON sr.`receive_id` = rr.`receive_id` 
+		  LEFT JOIN tb_upc_users su 
+		    ON su.`userid` = sr.`transfer_per` 
+		  LEFT JOIN tb_upc_users ur 
+		    ON ur.`userid` = rr.`receive_per` 
+		    where 1=1
+	    	<if test=" transfer_num !=null and transfer_num != '' ">
+				and sr.transfer_num like '%${transfer_num}%'
+			</if> 
+			<if test=" receive_per !=null and receive_per != '' ">
+				and rr.receive_per=#{receive_per}
+			</if>
+			<if test=" transfer_time_start !=null and transfer_time_start != '' ">
+				and sr.transfer_time >= #{transfer_time_start}
+			</if>
+			<if test=" transfer_time_end !=null and transfer_time_end != '' ">
+				and #{transfer_time_end} >= sr.transfer_time
+			</if>
+			<if test=" receive_time_start !=null and receive_time_start != '' ">
+				and rr.receive_time >= #{receive_time_start}
+			</if>
+			<if test=" receive_time_end !=null and receive_time_end != '' ">
+				and #{receive_time_end} >= rr.receive_time
+			</if>
+			<if test=" transfer_per !=null and transfer_per != '' ">
+				and sr.transfer_per=#{transfer_per}
+			</if> 
+			<if test=" state !=null and state != '' ">
+				and sr.state=#{state}
+			</if> 
+			order by sr.`transfer_num` desc
+			<if test=" limit !=null and limit != ''">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="getTransferInfoCount" parameterType="map" resultType="int">
+		SELECT 
+		  count(1)
+		FROM
+		  `tb_children_sample_receive` sr 
+		  LEFT JOIN `tb_children_relay_receive` rr 
+		    ON sr.`receive_id` = rr.`receive_id` 
+		    where 1=1
+	    	<if test=" transfer_num !=null and transfer_num != '' ">
+				and sr.transfer_num like '%${transfer_num}%'
+			</if> 
+			<if test=" receive_per !=null and receive_per != '' ">
+				and rr.receive_per=#{receive_per}
+			</if>
+			<if test=" transfer_time_start !=null and transfer_time_start != '' ">
+				and sr.transfer_time >= #{transfer_time_start}
+			</if>
+			<if test=" transfer_time_end !=null and transfer_time_end != '' ">
+				and #{transfer_time_end} >= sr.transfer_time
+			</if>
+			<if test=" receive_time_start !=null and receive_time_start != '' ">
+				and rr.receive_time >= #{receive_time_start}
+			</if>
+			<if test=" receive_time_end !=null and receive_time_end != '' ">
+				and #{receive_time_end} >= rr.receive_time
+			</if>
+			<if test=" transfer_per !=null and transfer_per != '' ">
+				and sr.transfer_per=#{transfer_per}
+			</if> 
+			<if test=" state !=null and state != '' ">
+				and sr.state=#{state}
+			</if> 
+	</select>
+	
+	<select id="getRelaySampleInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenSampleReceiveModel">
+			select * from tb_children_sample_receive_info where receive_id=#{receive_id}
+	</select>
+	
+	<select id="getSampleInfo" parameterType="String"
+		resultType="com.rds.children.model.RdsChildrenSampleModel">
+		SELECT t.id,t.sample_code as text from tb_children_sample_receive_info t
+		where t.receive_id=#{receive_id}
+	</select>
+	
+	<insert id="saveTransferNum" parameterType="map">
+		INSERT INTO `tb_children_sample_receive`
+		(
+		`receive_id`,
+		`transfer_num`,
+		`transfer_time`,
+		`transfer_per`,
+		remark
+		)
+		VALUES
+		(#{receive_id},#{transfer_num},now(),#{transfer_per},#{remark})
+	</insert>
+	
+	<insert id="saveReceiveConfirm" parameterType="map">
+		insert into tb_children_relay_receive(relay_id,receive_id,receive_per,receive_time,receive_remark)
+		values(#{relay_id},#{receive_id},#{receive_per},now(),#{receive_remark})
+	</insert>
+	
+	<insert id="saveTransferSample" parameterType="map">
+		insert into tb_children_sample_receive_info(
+		id,sample_code,receive_id
+		)
+		values(#{id},#{sample_code},#{receive_id})
+	</insert>
+	
+	<update id="updateCaseState" parameterType="map">
+		update tb_children_case_info set verify_state=#{verify_state}
+		where (case_code=#{case_code} or case_id=#{case_code})
+	</update>
+	
+	<update id="updateTransferNum" parameterType="map">
+		update tb_children_sample_receive set state=#{state}
+		where receive_id=#{receive_id}
+	</update>
+	
+	<update id="updateTransferSample" parameterType="map">
+		update tb_children_sample_receive_info set confirm_state=#{confirm_state}
+		where receive_id = #{receive_id} 
+		<if test=" confirm_state==1 ">
+			 and id in 
+			<foreach item="item" index="index" collection="sample_codeids" open="("
+	            separator="," close=")">
+	            #{item}  
+	       	 </foreach>
+       	 </if>
+       	 <if test=" confirm_state==2 ">
+			 and id not in 
+			<foreach item="item" index="index" collection="sample_codeids" open="("
+	            separator="," close=")">
+	            #{item}  
+	       	 </foreach>
+       	 </if>
+	</update>
+	
+	<select id="queryVerifybySampleCode" parameterType="map" resultType="String">
+		select sample_code from tb_children_case_info where 3 > verify_state and
+		sample_code in 
+		<foreach item="item" index="index" collection="sample_code" open="("
+            separator="," close=")">
+            #{item}  
+       	 </foreach>
+	</select>
+	
+	<select id="queryCaseCodebyReceive" parameterType="map" resultType="String">
+		SELECT 
+		  ci.case_code 
+		FROM
+		  `tb_children_case_info` ci 
+		  INNER JOIN `tb_children_sample_receive_info` sr 
+		    ON ci.`sample_code` = sr.`sample_code` 
+		    WHERE receive_id = #{receive_id} 
+		 <if test=" sample_codeids !=null and sample_codeids != '' ">
+		 	and id in
+		    <foreach item="item" index="index" collection="sample_codeids" open="("
+	            separator="," close=")">
+	            #{item}  
+	       	 </foreach>
+       	 </if>
+	</select>
+	
+	<select id="queryCaseCodebySampleCode" parameterType="map" resultType="String">
+		select case_code from tb_children_case_info where
+		sample_code in 
+		<foreach item="item" index="index" collection="sample_code" open="("
+            separator="," close=")">
+            #{item}  
+       	 </foreach>
+	</select>
+	
+	<select id="queryTransferbySampleCode" parameterType="map" resultType="String">
+		select sample_code from tb_children_sample_receive_info where 2 > confirm_state and
+		sample_code in 
+		<foreach item="item" index="index" collection="sample_code" open="("
+            separator="," close=")">
+            #{item}  
+       	 </foreach>
+	</select>
+	
+	<select id="existSampleCode" parameterType="map" resultType="int">
+		SELECT COUNT(1) FROM tb_children_case_info t WHERE t.`is_delete`=0 AND t.`sample_code`=#{sample_code}
+	</select>
+	
+	
+</mapper>

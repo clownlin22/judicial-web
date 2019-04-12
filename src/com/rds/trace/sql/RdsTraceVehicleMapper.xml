@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceVehicleMapper">
+    <insert id="insertVehicle" parameterType="map">
+        insert into tb_trace_vehicle (uuid, case_id, plate_number,
+        vehicle_identification_number, engine_number, vehicle_type)
+        values(#{uuid},#{case_id},#{plate_number},#{vehicle_identification_number},
+        #{engine_number},#{vehicle_type})
+    </insert>
+
+    <select id="queryVehicle" parameterType="map" resultType="com.rds.trace.model.RdsTraceVehicleInfoModel">
+        select * from tb_trace_vehicle where 1
+        <if test="uuid!=null and uuid!=''">
+            and uuid = #{uuid}
+        </if>
+        <if test="plate_number!=null and plate_number!=''">
+            and plate_number = #{plate_number}
+        </if>
+        <if test="vehicle_identification_number!=null and vehicle_identification_number!=''">
+            and vehicle_identification_number = #{vehicle_identification_number}
+        </if>
+        <if test="engine_number!=null and engine_number!=''">
+            and engine_number = #{engine_number}
+        </if>
+        <if test="vehicle_type!=null and vehicle_type!=''">
+            and vehicle_type = #{vehicle_type}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and case_id = #{case_id}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountVehicle" parameterType="map" resultType="int">
+        select count(*) from tb_trace_vehicle where 1
+        <if test="uuid!=null and uuid!=''">
+            and uuid = #{uuid}
+        </if>
+        <if test="plate_number!=null and plate_number!=''">
+            and plate_number = #{plate_number}
+        </if>
+        <if test="vehicle_identification_number!=null and vehicle_identification_number!=''">
+            and vehicle_identification_number = #{vehicle_identification_number}
+        </if>
+        <if test="engine_number!=null and engine_number!=''">
+            and engine_number = #{engine_number}
+        </if>
+        <if test="vehicle_type!=null and vehicle_type!=''">
+            and vehicle_type = #{vehicle_type}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and case_id = #{case_id}
+        </if>
+    </select>
+
+    <update id="updateVehicle" parameterType="map">
+        update tb_trace_vehicle set
+        plate_number = #{plate_number},
+        vehicle_identification_number = #{vehicle_identification_number},
+        engine_number = #{engine_number},
+        vehicle_type = #{vehicle_type}
+        where uuid=#{uuid}
+    </update>
+
+    <delete id="deleteVehicle" parameterType="string">
+        delete from tb_trace_vehicle where case_id = #{case_id}
+    </delete>
+</mapper>

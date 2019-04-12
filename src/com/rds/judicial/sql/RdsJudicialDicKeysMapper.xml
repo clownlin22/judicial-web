@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialDicKeysMapper" >
+	<resultMap id="dickeys" type="com.rds.judicial.model.RdsJudicialDicKeysModel">
+		<id column="id" property="id"/>
+		<result column='keycode' property="keycode"/>
+		<result column='keyname' property="keyname"/>
+		<result column='status' property="status"/>
+		<result column='sort' property="sort"/>
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_dic_keys(keycode,keyname,id)
+		values (#{keycode},#{keyname},#{id})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_upc_dic_keys
+			set keycode = #{keycode},
+				keyname = #{keyname}
+				where id = #{id}
+	</update>
+	
+	<delete id="delete" parameterType="map">
+		delete from tb_upc_dic_keys where id in(${id})
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultType="dickeys">
+		select t.* from tb_upc_dic_keys t 
+			where 1=1
+			<if test="search != null and search != ''">
+				and keyname like '%${search}%'
+			</if>	
+			order by keycode asc limit #{start},#{end}
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultType="dickeys">
+		select * from tb_upc_dic_keys
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_dic_keys t
+		where 1=1
+			<if test="search != null">
+				and keyname like '%${search}%'
+			</if>	
+	</select>
+</mapper>

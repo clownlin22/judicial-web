@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraDocumentAppCooMapper" >
+	<resultMap id="cooModel" type="com.rds.bacera.model.RdsBaceraDocumentAppCooModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='client' property="client" />
+		<result column='phone' property="phone" />
+		<result column='client_date' property="client_date" />
+		<result column='accept_date' property="accept_date" />
+		<result column='appraisal_pro' property="appraisal_pro" />
+		<result column='basic_case' property="basic_case" />
+		<result column='appraisal_end_date' property="appraisal_end_date" />
+		<result column='return_type' property="return_type" />
+		<result column='invoice_exp' property="invoice_exp" />
+		<result column='remark' property="remark" />
+		<result column='case_close' property="case_close" />
+		<result column='create_time' property="create_time" />
+		<result column='create_pername' property="create_pername" />
+		<result column='cancelif' property='cancelif' />
+		
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='remarks' property="finance_remark" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='expressremark' property="expressremark" />
+		<result column='recive' property="recive" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_document_appraisal_coo
+		(id,num,client,phone,client_date,accept_date,appraisal_pro,basic_case,appraisal_end_date,return_type,case_close,
+		invoice_exp,ownperson,remark,create_time,create_per
+		)values(#{id},#{num},#{client},#{phone},#{client_date},#{accept_date},#{appraisal_pro},#{basic_case},#{appraisal_end_date},#{return_type},#{case_close},
+		#{invoice_exp},#{ownperson},#{remark},now(),#{create_per}
+		)
+	</insert>
+	
+	<insert id="insertDocumentAppCooAttachment" parameterType="com.rds.bacera.model.RdsBaceraCaseAttachmentModel">
+	insert into tb_document_appraisal_coo_attachment(appraisal_cpp_id,attachment_id,attachment_path,attachment_type,create_per,create_date)
+	 values(#{appraisal_cpp_id},#{attachment_id},#{attachment_path},#{attachment_type},#{create_per},#{create_date})
+	</insert>
+	
+	<select id="queryAttacmByDocumentAppCoo" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraCaseAttachmentModel">
+		select at.attachment_id,at.attachment_path,at.attachment_type,u.username as create_per,at.create_date,at.appraisal_cpp_id from tb_document_appraisal_coo_attachment at
+		left join tb_upc_users u on at.create_per = u.userid
+		 where appraisal_cpp_id = #{appraisal_cpp_id} and isdelete='1'
+	</select>
+	
+	<update id="update" parameterType="map">
+		update tb_document_appraisal_coo 
+		set 
+				num=#{num}
+				,client=#{client}
+				,phone=#{phone}
+				,client_date=#{client_date}
+				,accept_date=#{accept_date}
+				,appraisal_pro=#{appraisal_pro}
+				,basic_case=#{basic_case}
+				,appraisal_end_date=#{appraisal_end_date}
+				,return_type=#{return_type}
+				,invoice_exp=#{invoice_exp}
+				,ownperson=#{ownperson}
+				,remark=#{remark}
+				,case_close=#{case_close}
+				,create_per=#{create_per}
+				,create_time=now()
+			where id = #{id}
+	</update>
+	
+	<select id="queryDocumentAppCooPathById" parameterType="String" resultType="String">
+		SELECT attachment_path FROM `tb_document_appraisal_coo_attachment` WHERE attachment_id =
+		#{attachment_id}
+	</select>
+	<!-- 根据id删除信息 -->
+	<update id="delete" parameterType="map">
+		update tb_document_appraisal_coo t set t.cancelif = 1 where t.id = #{id}
+	</update>
+	
+	<update id="delAttachment" parameterType="map">
+		update tb_document_appraisal_coo_attachment t set t.isdelete=2 where t.attachment_id=#{attachment_id}
+	</update>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="cooModel">
+		  SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`client`,
+			  a.phone,
+			  a.`ownperson` AS ownperson,
+			  a.client_date,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`accept_date`,
+			  a.`appraisal_pro`,
+			  a.`basic_case`,
+			  a.`appraisal_end_date`,
+			  a.return_type,
+			  a.invoice_exp,
+			  a.create_time,
+			  a.case_close,
+			  a.`remark`,
+			  u.username as create_pername,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  a.`cancelif` , 
+			  i.expressremark
+			FROM
+			  tb_document_appraisal_coo a 
+			  inner join tb_upc_users u 
+			  on a.create_per = u.userid
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id` 
+			  INNER JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>
+			<if test="client != '' and client != null">
+				and a.client like concat('%', #{client}, '%') 
+			</if>
+			<if test="phone != '' and phone != null">
+				and a.phone like concat('%', #{phone}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="client_starttime != '' and client_starttime != null">
+				and a.client_date >= #{client_starttime}
+			</if>	
+			<if test="client_endtime != '' and client_endtime != null">
+				and #{client_endtime} >= a.client_date
+			</if>	
+			<if test="accept_starttime != '' and accept_starttime != null">
+				and a.accept_date >= #{accept_starttime}
+			</if>	
+			<if test="accept_endtime != '' and accept_endtime != null">
+				and #{accept_endtime} >= a.accept_date
+			</if>	
+			<if test="appraisal_end_starttime != '' and appraisal_end_starttime != null">
+				and a.appraisal_end_date >= #{appraisal_end_starttime}
+			</if>	
+			<if test="appraisal_end_endtime != '' and appraisal_end_endtime != null">
+				and #{appraisal_end_endtime} >= a.appraisal_end_date
+			</if>
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="case_close != '' and case_close != null">
+				and a.case_close = #{case_close}
+			</if>
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="create_pername != '' and create_pername != null">
+				and u.`username`  like concat('%', #{create_pername}, '%') 
+			</if>
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="create_per != '' and create_per != null">
+				and a.create_per = #{create_per}
+			</if>
+			order by a.num desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		 SELECT 
+			 count(1)
+			FROM
+			   tb_document_appraisal_coo a 
+			  inner join tb_upc_users u 
+			  on a.create_per = u.userid
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id` 
+			  INNER JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>
+			<if test="client != '' and client != null">
+				and a.client like concat('%', #{client}, '%') 
+			</if>
+			<if test="phone != '' and phone != null">
+				and a.phone like concat('%', #{phone}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="client_starttime != '' and client_starttime != null">
+				and a.client_date >= #{client_starttime}
+			</if>	
+			<if test="client_endtime != '' and client_endtime != null">
+				and #{client_endtime} >= a.client_date
+			</if>	
+			<if test="accept_starttime != '' and accept_starttime != null">
+				and a.accept_date >= #{accept_starttime}
+			</if>	
+			<if test="accept_endtime != '' and accept_endtime != null">
+				and #{accept_endtime} >= a.accept_date
+			</if>	
+			<if test="appraisal_end_starttime != '' and appraisal_end_starttime != null">
+				and a.appraisal_end_date >= #{appraisal_end_starttime}
+			</if>	
+			<if test="appraisal_end_endtime != '' and appraisal_end_endtime != null">
+				and #{appraisal_end_endtime} >= a.appraisal_end_date
+			</if>
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="create_pername != '' and create_pername != null">
+				and u.`username`  like concat('%', #{create_pername}, '%') 
+			</if>
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="create_per != '' and create_per != null">
+				and a.create_per = #{create_per}
+			</if>
+			<if test="case_close != '' and case_close != null">
+				and a.case_close = #{case_close}
+			</if>
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_document_appraisal_coo where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+</mapper>

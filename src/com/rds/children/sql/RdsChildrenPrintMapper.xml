@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenPrintMapper">
+
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenPrintCaseModel">
+		SELECT
+		ci.case_id,ci.case_code,ci.sample_code,ci.child_name,ci.child_sex,ci.birth_date,ci.id_number,ci.house_area,ci.verify_state,
+		ci.life_area,ci.print_time,u.username as 'case_username',ci.case_areaname,ci.`gather_id`
+		FROM
+		tb_children_case_info ci
+		 LEFT JOIN tb_upc_users u 
+		 ON ci.`case_userid` = u.`userid` 
+		where ci.is_delete=0 and ci.verify_state >= 6
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code!=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" child_name!=null and child_name != ''">
+			and ci.child_name LIKE '%${child_name}%'
+		</if>
+		<if test="child_sex!=-1">
+			and ci.child_sex=#{child_sex}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" if_download == 1">
+			and ci.print_time is not null
+		</if>
+		<if test=" if_download == 2">
+			and ci.print_time is null
+		</if>
+		order by ci.case_code desc
+		LIMIT #{start},#{limit}
+	</select>
+
+
+	<select id="countCaseInfo" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		tb_children_case_info ci
+		where
+		ci.is_delete=0 and ci.verify_state >= 6
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code!=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" child_name!=null and child_name != ''">
+			and ci.child_name LIKE '%${child_name}%'
+		</if>
+		<if test="child_sex!=-1">
+			and ci.child_sex=#{child_sex}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" if_download == 1">
+			and ci.print_time is not null
+		</if>
+		<if test=" if_download == 2">
+			and ci.print_time is null
+		</if>
+	</select>
+
+	<select id="printCaseInfo" parameterType="String"
+		resultType="com.rds.children.model.RdsChildrenPrintCaseModel">
+		SELECT
+		ci.case_id,ci.case_code,ci.child_name,ci.child_sex,ci.birth_date,ci.id_number,ci.house_area,ci.life_area,
+		fa.custody_name as father_name, fa.id_number as father_number,fa.phone
+		as father_phone,
+		mo.custody_name as mother_name, mo.id_number as
+		mother_number,mo.phone as mother_phone
+		FROM
+		tb_children_case_info ci
+		LEFT JOIN
+		tb_children_custody_info fa
+		ON fa.`case_id` = ci.`case_id` AND
+		fa.custody_call = 'father'
+		LEFT JOIN
+		tb_children_custody_info mo
+		ON
+		mo.`case_id` = ci.`case_id` AND mo.custody_call = 'mother'
+		where
+		ci.case_id=#{case_id}
+	</select>
+
+	<select id="printCaseResult" parameterType="String" resultType="map">
+		SELECT
+		co.locus_name AS name,
+		co.locus_value AS value
+		FROM
+		tb_children_locus_info co
+		INNER JOIN
+		(SELECT
+		lo.locus_name,
+		lo.order
+		FROM
+		tb_dic_agentia_locus lo,tb_children_case_info ci WHERE
+		ci.`case_id`=#{case_id} AND
+		ci.`agentia_id`=lo.`agentia_id` ) ci
+		ON
+		ci.locus_name=co.`locus_name`
+		WHERE case_id = #{case_id}
+		ORDER BY co.`locus_name`
+	</select>
+
+	<select id="getCasePhoto" parameterType="map" resultType="String">
+		SELECT photo_path FROM tb_children_case_photo where
+		case_id=#{case_id}
+		<if test=" photo_type !=null and photo_type != ''">
+			and photo_type =#{photo_type}
+		</if>
+		ORDER BY upload_time desc
+		limit 1
+	</select>
+	
+	<update id="changePrintState" parameterType="map">
+	    update tb_children_case_info set print_time=now() where case_id=#{case_id} and (print_time is null or print_time='')
+	</update>
+</mapper>

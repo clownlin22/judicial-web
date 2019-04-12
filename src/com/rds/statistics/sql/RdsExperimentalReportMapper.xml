@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsExperimentalReportMapper">
+
+    
+    <insert id="insertReport" parameterType="map">
+        insert into  tb_laboratory_report  (uuid,
+        report, upload_date, upload_username,times,id)values (#{uuid},#{report},now(),#{upload_username},0,#{id})
+    </insert>
+    
+     <insert id="insert" parameterType="map">
+        insert into tb_subject(id,
+        subject,date, flag)
+        values(#{id},#{subject},now(),
+        #{flag})
+     </insert>
+    <delete id="deleteReport" parameterType="map">
+        delete from tb_laboratory_report where uuid = #{uuid}
+    </delete>
+      <update id="deleteSubject" parameterType="map">
+        update tb_subject set deleteflag = 0 where id=#{id}
+    </update>
+
+    <select id="queryAllReport" parameterType="map"
+            resultType="com.rds.statistics.model.RdsExperimentalReportModel">
+           SELECT uuid,report,upload_date,upload_username,times
+		   from tb_laboratory_report
+	     	WHERE id = #{id} 
+    </select>
+        <select id="queryReport" parameterType="map"
+            resultType="com.rds.statistics.model.RdsExperimentalReportModel">
+           SELECT id,report,upload_date,upload_username,times
+		   from tb_laboratory_report
+	     	WHERE uuid = #{uuid} 
+    </select>
+     <select id="queryReportByName" parameterType="map"
+            resultType="int">
+           SELECT count(*)
+		   from tb_laboratory_report
+	     	WHERE report = #{report} and id=#{id}
+    </select>
+    
+    <select id="queryAllSubject" parameterType="map"
+            resultType="com.rds.statistics.model.RdsExperimentalReportModel">
+           SELECT id,subject,flag
+		   from tb_subject
+
+		WHERE 1 = 1 and deleteflag=1
+
+        <if test=" subject !=null and subject != '' ">
+            and subject like '%${subject}%'
+        </if>
+         
+        <if test="start!=null and limit!=null">
+           
+            limit #{start},#{limit}
+        </if>
+    </select>
+    <select id="querySubject" parameterType="map"
+            resultType="int">
+           SELECT count(*)
+		   from tb_subject
+		WHERE subject=#{subject} and deleteflag = 1
+    </select>
+    
+    <select id="querySubjectById" parameterType="map"
+            resultType="com.rds.statistics.model.RdsExperimentalReportModel">
+           SELECT subject,flag
+		   from tb_subject
+		WHERE id=#{id}
+    </select>
+     <select id="queryAllCount" parameterType="map"
+            resultType="int">
+		 SELECT COUNT(1)
+		FROM
+		  tb_subject
+		WHERE 1 = 1 
+       <if test=" subject !=null and subject != '' ">
+            and subject like '%${subject}%'
+        </if>
+    </select>
+
+
+    
+    <update id="updateReport" parameterType="map">
+    	update tb_laboratory_report t set 
+    	t.times = t.times + 1
+    	where t.uuid=#{uuid}
+    </update>
+    
+
+    
+   
+    
+</mapper>

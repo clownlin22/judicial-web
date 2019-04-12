@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenExceptionMapper">
+	<insert id="saveException" parameterType="map">
+		INSERT INTO `tb_children_case_exception`
+		(exception_id,case_id,exception_type,exception_desc,exception_time,exception_per)
+		VALUES
+		(#{exception_id},#{case_id},#{exception_type},#{exception_desc},now(),#{exception_per})
+	</insert>
+	
+	<update id="deleteException" parameterType="map">
+		update tb_children_case_exception set is_handle=2,handle_per=#{handle_per},handle_time=now()
+		 where exception_id = #{exception_id}
+	</update>
+	
+	<update id="updateExcetion" parameterType="map">
+		update tb_children_case_exception 
+		set is_handle=#{is_handle},
+			handle_per=#{handle_per},
+			handle_time=now()
+		where exception_id = #{exception_id}
+	</update>
+	
+	<select id="getExceptionInfo" parameterType="map" resultType="com.rds.children.model.RdsChildrenExceptionModel">
+		SELECT 
+		  e.`exception_id`,
+		  t.`case_id`,
+		  t.`case_code`,
+		  t.`sample_code`,
+		  t.`case_areaname`,
+		  u.`username` AS 'case_username',
+		  t.`child_name`,
+		  t.`birth_date`,
+		  t.`child_sex`,
+		  t.`id_number`,
+		  t.`gather_time`,
+		  e.`exception_desc`,
+		  e.`exception_type`,
+		  e.`exception_time`,
+		  e.`handle_time`,
+		  u1.`username` AS 'exception_pername',
+		  u2.`username` AS 'handle_pername',
+		  e.`is_handle` 
+		FROM
+		  `tb_children_case_info` t 
+		  LEFT JOIN `tb_children_case_exception` e 
+		    ON t.`case_id` = e.`case_id` 
+		  LEFT JOIN tb_upc_users u 
+		    ON t.`case_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1 
+		    ON e.`exception_per` = u1.`userid` 
+		  LEFT JOIN tb_upc_users u2 
+		    ON e.`handle_per` = u2.`userid` 
+		WHERE 1 = 1 
+		<if test=" case_code !=null and case_code != ''">
+			and t.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and t.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name !=null and child_name!= '' ">
+			and t.child_name like '%${child_name}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and t.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=t.gather_time
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and t.case_userid=#{case_userid}
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (t.case_userid=#{userid} or t.case_in_per = #{userid})
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and t.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and t.id_number like '%${id_number}%'
+		</if>
+		<if test=" exception_per !=null and exception_per != ''">
+			and e.case_userid=#{exception_per}
+		</if>
+		<if test=" handle_per !=null and handle_per != ''">
+			and e.handle_per=#{handle_per} 
+		</if>
+		<if test=" exception_type !=null and exception_type != ''">
+			and e.exception_type=#{exception_type} 
+		</if>
+		<if test=" has_exception==1 ">
+			and e.exception_id is not null
+		</if>
+		<if test=" has_exception==2 ">
+			and e.exception_id is null
+		</if>
+		<if test=" is_handle !=null and is_handle != ''">
+			and e.is_handle=#{is_handle} 
+		</if>
+		ORDER BY t.case_code
+		<if test=" start !=null and start != ''">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="getExceptionInfoCount" parameterType="map" resultType="int">
+		SELECT 
+		 count(1)
+		FROM
+		  `tb_children_case_info` t 
+		  LEFT JOIN `tb_children_case_exception` e 
+		    ON t.`case_id` = e.`case_id` 
+		WHERE 1 = 1 
+		<if test=" case_code!=null and case_code != ''">
+			and t.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and t.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name!=null and child_name!= '' ">
+			and t.child_name like '%${child_name}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and t.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=t.gather_time
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and t.case_userid=#{case_userid}
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (t.case_userid=#{userid} or t.case_in_per = #{userid})
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and t.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and t.id_number like '%${id_number}%'
+		</if>
+		<if test=" exception_per !=null and exception_per != ''">
+			and e.case_userid=#{exception_per}
+		</if>
+		<if test=" handle_per !=null and handle_per != ''">
+			and e.handle_per=#{handle_per} 
+		</if>
+		<if test=" exception_type !=null and exception_type != ''">
+			and e.exception_type=#{exception_type} 
+		</if>
+		<if test=" has_exception==1 ">
+			and e.exception_id is not null
+		</if>
+		<if test=" has_exception==2 ">
+			and e.exception_id is  null
+		</if>
+		<if test=" is_handle !=null and is_handle != ''">
+			and e.is_handle=#{is_handle} 
+		</if>
+	</select>
+</mapper>

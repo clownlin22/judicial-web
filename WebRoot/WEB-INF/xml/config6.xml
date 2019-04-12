@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+         
+         <case_code_child>1</case_code_child>
+         <case_code_child_date>201705</case_code_child_date>
+         
+         <finance_code_child>1</finance_code_child>
+         <finance_code_child_date>201705</finance_code_child_date>
+   
+</config>

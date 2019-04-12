@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialMailMapper">
+	<select id="queryMailCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`urgent_state`,
+		  ci.`accept_time`,
+		  ci.`status` AS gather_status,
+		  ci.`print_count`,
+		  ci.`client`,
+		  DATE_FORMAT(
+		    ci.`close_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS close_time,
+		  ci.`is_delete`,
+		  ci.`report_model`,
+		  ci.`phone`,
+		  concat(ifnull(ci.`remark`,''),'|',ifnull(ci.finance_remark,'')) as 'remark',
+		  ci.`is_new`,
+		  ci.`case_in_per`,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  ci.fee_type,
+		  u.`username` AS case_receiver,
+		  ci.receiver_area,
+		  u2.`username` AS case_in_pername,
+		  IFNULL(mi.mail_count, 0) AS mail_count
+		FROM
+		(SELECT 
+		    ci.*,
+		    cf.`status`,
+		    cf.type AS fee_type ,
+		    cf.`finance_remark`
+		  FROM
+		    tb_judicial_case_info ci,
+		    tb_judicial_casefee cf 
+		  WHERE cf.case_id = ci.case_id 
+		        AND ci.verify_state >= 8
+		<if test=" receiver!=null and receiver != ''">
+			and ci.case_userid=#{receiver}
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="client!=null and client !=''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test="partner_name !=null and partner_name !=''">
+			and ci.parnter_name =#{partner_name}
+		</if>
+		ORDER BY accept_time DESC) ci
+		  LEFT JOIN tb_upc_users u 
+		    ON ci.case_userid = u.`userid`
+		  LEFT JOIN tb_upc_users u2 
+		    ON ci.case_in_per = u2.`userid`
+		LEFT JOIN
+		(SELECT case_id,COUNT(*) AS mail_count 
+			FROM tb_judicial_mail_info
+		WHERE is_delete=0
+		<if test=" mail_starttime!=null and  mail_starttime != '' ">
+			and DATE_FORMAT(mail_time,'%Y-%m-%d')>=#{mail_starttime}
+		</if>
+		<if test=" mail_endtime!=null and mail_endtime != ''">
+			and #{mail_endtime}>=DATE_FORMAT(mail_time,'%Y-%m-%d')
+		</if>
+		 GROUP BY case_id) mi
+		ON mi.case_id=ci.case_id
+		WHERE ci.`is_archived`=0 AND ci.`is_delete`=0
+		<if test=" is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test=" is_mail==1">
+			and mi.case_id is null
+		</if>
+		<!-- >if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if -->
+		LIMIT #{start},#{limit}
+	</select>
+
+	<select id="countMailCaseInfo" parameterType="map" resultType="Integer">
+		SELECT count(ci.case_id)
+		FROM
+		(SELECT 
+		    ci.*,
+		    cf.`status`,
+		    cf.type AS fee_type 
+		  FROM
+		    tb_judicial_case_info ci,
+		    tb_judicial_casefee cf 
+		  WHERE cf.case_id = ci.case_id  AND ci.verify_state >= 8
+		<if test=" receiver!=null and receiver != ''">
+			and ci.case_userid=#{receiver}
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="client!=null and client !=''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test="partner_name !=null and partner_name !=''">
+			and ci.parnter_name =#{partner_name}
+		</if>
+		ORDER BY accept_time DESC) ci
+		  LEFT JOIN tb_upc_users u2 
+		    ON ci.case_in_per = u2.`userid`
+		LEFT JOIN
+		(SELECT case_id,COUNT(*) AS mail_count 
+			FROM tb_judicial_mail_info
+		WHERE is_delete=0
+		<if test=" mail_starttime!=null and  mail_starttime != '' ">
+			and DATE_FORMAT(mail_time,'%Y-%m-%d')>=#{mail_starttime}
+		</if>
+		<if test=" mail_endtime!=null and mail_endtime != ''">
+			and #{mail_endtime}>=DATE_FORMAT(mail_time,'%Y-%m-%d')
+		</if>
+		 GROUP BY case_id) mi
+		ON mi.case_id=ci.case_id
+		WHERE ci.`is_archived`=0 AND ci.`is_delete`=0
+		<if test=" is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test=" is_mail==1">
+			and mi.case_id is null
+		</if>
+	</select>
+
+	<select id="getAllMails" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialMailInfoModel">
+		select
+		m.mail_code,m.mail_type,m.mail_id,DATE_FORMAT(m.mail_time,'%Y-%m-%d
+		%H:%i:%s') as
+		time,m.case_id,v.value as mail_typename,m.mail_per,m.mail_address,m.mail_phone,m.mail_remark from
+		tb_judicial_mail_info m
+		left join
+		(SELECT key1,VALUE FROM
+		tb_dic_values
+		WHERE
+		keycode='000000002') v on
+		m.mail_type=v.key1 where m.is_delete=0
+		and
+		m.case_id=#{case_id}
+	</select>
+
+	<insert id="saveMailInfo" parameterType="map">
+		insert into
+		tb_judicial_mail_info(
+		mail_id,mail_code,mail_type,mail_time,case_id,mail_per,user_id,mail_address,mail_phone,case_type,mail_remark)
+		values(#{mail_id},#{mail_code},#{mail_type},now(),#{case_id},#{mail_per},#{user_id},#{mail_address},#{mail_phone},#{case_type},#{mail_remark})
+	</insert>
+
+	<update id="updateMailInfo" parameterType="map">
+		update
+		tb_judicial_mail_info set
+		mail_code=#{mail_code},mail_type=#{mail_type},mail_per=#{mail_per},user_id=#{user_id},
+		mail_address=#{mail_address},mail_phone=#{mail_phone},mail_remark=#{mail_remark}
+		where mail_id =
+		#{mail_id}
+	</update>
+
+	<update id="delMailInfo" parameterType="map">
+		update
+		tb_judicial_mail_info set
+		is_delete = 1 where mail_id = #{mail_id}
+	</update>
+	
+	<select id="getException" parameterType="map" resultType="int">
+	    select count(*) from tb_judicial_case_exception where exception_type=#{exception_type} and case_id=#{case_id} and is_handle =0
+	</select>
+	
+	<insert id="insertException" parameterType="map">
+	    insert into
+		tb_judicial_case_exception(exception_id,case_id,exception_type,exception_desc,exception_time,exception_per)
+		values(#{exception_id},#{case_id},#{exception_type},#{exception_desc},now(),#{userid})
+	</insert>
+	
+	<select id="querySampleRecive" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialSampleExpressModel">
+		select t.*,v.value as express_type_name  from tb_judicial_sample_express t left join
+		(SELECT key1,VALUE FROM
+		tb_dic_values
+		WHERE
+		keycode='000000002') v on
+		t.express_type=v.key1 where t.case_id = #{case_id} and  t.`express_recive` &lt;&gt;  '' and  t.`express_recive` is not null
+		limit 1
+	</select>
+	
+</mapper>

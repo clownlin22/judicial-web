@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsRemittanceConsumptionTimeMapper">
+	<select id="queryConsumptionTimeAll" parameterType="map"
+		resultType="com.rds.statistics.model.RdsRemittanceConsumptionTimeModel">
+			SELECT
+			  c.id AS 'fee_id',
+			  c.`case_id`,
+			  c.status,
+			  ci.case_state,
+			  ci.`case_code`,
+			  ci.`accept_time` AS `date`,
+			  r.`remittance_num`,
+			  r.remittance_id,
+			  u2.`username` AS `case_receiver`,
+			  u3.username AS create_per,
+			  u4.username AS confirm_per,
+			  r.`confirm_state`,
+			  r.`remittance_id`,
+			  m.confirm_date1 AS create_date,
+			  m.confirm_date2 AS confirm_date,
+			   TIMESTAMPDIFF( SECOND,  confirm_date1, confirm_date2) AS time_spent FROM (
+				SELECT t.remittance_id, 
+				MAX(CASE
+				      WHEN t.confirm_state = '-1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date1,
+				    MAX(CASE
+				      WHEN t.confirm_state = '1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date2
+				     FROM (
+				SELECT MAX(t.`confirm_date`) AS confim_date,t.`confirm_state`,t.`remittance_id`
+				FROM
+				  tb_judicial_remittance_logs t 
+				WHERE  1=1 AND (t.`confirm_state`='-1' OR t.`confirm_state`='1')
+				GROUP BY t.`remittance_id`,t.`confirm_state`) t GROUP BY t.remittance_id) m 
+                   LEFT JOIN 
+                   `tb_judicial_casefee` c 
+                    ON c.`remittance_id` = m.`remittance_id`
+			  LEFT JOIN `tb_judicial_case_info` ci 
+			    ON ci.`case_id` = c.`case_id` 
+			    LEFT JOIN `tb_judicial_remittance` r 
+			    ON c.`remittance_id` = r.`remittance_id`
+			  LEFT JOIN `tb_upc_users` u2 
+			    ON u2.`userid` = ci.`case_userid` 
+			     LEFT JOIN `tb_upc_users` u3 
+			    ON u3.`userid` = r.`create_per`
+			     LEFT JOIN `tb_upc_users` u4 
+			    ON u4.`userid` = r.`confirm_per`
+              
+			WHERE 1=1 and ci.is_delete =0
+		
+			<if test="starttime_accept !=null and starttime_accept !=''">
+				AND ci.accept_time >= #{starttime_accept}
+			</if>
+			<if test="endtime_accept !=null and endtime_accept !=''">
+				AND #{endtime_accept} >= ci.accept_time
+			</if>
+            <if test="starttime_accept !=null and starttime_accept !=''">
+				AND ci.accept_time >= #{starttime_accept}
+			</if>
+			<if test="endtime_accept !=null and endtime_accept !=''">
+				AND #{endtime_accept} >= ci.accept_time
+			</if>
+			<if test="status==0 ">
+				and c.status = 0
+			</if>
+			<if test="status==1 ">
+				and c.status &lt;&gt; 0
+			</if>
+			<if test="time_spent !='' and time_spent!=null ">
+				and  TIMESTAMPDIFF( SECOND,  m.confirm_date1, m.confirm_date2) > 3600*#{time_spent}
+			</if>
+
+			<if test="remittance_num !=null and remittance_num !=''">
+				AND r.`remittance_num` like '%${remittance_num}%'
+			</if>
+			<if test="confirm_state !=null and confirm_state !=''">
+				AND r.`confirm_state` =#{confirm_state}
+			</if>
+			<if test="case_code !=null and case_code !=''">
+				AND ci.`case_code` like '%${case_code}%'
+			</if>
+			<if test="case_receiver !=null and case_receiver !=''">
+				AND u2.username like '%${case_receiver}%'
+			</if>
+			<if test="case_state !=null and case_state !=''">
+				AND ci.`case_state` = #{case_state}
+			</if>
+			order by ci.`case_code` asc			
+			limit #{start},#{limit}
+		
+	</select>
+	<select id="queryConsumptionTime" parameterType="map"
+		resultType="com.rds.statistics.model.RdsRemittanceConsumptionTimeModel">
+
+		SELECT
+			  c.id AS 'fee_id',
+			  c.`case_id`,
+			  c.status,
+			  ci.case_state,
+			  ci.`case_code`,
+			  ci.`accept_time` AS `date`,
+			  r.`remittance_num`,
+			  r.remittance_id,
+			  u2.`username` AS `case_receiver`,
+			  u3.username AS create_per,
+			  u4.username AS confirm_per,
+			  r.`confirm_state`,
+			  r.`remittance_id`,
+			  m.confirm_date1 AS create_date,
+			  m.confirm_date2 AS confirm_date,
+			   TIMESTAMPDIFF( SECOND,  confirm_date1, confirm_date2) AS time_spent FROM (
+				SELECT t.remittance_id, 
+				MAX(CASE
+				      WHEN t.confirm_state = '-1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date1,
+				    MAX(CASE
+				      WHEN t.confirm_state = '1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date2
+				     FROM (
+				SELECT MAX(t.`confirm_date`) AS confim_date,t.`confirm_state`,t.`remittance_id`
+				FROM
+				  tb_judicial_remittance_logs t 
+				WHERE  1=1 AND (t.`confirm_state`='-1' OR t.`confirm_state`='1')
+				GROUP BY t.`remittance_id`,t.`confirm_state`) t GROUP BY t.remittance_id) m 
+                   LEFT JOIN 
+                   `tb_judicial_casefee` c 
+                    ON c.`remittance_id` = m.`remittance_id`
+			  LEFT JOIN `tb_judicial_case_info` ci 
+			    ON ci.`case_id` = c.`case_id` 
+			    LEFT JOIN `tb_judicial_remittance` r 
+			    ON c.`remittance_id` = r.`remittance_id`
+			  LEFT JOIN `tb_upc_users` u2 
+			    ON u2.`userid` = ci.`case_userid` 
+			     LEFT JOIN `tb_upc_users` u3 
+			    ON u3.`userid` = r.`create_per`
+			     LEFT JOIN `tb_upc_users` u4 
+			    ON u4.`userid` = r.`confirm_per`
+              
+			WHERE 1=1 and ci.is_delete =0
+            <if test="starttime_accept !=null and starttime_accept !=''">
+				AND ci.accept_time >= #{starttime_accept}
+			</if>
+			<if test="endtime_accept !=null and endtime_accept !=''">
+				AND #{endtime_accept} >= ci.accept_time
+			</if>
+			<if test="status==0 ">
+				and c.status = 0
+			</if>
+			<if test="status==1 ">
+				and c.status &lt;&gt; 0
+			</if>
+			<if test="time_spent !='' and time_spent!=null ">
+				and time_spent> 3600*#{time_spent}
+			</if>
+
+			<if test="remittance_num !=null and remittance_num !=''">
+				AND r.`remittance_num` like '%${remittance_num}%'
+			</if>
+			<if test="confirm_state !=null and confirm_state !=''">
+				AND r.`confirm_state` =#{confirm_state}
+			</if>
+			<if test="case_code !=null and case_code !=''">
+				AND ci.`case_code` like '%${case_code}%'
+			</if>
+			<if test="case_receiver !=null and case_receiver !=''">
+				AND u2.username like '%${case_receiver}%'
+			</if>
+			<if test="case_state !=null and case_state !=''">
+				AND ci.`case_state` = #{case_state}
+			</if>
+	</select>
+	<select id="queryConsumptionTimeAllCount" parameterType="map"
+		       resultType="Integer">
+		SELECT
+			  count(1)
+			   FROM (
+				SELECT t.remittance_id, 
+				MAX(CASE
+				      WHEN t.confirm_state = '-1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date1,
+				    MAX(CASE
+				      WHEN t.confirm_state = '1' 
+				      THEN t.`confim_date` 
+				    END) AS confirm_date2
+				     FROM (
+				SELECT MAX(t.`confirm_date`) AS confim_date,t.`confirm_state`,t.`remittance_id`
+				FROM
+				  tb_judicial_remittance_logs t 
+				WHERE  1=1 AND (t.`confirm_state`='-1' OR t.`confirm_state`='1')
+				GROUP BY t.`remittance_id`,t.`confirm_state`) t GROUP BY t.remittance_id) m 
+                   LEFT JOIN 
+                   `tb_judicial_casefee` c 
+                    ON c.`remittance_id` = m.`remittance_id`
+			  LEFT JOIN `tb_judicial_case_info` ci 
+			    ON ci.`case_id` = c.`case_id` 
+			    LEFT JOIN `tb_judicial_remittance` r 
+			    ON c.`remittance_id` = r.`remittance_id`
+			  LEFT JOIN `tb_upc_users` u2 
+			    ON u2.`userid` = ci.`case_userid` 
+			     LEFT JOIN `tb_upc_users` u3 
+			    ON u3.`userid` = r.`create_per`
+			     LEFT JOIN `tb_upc_users` u4 
+			    ON u4.`userid` = r.`confirm_per`
+              
+			WHERE 1=1 and ci.is_delete =0
+		
+            <if test="starttime_accept !=null and starttime_accept !=''">
+				AND ci.accept_time >= #{starttime_accept}
+			</if>
+			<if test="endtime_accept !=null and endtime_accept !=''">
+				AND #{endtime_accept} >= ci.accept_time
+			</if>
+			<if test="status==0 ">
+				and c.status = 0
+			</if>
+			<if test="status==1 ">
+				and c.status &lt;&gt; 0
+			</if>
+			<if test="time_spent !='' and time_spent!=null ">
+				and  TIMESTAMPDIFF( SECOND,  m.confirm_date1, m.confirm_date2) > 3600*#{time_spent}
+			</if>
+			<if test="remittance_num !=null and remittance_num !=''">
+				AND r.`remittance_num` like '%${remittance_num}%'
+			</if>
+			<if test="confirm_state !=null and confirm_state !=''">
+				AND r.`confirm_state` =#{confirm_state}
+			</if>
+			<if test="case_code !=null and case_code !=''">
+				AND ci.`case_code` like '%${case_code}%'
+			</if>
+			<if test="case_receiver !=null and case_receiver !=''">
+				AND u2.username like '%${case_receiver}%'
+			</if>
+			<if test="case_state !=null and case_state !=''">
+				AND ci.`case_state` = #{case_state}
+			</if>
+		
+	</select>
+	
+
+</mapper>

@@ -1,0 +1,978 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialPrintMapper">
+	<select id="getPrintCase" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialPrintCaseModel">
+		select * from tb_judicial_case_info where
+		case_code=#{case_code}
+	</select>
+
+	<select id="getSubCaseInfos" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialSubCaseInfoModel">
+		SELECT * FROM tb_judicial_sub_case_info WHERE
+		case_code=#{case_code} AND
+		(result = 'passed' OR(result ='failed' AND
+		sample_code2 IS NULL))
+	</select>
+
+	<select id="getIdentifyPer" resultType="com.rds.judicial.model.RdsJudicialIdentifyPer">
+		select p.* from
+		tb_judicial_case_to_identify ci,tb_judicial_identify_per p
+		where
+		p.identify_id =ci.identify_id and ci.case_id=#{case_id} group by
+		p.identify_code order by p.identify_id
+	</select>
+
+	<select id="getSampleInfo" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		s.sample_id,s.sample_code,s.`address`,s.sample_call,s.sample_username,s.id_number,s.birth_date,s.case_id,v2.value
+		AS sample_callname,
+		v1.value AS sample_typename,s.sample_type FROM
+		tb_judicial_sample_info
+		s ,
+		(SELECT * FROM tb_dic_values WHERE
+		keycode='000000004') v1,(SELECT * FROM tb_dic_values WHERE
+		keycode='call') v2
+		WHERE s.sample_type=v1.key1 AND
+		s.sample_call=v2.key1 AND
+		s.case_id =#{case_id} ORDER BY
+		v2.sort,s.sample_code
+	</select>
+
+	<select id="getSampleResult" parameterType="map" resultType="map">
+		SELECT da1.* FROM (${sql}) da1 INNER JOIN (
+		<if test="reagent_name_ext==null ">
+			SELECT NAME,sort FROM tb_dic_print_gene WHERE reagent_name
+			=#{reagent_name} AND model=#{type}
+		</if>
+		<if test="reagent_name_ext!=null ">
+			SELECT NAME,sort FROM tb_dic_print_gene WHERE reagent_name
+			=#{reagent_name} AND model=#{type} UNION ALL
+			SELECT NAME,sort FROM
+			tb_dic_print_gene WHERE reagent_name
+			=#{reagent_name_ext} AND
+			model=#{type}
+		</if>
+		) da ON
+		da.name=da1.name GROUP BY da.name ORDER BY
+		da.sort
+	</select>
+
+	<select id="getPrintAttachment" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		select * from tb_judicial_case_attachment where
+		case_id=#{case_id} and
+		attachment_type=3 limit 1
+	</select>
+
+	<select id="getPrintCaseTable" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialPrintTableModel">
+		SELECT * FROM tb_judicial_sub_case_info WHERE
+		case_code=#{case_code} and
+		result = 'passed' AND pi IS NOT NULL AND pi
+		!='' AND rcp!='' AND rcp IS NOT
+		NULL
+	</select>
+
+	<select id="getCompareResult" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialCompareResultModel">
+		select * from tb_judicial_compare_result where
+		case_code=#{sub_case_code}
+		and final_result_flag is not null group by
+		case_code
+	</select>
+
+	<update id="usePrintCount" parameterType="map">
+		update
+		tb_judicial_case_info
+		set print_count=print_count+1
+		<if test="print_count==0">,close_time=now() </if>
+		where
+		case_code=#{case_code}
+	</update>
+	
+	<select id="getPiInfoModel" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialPiInfoModel">
+		<!-- select * from tb_judicial_pi_info p INNER JOIN (SELECT
+		NAME,sort FROM
+		tb_dic_print_gene WHERE model=#{type} and reagent_name =
+		#{reagent_name})da ON da.name=p.param_type where
+		p.sub_case_code=#{case_code} GROUP BY da.name ORDER BY
+		da.sort -->
+		SELECT 
+		  * 
+		FROM
+		  (SELECT 
+		    *
+		  FROM
+		    tb_judicial_pi_info p 
+		  WHERE p.`sub_case_code` =#{case_code}) aa 
+		  INNER JOIN 
+		    (SELECT 
+		      NAME,
+		      sort 
+		    FROM
+		      tb_dic_print_gene 
+		    WHERE model = #{type}
+		      AND reagent_name = #{reagent_name}) da 
+		    ON da.name = aa.param_type 
+		GROUP BY da.name 
+		ORDER BY da.sort 
+	</select>
+	
+	<select id="getPrintModel" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialPrintModel">
+		select pt.* from tb_dic_print_model
+		pt,tb_judicial_case_info ci where
+		ci.case_code=#{case_code} and
+		ci.report_model=pt.code and
+		pt.reagent_name = #{reagent_name}
+		LIMIT 1
+	</select>
+	<select id="exsitSampleImg" parameterType="map" resultType="Integer">
+		select count(*) from tb_judicial_case_attachment where
+		case_code=#{case_code} and attachment_type=6
+	</select>
+
+	<select id="getSampleImg" parameterType="String" resultType="String">
+		select attachment_path from tb_judicial_case_attachment where
+		case_code=#{case_code} and attachment_type=6
+	</select>
+
+
+	<select id="getPrintCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.`compare_date`,
+		  ci.`url` AS report_url,
+		  ci.chart AS report_chart,
+		  ci.`text` AS `report_modelname`,
+		  ci.`reagent_name`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`urgent_state`,
+		  ci.`accept_time`,
+		  ci.`print_count`,
+		  ci.`client`,
+		  DATE_FORMAT(
+		    ci.`close_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS close_time,
+		  ci.`is_delete`,
+		  ci.`report_model`,
+		  ci.`phone`,
+		  <!-- ci.attach_need AS attach_need_case, -->
+		  ci.copies,
+		  ci.`remark`,
+		  ci.`is_new`,
+		  ci.verify_state,
+		  ci.`case_in_per`,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  u.`username` AS case_receiver,
+		  ci.receiver_area,
+		  u2.`username` AS case_in_pername,
+		  ci.sample_in_per,
+		  ci.unit_type,
+		  ci.case_type,
+		  ci.sample_relation,
+		  ci.case_userid
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name = m.reagent_name AND (ci.reagent_name_ext = m.reagent_name_ext OR ci.reagent_name_ext IS NULL) 
+		AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel','zyjdmodelzk','zyjdmodeltq')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state == 0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state == 1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 and  10 > ci.verify_state
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u
+		ON ci.case_userid = u.`userid`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		<!-- >if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if -->
+		AND nc.case_code IS NULL
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+
+	<select id="countPrintCaseInfo" parameterType="map" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel','zyjdmodelzk','zyjdmodeltq')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 and  10 > ci.verify_state
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT case_code FROM tb_judicial_sub_case_info WHERE result IS NULL OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT case_code FROM tb_judicial_exception WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		<!-- >if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if -->
+		AND nc.case_code IS NULL
+	</select>
+
+
+	<select id="getPrintCaseInfoForWord" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.`compare_date`,
+		  ci.`status` AS gather_status,
+		  ci.remittance_id,
+		  ci.type AS fee_type,
+		  rm.confirm_date,
+          ci.time1,
+          ci.time2,
+		 TIMESTAMPDIFF(SECOND,
+			GREATEST(ci.time1,IF(rm.confirm_date IS NULL,'2000-11-15 10:51:44',rm.confirm_date)),
+			IF(ci.time2 IS NULL ,NOW(),ci.time2)
+			) AS
+			iswilltime,
+		  ci.`url` AS report_url,
+		  ci.chart AS report_chart,
+		  ci.`text` AS `report_modelname`,
+		  ci.copies,
+		  ci.`reagent_name`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`urgent_state`,
+		  ci.`accept_time`,
+		  ci.`print_count`,
+		  ci.`client`,
+		  DATE_FORMAT(
+		    ci.`close_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS close_time,
+		  ci.`is_delete`,
+		  ci.`report_model`,
+		  ci.`phone`,
+		  ci.attach_need AS attach_need_case,
+		  ci.`remark`,
+		  ci.`is_new`,
+		  ci.verify_state,
+		  ci.`case_in_per`,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  u.`username` AS case_receiver,
+		  ci.receiver_area,
+		  u2.`username` AS case_in_pername,
+		  ci.sample_in_per,
+		  ci.unit_type,
+		  ci.case_type,
+		  ci.sample_relation,
+		  ci.`case_userid` 
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart,cf.`status`,cf.remittance_id,cf.type, aht.time1,
+        aht.time2
+		  FROM tb_judicial_case_info ci 
+		   JOIN tb_dic_print_model m ON (ci.`report_model` = m.`code` AND ci.reagent_name = m.reagent_name AND (ci.reagent_name_ext IS NULL OR ci.reagent_name_ext = m.reagent_name_ext))
+		   JOIN tb_judicial_casefee cf ON ci.`case_id`=cf.`case_id`
+		   JOIN (
+		    SELECT t1.PROC_INST_ID_,t1.START_TIME_ AS time1,t2.END_TIME_ AS time2
+		    FROM
+		      (SELECT PROC_INST_ID_,START_TIME_
+		       FROM act_hi_taskinst 
+		       WHERE TASK_DEF_KEY_ = 'taskSampleRecive' ) t1
+		    LEFT JOIN 
+		      ( SELECT PROC_INST_ID_,END_TIME_
+		       FROM act_hi_taskinst 
+		       WHERE TASK_DEF_KEY_ = 'taskMail') t2 ON t1.PROC_INST_ID_=t2.PROC_INST_ID_
+		
+		   ) aht ON ci.`process_instance_id`=aht.`PROC_INST_ID_`
+		<if test="checkNeg==1">
+		 JOIN (select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+			on ci.case_code=yc.case_code
+		</if>
+		WHERE
+		ci.verify_state >= 6 
+	    AND ci.verify_state  &lt; 10
+	    AND ci.`is_archived` = 0 
+	    AND ci.is_delete = 0 
+	    AND ci.`report_model`  NOT IN ('cxjymodel', 'dnmodel') 
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+
+		
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name = #{parnter_name}
+		</if>
+		GROUP BY ci.`case_code`
+		) ci
+	  LEFT JOIN tb_judicial_remittance rm 
+      ON ci.remittance_id=rm.`remittance_id`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+			LEFT JOIN tb_upc_users u
+		ON ci.case_userid = u.`userid`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countPrintCaseInfoForWord" parameterType="map"
+		resultType="Integer">
+		SELECT 
+		 count(1)
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		 AND m.code NOT IN ( 'cxjymodel', 'dnmodel',  'zyjymodel' ) 
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 and  10 > ci.verify_state
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name = #{parnter_name}
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+	</select>
+	
+	<select id="getChangePrintCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.`compare_date`,
+		  ci.`url` AS report_url,
+		  ci.chart AS report_chart,
+		  ci.`text` AS `report_modelname`,
+		  ci.`reagent_name`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`urgent_state`,
+		  ci.`accept_time`,
+		  ci.`print_count`,
+		  ci.`client`,
+		  DATE_FORMAT(
+		    ci.`close_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS close_time,
+		  ci.`is_delete`,
+		  ci.`report_model`,
+		  ci.`phone`,
+		  ci.copies,
+		  ci.`remark`,
+		  ci.`is_new`,
+		  ci.verify_state,
+		  ci.`case_in_per`,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  u.`username` AS case_receiver,
+		  ci.receiver_area,
+		  u2.`username` AS case_in_pername,
+		  ci.sample_in_per,
+		  ci.unit_type,
+		  ci.case_type,
+		  ci.sample_relation,
+		  ci.case_userid
+		FROM
+		(SELECT
+		cf.id,ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m, tb_judicial_casefee cf
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE ci.case_id = cf.case_id and (cf.case_type='dna_change' or cf.case_type='dna_add') 
+		and	ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name = m.reagent_name AND (ci.reagent_name_ext = m.reagent_name_ext OR ci.reagent_name_ext IS NULL) 
+		AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state == 0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state == 1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u
+		ON ci.case_userid = u.`userid`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+
+	<select id="countChangePrintCaseInfo" parameterType="map" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m, tb_judicial_casefee cf
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.case_id= cf.case_id and (cf.case_type='dna_change' or cf.case_type='dna_add') 
+		and ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT case_code FROM tb_judicial_sub_case_info WHERE result IS NULL OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT case_code FROM tb_judicial_exception WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+	</select>
+	
+	
+	<select id="getChangePrintCaseInfoForWord" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.`compare_date`,
+		  ci.`url` AS report_url,
+		  ci.chart AS report_chart,
+		  ci.`text` AS `report_modelname`,
+		  ci.copies,
+		  ci.`reagent_name`,
+		  ci.case_areacode,
+		  ci.`receiver_id`,
+		  ci.`urgent_state`,
+		  ci.`accept_time`,
+		  ci.`print_count`,
+		  ci.`client`,
+		  DATE_FORMAT(
+		    ci.`close_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS close_time,
+		  ci.`is_delete`,
+		  ci.`report_model`,
+		  ci.`phone`,
+		  ci.attach_need AS attach_need_case,
+		  ci.`remark`,
+		  ci.`is_new`,
+		  ci.verify_state,
+		  ci.`case_in_per`,
+		  DATE_FORMAT(
+		    ci.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS sample_in_time,
+		  u.`username` AS case_receiver,
+		  ci.receiver_area,
+		  u2.`username` AS case_in_pername,
+		  ci.sample_in_per,
+		  ci.unit_type,
+		  ci.case_type,
+		  ci.sample_relation,
+		  ci.`case_userid` 
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m, tb_judicial_casefee cf
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.case_id= cf.case_id and (cf.case_type='dna_change' or cf.case_type='dna_add') 
+		and ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name = m.reagent_name AND (ci.reagent_name_ext = m.reagent_name_ext OR ci.reagent_name_ext IS NULL) 
+		AND m.`type` = 'dna'
+		 AND m.code NOT IN ( 'cxjymodel', 'dnmodel', 'zyjymodel' ) 
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name = #{parnter_name}
+		</if>
+		GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+			LEFT JOIN tb_upc_users u
+		ON ci.case_userid = u.`userid`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countChangePrintCaseInfoForWord" parameterType="map"
+		resultType="Integer">
+		SELECT 
+		 count(1)
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m ,tb_judicial_casefee cf
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.case_id= cf.case_id and (cf.case_type='dna_change' or cf.case_type='dna_add') 
+		and ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		 AND m.code NOT IN ( 'cxjymodel', 'dnmodel',  'zyjymodel' ) 
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '${case_code}%' or
+			upper(ci.case_code) LIKE '${case_code}%')
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state >= 6 and  10 > ci.verify_state
+		<if test=" starttime != null and  starttime != '' ">
+			and ci.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=DATE_SUB(ci.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name = #{parnter_name}
+		</if>
+		 GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE 1=1
+		AND nc.case_code IS NULL
+	</select>
+	
+	<select id="getPiOne" parameterType="map"
+		resultType="String">
+          SELECT 
+		    pi
+		  FROM
+		    tb_judicial_pi_info p 
+		  WHERE p.`sub_case_code` =#{subcasecode}
+		       and p.param_type=#{name}
+	</select>
+</mapper>

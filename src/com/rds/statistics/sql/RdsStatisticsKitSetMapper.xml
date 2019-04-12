@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsStatisticsKitSetMapper">
+	<select id="queryAllPage" parameterType="map" resultType="com.rds.statistics.model.RdsFinanceKitSetModel">
+		select w.*,u.username as create_pername ,u1.username as confirm_pername
+		from tb_finance_kit_settlement w 
+		left join tb_upc_users u 
+		on w.create_per = u.userid
+		left join tb_upc_users u1 
+		on w.confirm_per = u1.userid
+		where 1=1
+		<if test="kit_name !=null and kit_name !=''">
+			and w.kit_name like '%${kit_name}%'
+		</if>
+		<if test="kit_bathc_num !=null and kit_bathc_num !=''">
+			and w.kit_bathc_num like '%${kit_bathc_num}%'
+		</if>
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and w.user_dept_level1 like '%${user_dept_level1}%'
+		</if>
+		<if test="kit_express_num !=null and kit_express_num !=''">
+			and w.kit_express_num like '%${kit_express_num}%'
+		</if>
+		<if test="apply_per !=null and apply_per !=''">
+			and w.apply_per like '%${apply_per}%'
+		</if>
+		<if test="apply_num !=null and apply_num !=''">
+			and w.apply_num like '%${apply_num}%'
+		</if>
+		<if test="kit_receive_per !=null and kit_receive_per !=''">
+			and w.kit_receive_per like '%${kit_receive_per}%'
+		</if>
+		<if test="confirm_state !=null and confirm_state !=''">
+			and w.confirm_state =#{confirm_state}
+		</if>
+		<if test="create_date_start !=null and create_date_start !=''">
+			and DATE_FORMAT(w.create_date,'%Y-%m-%d') >= #{create_date_start}
+		</if>
+		<if test="create_date_end !=null and create_date_end !=''">
+			and #{create_date_end} >= DATE_FORMAT(w.create_date,'%Y-%m-%d')
+		</if>
+		<if test="create_pername !=null and create_pername !=''">
+			and u.username like '%${create_pername}%'
+		</if>
+		<if test="confirm_pername !=null and confirm_pername !=''">
+			and u1.username  like '%${confirm_pername}%'
+		</if>
+		<if test="is_delete !=null and is_delete !=''">
+			and w.is_delete = #{is_delete}
+		</if>
+		<if test="userid !=null and userid !=''">
+			and w.create_per = #{userid}
+		</if>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		select count(1)
+		from tb_finance_kit_settlement w 
+		left join tb_upc_users u 
+		on w.create_per = u.userid
+		left join tb_upc_users u1 
+		on w.confirm_per = u1.userid
+		where 1=1  and w.is_delete = 1
+		<if test="kit_name !=null and kit_name !=''">
+			and w.kit_name like '%${kit_name}%'
+		</if>
+		<if test="kit_bathc_num !=null and kit_bathc_num !=''">
+			and w.kit_bathc_num like '%${kit_bathc_num}%'
+		</if>
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and w.user_dept_level1 like '%${user_dept_level1}%'
+		</if>
+		<if test="kit_express_num !=null and kit_express_num !=''">
+			and w.kit_express_num like '%${kit_express_num}%'
+		</if>
+		<if test="apply_per !=null and apply_per !=''">
+			and w.apply_per like '%${apply_per}%'
+		</if>
+		<if test="apply_num !=null and apply_num !=''">
+			and w.apply_num like '%${apply_num}%'
+		</if>
+		<if test="kit_receive_per !=null and kit_receive_per !=''">
+			and w.kit_receive_per like '%${kit_receive_per}%'
+		</if>
+		<if test="confirm_state !=null and confirm_state !=''">
+			and w.confirm_state =#{confirm_state}
+		</if>
+		<if test="create_date_start !=null and create_date_start !=''">
+			and DATE_FORMAT(w.create_date,'%Y-%m-%d') >= #{create_date_start}
+		</if>
+		<if test="create_date_end !=null and create_date_end !=''">
+			and #{create_date_end} >= DATE_FORMAT(w.create_date,'%Y-%m-%d')
+		</if>
+		<if test="create_pername !=null and create_pername !=''">
+			and u.username like '%${create_pername}%'
+		</if>
+		<if test="confirm_pername !=null and confirm_pername !=''">
+			and u1.username  like '%${confirm_pername}%'
+		</if>
+		<if test="is_delete !=null and is_delete !=''">
+			and w.is_delete = #{is_delete}
+		</if>
+		<if test="userid !=null and userid !=''">
+			and w.create_per = #{userid}
+		</if>
+	</select>
+	
+	<insert id="insertKitSet" parameterType="map">
+		insert into tb_finance_kit_settlement(kit_id,kit_count,kit_name,kit_spec,kit_bathc_num,user_dept_level1,kit_dest,kit_express_num,
+		kit_receive_per,apply_per,apply_num,apply_date,create_per,create_date,remark)
+		values (#{kit_id},#{kit_count},#{kit_name},#{kit_spec},#{kit_bathc_num},#{user_dept_level1},#{kit_dest},#{kit_express_num},#{kit_receive_per},#{apply_per},#{apply_num},#{apply_date},#{create_per},now(),#{remark})
+	</insert>
+	
+	<update id="deleteKitSet" parameterType="map">
+		update tb_finance_kit_settlement set is_delete = 2,create_per=#{create_per} where kit_id in 
+		<foreach item="kit_id" index="index" collection="list" open="("
+            separator="," close=")">
+            #{kit_id}  
+       	 </foreach>
+	</update>
+	
+	<insert id="updateKitSet" parameterType="map">
+		update tb_finance_kit_settlement set 
+		kit_count=#{kit_count},
+		kit_name=#{kit_name},
+		kit_spec=#{kit_spec},
+		kit_bathc_num=#{kit_bathc_num},
+		user_dept_level1=#{user_dept_level1},
+		kit_dest=#{kit_dest},
+		kit_express_num=#{kit_express_num},
+		kit_receive_per=#{kit_receive_per},
+		apply_per=#{apply_per},
+		apply_num=#{apply_num},
+		apply_date=#{apply_date},
+		create_per=#{create_per},
+		create_date=now(),
+		remark=#{remark}
+		where kit_id=#{kit_id}
+	</insert>
+	
+	<update id="comfirmKitSet" parameterType="map">
+		update tb_finance_kit_settlement set 
+		confirm_state=2,
+		confirm_per=#{confirm_per},
+		confirm_time=now()
+		where kit_id in 
+		<foreach item="kit_id" index="index" collection="list" open="("
+            separator="," close=")">
+            #{kit_id}  
+       	 </foreach>
+	</update>
+	
+	<select id="queryDeptList" resultType="String">
+		SELECT deptlist FROM departmentList
+	</select>
+	
+</mapper>

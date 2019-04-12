@@ -1,0 +1,1337 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialRegisterMapper">
+	<select id="queryCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT ci.*,IF(
+		ci.`roletype` = 104,
+		(SELECT
+		u3.username
+		FROM
+		tb_judicial_agent ag,tb_upc_users u3
+		WHERE ag.userid = ci.case_userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+		''
+		) AS agent,
+		IF(
+		ci.last_task_id,
+		(select count(1) from ACT_HI_COMMENT where TASK_ID_=ci.last_task_id),
+		0
+		) AS has_comment
+		FROM (SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.case_areacode,
+		ci.case_userid,
+		ci.typeid,
+		ci.copies,
+		ci.parnter_name,
+		ci.`reagent_name`,
+		ci.`urgent_state`,
+		ci.`accept_time`,
+		ci.consignment_time,
+		ci.`print_count`,
+		ci.`client`,
+		ci.receiver_id,
+		DATE_FORMAT(
+		ci.`close_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		m.`text` AS `report_modelname`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.attach_need as attach_need_case,
+		ci.verify_state,
+		ci.`case_in_per`,
+		ci.source_type,
+		DATE_FORMAT(
+		ci.`sample_in_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS sample_in_time,
+		users.`username` AS case_receiver,
+		ci.receiver_area,
+		u2.`username` AS case_in_pername,
+		ci.sample_in_per,
+		ci.unit_type,
+		ci.case_type,
+		ci.sample_relation,
+		ci.case_state,
+		ci.confirm_code,
+		ci.purpose,
+		users.`roletype`,
+		ci.process_instance_id,
+		RES.ID_ AS task_id,
+		RES.TASK_DEF_KEY_ AS task_def_key,
+		RES.NAME_ AS task_name,
+		RES.SUSPENSION_STATE_ AS suspension_state,
+		IF(
+		ci.process_instance_id,
+		(select ID_ from ACT_HI_TASKINST where PROC_INST_ID_=ci.process_instance_id order by START_TIME_ desc LIMIT 1,1),
+		''
+		) AS last_task_id
+		FROM
+		(SELECT * FROM tb_judicial_case_info  where 1=1
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(case_code) LIKE '%${case_code}%' or
+			upper(case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=consignment
+		</if>
+		<if test=" client!=null and client!= ''">
+			and client LIKE '%${client}%'
+		</if>
+		<if test=" receiver_area != null and receiver_area != ''">
+			and receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" is_delete != null and is_delete != '' ">
+			and is_delete=#{is_delete}
+		</if>
+		<if test=" report_model !=null and report_model != ''">
+			and report_model =#{report_model}
+		</if>
+		<if test=" phone !=null and phone != ''">
+			and phone LIKE '%${phone}%'
+		</if>
+		<if test=" sample_in_per !=null and sample_in_per != ''">
+			and sample_in_per =#{sample_in_per}
+		</if>
+		<if test=" case_type !=null and case_type != ''">
+			and case_type = #{case_type}
+		</if>
+		<if test=" case_state !=null and case_state != ''">
+			and case_state =#{case_state}
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and verify_state =#{verify_state}
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and parnter_name LIKE '%${parnter_name}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and case_in_per =#{userid}
+		</if>
+		<if test=" receiver_area_user !=null and receiver_area_user != ''">
+			and receiver_area LIKE '%${receiver_area_user}%'
+		</if>
+		<if test=" source_type !=null and source_type != ''">
+			and source_type =#{source_type}
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			and confirm_code LIKE '%${confirm_code}%'
+		</if>
+         ) ci
+          LEFT JOIN 
+      (SELECT 
+        CODE,
+        TEXT,
+        TYPE 
+      FROM
+        tb_dic_print_model 
+      WHERE TYPE = 'dna' 
+      GROUP BY CODE) m 
+      ON ci.`report_model` = m.`code`
+		LEFT JOIN tb_upc_users users
+		ON ci.case_userid = users.`userid`
+		LEFT JOIN tb_upc_department dept
+		ON users.`deptcode` = dept.`deptcode`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		LEFT JOIN ACT_RU_TASK RES
+		ON ci.process_instance_id = RES.PROC_INST_ID_
+		where 1=1
+       <if test=" case_userid !=null and case_userid != ''">
+			and users.username  LIKE '%${case_userid}%'
+		</if>
+		ORDER BY ci.case_code DESC,ci.is_delete desc
+		<if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>
+		) ci 
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM tb_judicial_case_info ci
+		LEFT JOIN tb_upc_users users
+		ON ci.case_userid = users.`userid`
+		 WHERE 1=1
+		<if test=" case_code != null and case_code != ''">
+			and (lower(case_code) LIKE '%${case_code}%' or
+			upper(case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=consignment
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and users.username  LIKE '%${case_userid}%'
+		</if>
+		<if test=" client!=null and client!= ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test=" receiver_area !=null and receiver_area != ''">
+			and ci.receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" is_delete != null and is_delete != '' ">
+			and is_delete=#{is_delete}
+		</if>
+		<if test=" report_model !=null and report_model != ''">
+			and ci.report_model =#{report_model}
+		</if>
+		<if test=" phone !=null and phone != ''">
+			and ci.phone LIKE '%${phone}%'
+		</if>
+		<if test=" sample_in_per !=null and sample_in_per != ''">
+			and ci.sample_in_per =#{sample_in_per}
+		</if>
+		<if test=" case_type !=null and case_type != ''">
+			and ci.case_type =#{case_type}
+		</if>
+		<if test=" case_state !=null and case_state != ''">
+			and ci.case_state =#{case_state}
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and verify_state =#{verify_state}
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and  ci.case_in_per =#{userid} 
+		</if>
+		<if test=" receiver_area_user !=null and receiver_area_user != ''">
+			and receiver_area LIKE '%${receiver_area_user}%'
+		</if>
+		<if test=" source_type !=null and source_type != ''">
+			and source_type =#{source_type}
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			and confirm_code LIKE '%${confirm_code}%'
+		</if>
+	</select>
+
+	<update id="updateCaseVerifyState" parameterType="map">
+		update tb_judicial_case_info t set t.verify_state=#{verify_state} where t.case_id=#{case_id}
+	</update>
+
+	<select id="queryAllCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialParamsModel"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT
+		CONCAT(vmail.`keyvalue`,'|',mi.`mail_code`,'|',DATE_FORMAT(mi.`mail_time`,'%Y年%m月%d日'))
+		AS mail_info,
+		cf.`return_sum`,
+		cf.`real_sum`,
+		cf.`confirm_date` AS fee_date,
+		cf.remark as fee_remark,
+		ci.*,
+		da.county,
+		da.city,
+		da.province
+		FROM
+		(SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.case_areacode,
+		ci.`receiver_id`,
+		ci.`urgent_state`,
+		ci.`accept_time`,
+		ci.consignment_time,
+		ci.`print_count`,
+		ci.`client`,
+		DATE_FORMAT(ci.`close_time`,'%Y-%m-%d %H:%i:%s') as close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		m.`text` AS
+		`report_modelname`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.verify_state,
+		ci.`case_in_per`,
+		DATE_FORMAT(ci.`sample_in_time`,'%Y-%m-%d %H:%i:%s') as
+		sample_in_time,
+		ai.case_receiver,
+		ai.receiver_area,
+		ci.case_in_pername
+		FROM
+		(SELECT
+		ci.*,u2.username as case_in_pername FROM
+		tb_judicial_case_info
+		ci,tb_upc_users u2 WHERE
+		u2.userid=ci.`case_in_per` and
+		ci.`is_archived` = 0
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and ci.consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=ci.consignment
+		</if>
+		<if test=" urgent_state!=-1 ">
+			and ci.urgent_state=#{urgent_state}
+		</if>
+		<if test=" is_delete!=-1 ">
+			and ci.is_delete=#{is_delete}
+		</if>
+		)ci
+		LEFT JOIN
+		(SELECT
+		ar.`area_id`,
+		users.`username` AS case_receiver,
+		ar.`areaname` AS receiver_area,
+		dept.companyid,
+		users.userid,
+		users.deptcode
+		FROM
+		(SELECT ar.area_id,ai.areaname,ar.`userid` FROM
+		tb_upc_area ar LEFT JOIN
+		tb_upc_area_info ai ON ar.areacode =
+		ai.`areacode` )ar,
+		tb_upc_users users,
+		tb_upc_department dept
+		WHERE
+		ar.userid = users.userid
+		AND users.`deptcode` = dept.`deptcode`
+		AND (
+		dept.delstatus = 0
+		OR dept.delstatus IS NULL
+		)
+		)
+		ai
+		ON
+		ci.`receiver_id` =
+		ai.area_id
+		LEFT JOIN
+		(select code,text,type from
+		tb_dic_print_model where
+		type = 'dna' group by code) m
+		ON
+		ci.`report_model` = m.`code`
+		WHERE 1=1
+		<if test=" receiver!=null and receiver != ''">
+			and ai.case_receiver LIKE '%${receiver}%'
+		</if>
+		ORDER BY ci.is_delete,
+		ci.accept_time DESC
+		) ci
+		LEFT JOIN
+		(SELECT
+		da.id,
+		da.name AS
+		county,
+		da2.name AS city,
+		da3.name AS
+		province
+		FROM
+		`tb_dic_area_info` da,
+		`tb_dic_area_info` da2,
+		`tb_dic_area_info` da3
+		WHERE da2.`id` =
+		da.`parentID`
+		AND da3.`id` =
+		da2.`parentID`) da
+		ON da.id
+		=
+		ci.`case_areacode`
+		LEFT JOIN `tb_judicial_casefee` cf
+		ON ci.case_id =
+		cf.`case_id`
+		LEFT JOIN `tb_judicial_mail_info` mi
+		ON
+		mi.`case_id`=ci.case_id
+		LEFT JOIN `tb_upc_dic_values` vmail
+		ON
+		vmail.`keyid`=mi.`mail_type`
+	</select>
+
+
+	<update id="deleteCaseInfo" parameterType="map">
+		update
+		tb_judicial_case_info set
+		is_delete = 1 where case_id = #{case_id}
+	</update>
+
+	<delete id="deleteSampleInfo" parameterType="map">
+		DELETE FROM
+		tb_judicial_sample_info where case_id=#{case_id}
+	</delete>
+	
+	<delete id="deleteSubCaseInfo" parameterType="map">
+		DELETE FROM tb_judicial_sub_case_info where case_code in (select case_code from tb_judicial_case_info where case_id = #{case_id})
+	</delete>
+
+	<insert id="addCaseFee" parameterType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,discount,status,update_date,case_type)
+		values(#{fee_id},#{case_id},#{stand_sum},#{stand_sum},#{return_sum},#{discount},3,now(),'dna')
+	</insert>
+
+	<select id="getSampleInfo" resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		s.sample_id,s.sample_code,s.address,s.sample_code_sys,s.sample_call,s.sample_username,s.id_number,s.birth_date,s.case_id,v2.value
+		AS sample_callname,
+		v1.value AS sample_typename,s.sample_type,s.special FROM
+		tb_judicial_sample_info
+		s ,
+		(SELECT * FROM tb_dic_values WHERE
+		keycode='000000004') v1,(SELECT * FROM tb_dic_values WHERE
+		keycode='call') v2
+		WHERE s.sample_type=v1.key1 AND
+		s.sample_call=v2.key1 AND
+		s.case_id =#{case_id} ORDER BY v2.sort
+	</select>
+
+	<update id="forbiddenCaseInfo" parameterType="map">
+		update
+		tb_judicial_case_info set
+		is_delete = 1 where case_id = #{case_id}
+	</update>
+	
+	<update id="updateCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		update
+		tb_judicial_case_info set
+		case_code=#{case_code},
+		case_areacode=#{case_areacode},
+		receiver_area=#{receiver_area},
+		case_userid=#{case_userid},
+		accept_time=#{accept_time},
+		consignment_time=#{consignment_time},
+		phone=#{phone},
+		client=#{client},
+		remark=#{remark},
+		report_model=#{report_model},
+		urgent_state=#{urgent_state},
+		sample_in_time=#{sample_in_time},
+		laboratory_no=#{laboratory_no},
+		unit_type=#{unit_type},
+		sample_in_per=#{sample_in_per},
+		case_type=#{case_type},
+		sample_relation=#{sample_relation},
+		copies=#{copies},
+		typeid=#{typeid},
+		parnter_name=#{parnter_name},
+		source_type=#{source_type},
+		confirm_code=#{confirm_code},
+		case_in_per=#{case_in_per},
+		verify_state=#{verify_state},
+		case_state = #{case_state},
+		purpose=#{purpose},
+		receiver_id=#{receiver_id}
+		where
+		case_id=#{case_id}
+	</update>
+
+	<insert id="insertCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		insert into
+		tb_judicial_case_info(case_id,case_code,case_areacode,receiver_area,case_userid,urgent_state,case_state,accept_time,consignment_time,report_model,case_in_per,phone,
+							client,remark,sample_in_time,is_new,laboratory_no,sample_in_per,unit_type,case_type,copies,sample_relation,confirm_code,
+							parnter_name,source_type,process_instance_id,typeid,receiver_id,purpose
+							<if test="verify_state !=null and verify_state !=''">
+								,verify_state
+							</if>)
+		values(#{case_id},#{case_code},#{case_areacode},#{receiver_area},#{case_userid},#{urgent_state},#{case_state},#{accept_time},#{consignment_time},#{report_model},#{case_in_per},#{phone},
+							#{client},#{remark},#{sample_in_time},#{is_new},#{laboratory_no},#{sample_in_per},#{unit_type},#{case_type},#{copies},
+							#{sample_relation},#{confirm_code},#{parnter_name},#{source_type},#{process_instance_id},#{typeid},#{receiver_id},#{purpose}
+							<if test="verify_state !=null and verify_state !=''">
+								,#{verify_state}
+							</if>)
+	</insert>
+	<insert id="insertSampleInfo" parameterType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		insert into
+		tb_judicial_sample_info(
+		sample_id,sample_code,sample_code_sys,sample_type,sample_call,sample_username,id_number,birth_date,case_id,special,address)
+		values(#{sample_id},#{sample_code},#{sample_code_sys},#{sample_type},#{sample_call},#{sample_username},#{id_number},#{birth_date},#{case_id},#{special},#{address})
+	</insert>
+	<!-- add by fushaoming 20150413 -->
+
+	<update id="updateVerifyinfo" parameterType="map">
+		UPDATE
+		`tb_judicial_case_info` SET `check_state` = #{check_state} ,
+		`check_remark` = #{check_remark} WHERE `case_id` = #{case_id};
+	</update>
+	<update id="updateIsBill" parameterType="map">
+		update
+		`tb_judicial_case_info` set is_bill = #{is_bill} where case_id =
+		#{case_id}
+	</update>
+
+	<update id="updateIsArchived" parameterType="map">
+		UPDATE
+		`tb_judicial_case_info` SET `is_archived` = 1 WHERE `case_code` =
+		#{case_code} ;
+	</update>
+
+	<update id="updateSampleVerifyinfo" parameterType="map">
+		update tb_judicial_case_info set check_state = #{check_state}
+		<if test="isnull!=null and isnull!=''">
+			,set isnull = #{isnull}
+		</if>
+		where case_id = #{case_id}
+	</update>
+	<select id="queryCaseForArchive" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT
+		iiii.case_id,iiii.case_code,iiii.client,iiii.case_areacode,iiii.province,iiii.city,iiii.county,
+		iiii.receiver_id,iiii.urgent_state,
+		iiii.check_state,iiii.accept_time,iiii.consignment_time,iiii.print_count ,
+		iiii.close_time,iiii.is_delete,iiii.report_model,iiii.report_modelname
+		,
+		iiii.case_in_per,iiii.accept_time ,iiii.check_remark
+		,iiii.case_in_pername,upc.username AS
+		case_receiver,upc.areaname AS
+		receiver_area ,upc.print_copies FROM
+		(SELECT iii.*, uu.username AS
+		case_in_pername FROM( SELECT ii.* ,dv.value AS report_modelname FROM
+		(SELECT i.*,ai.name AS case_areaname FROM (SELECT * FROM
+		tb_judicial_case_info
+		WHERE is_archived=0 and print_count > 0
+		<if test=" case_code!=null and case_code != ''">
+			and case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=consignment
+		</if>
+		<if test=" urgent_state!=-1 ">
+			and urgent_state=#{urgent_state}
+		</if>
+		<if test=" check_state!=-1 ">
+			and check_state=#{check_state}
+		</if>
+		and is_delete= 0 )i
+		LEFT (SELECT aa.id,aa.name AS
+		county,aa.city,bb.name AS
+		province,aa.initials
+		FROM (SELECT
+		a.id,a.name,i.`name`AS
+		city,i.`parentID` ,a.initials
+		FROM
+		(SELECT * FROM
+		tb_dic_area_info
+		WHERE
+		SUBSTR(id,5,6)!='00')a,tb_dic_area_info i WHERE
+		a.`parentID`=i.`id`)aa
+		,tb_dic_area_info bb WHERE aa.parentID=bb.id) ai
+		ON
+		ai.id=i.case_areacode) ii LEFT JOIN
+		(SELECT key1,VALUE FROM
+		tb_dic_values WHERE keycode='000000003') dv ON
+		dv.key1=ii.report_model
+		)iii LEFT JOIN tb_upc_users uu ON
+		iii.case_in_per =uu.userid) iiii
+		LEFT
+		JOIN (SELECT
+		a.area_id,a.userid,i.areaname,i.address,i.print_copies,u.username
+		FROM
+		tb_upc_area a,
+		tb_upc_users u,tb_upc_area_info i WHERE
+		a.userid=u.userid AND
+		i.areacode=a.areacode ) upc ON
+		iiii.receiver_id=upc.area_id WHERE 1=1
+		<if test=" receiver!=null and receiver != ''">
+			and upc.username LIKE '%${receiver}%'
+		</if>
+		ORDER BY iiii.accept_time ,iiii.print_count,iiii.is_delete
+		limit
+		#{start},#{limit}
+	</select>
+	<select id="countCaseForArchive" parameterType="map" resultType="Integer">
+		SELECT count(*) FROM
+		(SELECT iii.*, uu.username AS
+		case_in_pername FROM(
+		SELECT ii.* ,dv.value AS report_modelname FROM
+		(SELECT i.*,ai.name AS
+		case_areaname FROM (SELECT * FROM
+		tb_judicial_case_info
+		WHERE
+		is_archived=0 and print_count > 0
+		<if test=" case_code!=null and case_code != ''">
+			and case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=consignment
+		</if>
+		<if test=" urgent_state!=-1 ">
+			and urgent_state=#{urgent_state}
+		</if>
+		<if test=" check_state!=-1 ">
+			and check_state=#{check_state}
+		</if>
+		and is_delete= 0
+		)i
+		LEFT JOIN tb_dic_area_info ai ON
+		ai.id=i.case_areacode) ii LEFT JOIN
+		(SELECT key1,VALUE FROM
+		tb_dic_values WHERE keycode='000000003') dv ON
+		dv.key1=ii.report_model
+		)iii LEFT JOIN tb_upc_users uu ON
+		iii.case_in_per =uu.userid) iiii
+		LEFT
+		JOIN (SELECT
+		a.area_id,a.userid,i.areaname,i.address,i.print_copies,u.username
+		FROM
+		tb_upc_area a,
+		tb_upc_users u,tb_upc_area_info i WHERE
+		a.userid=u.userid AND
+		i.areacode=a.areacode ) upc ON
+		iiii.receiver_id=upc.area_id WHERE 1=1
+		<if test=" receiver!=null and receiver != ''">
+			and upc.username LIKE '%${receiver}%'
+		</if>
+	</select>
+
+	<select id="exsitCaseCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_judicial_case_info where
+		1=1
+		<if test=" case_code !=null and case_code != ''">
+			and case_code=#{case_code}
+		</if>
+		<if test=" case_id !=null and case_id != ''">
+			and case_id=#{case_id}
+		</if>
+	</select>
+
+	<select id="exsitSampleCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_judicial_sample_info where 1=1
+		<if test=" sample_code !=null and sample_code != ''">
+			and sample_code=#{sample_code}
+		</if>
+	     <if test=" case_id !=null and case_id != ''">
+			and case_id=#{case_id}
+		</if>
+	</select>
+	
+	<select id="getClient" parameterType="map" resultType="String">
+		SELECT
+		sample_username FROM tb_judicial_sample_info i ,(SELECT
+		DISTINCT(sample_code1)
+		AS sample_code FROM tb_judicial_sub_case_info
+		WHERE
+		case_code=#{case_code}) s WHERE s.sample_code=i.`sample_code`
+	</select>
+
+
+	<select id="getPrintAttachment" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentPrintModel">
+		SELECT
+		a.case_id,a.case_code,b.id AS cardId,b.attachment_path AS
+		id_card_path,b.attachment_date AS id_card_date,b.is_print
+		AS
+		id_card_print,c.id,c.attachment_path
+		AS pic_path,c.attachment_date AS
+		pic_date,c.is_print AS
+		pic_print,d.attachment_path
+		AS
+		reg_path,d.attachment_date AS
+		reg_date,d.is_print AS
+		reg_print FROM
+		tb_judicial_case_info a LEFT JOIN
+		(SELECT
+		id,case_id,case_code,attachment_path,attachment_date,is_print FROM
+		tb_judicial_case_attachment WHERE attachment_type='2')b
+		ON
+		b.case_id=a.case_id
+		LEFT JOIN
+
+		(SELECT
+		id,case_id,case_code,attachment_path,attachment_date,is_print FROM
+		tb_judicial_case_attachment WHERE attachment_type='3')c
+		ON
+		c.case_id=a.case_id
+		LEFT JOIN
+		(SELECT
+		case_id,case_code,attachment_path,attachment_date,is_print FROM
+		tb_judicial_case_attachment WHERE attachment_type='1')d
+		ON
+		d.case_id=a.case_id
+		WHERE a.is_archived=0 and a.is_delete=0
+		<if test=" case_code!=null and case_code != ''">
+			and a.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (a.`case_userid` = #{userid} OR a.`case_in_per` =#{userid})
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and a.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=a.accept_time
+		</if>
+		<if test=" partner_name !=null and partner_name != ''">
+			and a.parnter_name = #{partner_name}
+		</if>
+		order by a.case_code desc
+		limit
+		#{start},#{limit}
+	</select>
+
+	<select id="countPrintAttachment" parameterType="map"
+		resultType="Integer">
+		select count(*) from tb_judicial_case_info WHERE is_archived=0 and
+		is_delete=0
+		<if test=" case_code!=null and case_code != ''">
+			and case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (case_userid = #{userid} OR case_in_per =#{userid})
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=accept_time
+		</if>
+		<if test=" partner_name !=null and partner_name != ''">
+			and parnter_name = #{partner_name}
+		</if>
+	</select>
+	<update id="printAttachment" parameterType="map">
+		update
+		tb_judicial_case_attachment set is_print=1 where
+		case_id=#{case_id} and attachment_type=#{type}
+	</update>
+
+	<select id="queryParentSampleInfo" resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type,
+		vv.`value` AS sample_callname
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON s.sample_type =
+		v.key1
+		LEFT JOIN tb_dic_values vv
+		ON vv.`key1` = s.`sample_call`
+		WHERE
+		s.`case_id` = #{case_id}
+		AND (
+		s.sample_call = 'father'
+		OR s.sample_call
+		= 'mother'
+		OR s.sample_call = 'grandpa'
+		OR s.sample_call = 'uncle'
+		)
+		GROUP BY s.`sample_code`
+		ORDER BY v.sort
+	</select>
+	<select id="queryChildSampleInfo" resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		ss.*,
+		vv.value AS sample_callname
+		FROM
+		(SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON s.sample_type =
+		v.key1
+		ORDER BY v.sort) ss
+		LEFT JOIN tb_dic_values vv
+		ON ss.sample_call =
+		vv.key1
+		WHERE ss.case_id = #{case_id}
+		AND (
+		ss.sample_call = 'son'
+		OR
+		ss.sample_call = 'daughter'
+		OR
+		ss.sample_call = 'grandson'
+		OR
+		ss.sample_call = 'nephew'
+
+		)
+		ORDER BY vv.sort
+	</select>
+
+	<select id="queryParentSampleInfoList" parameterType="java.util.List"
+		resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type,
+		vv.`value` AS sample_callname
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON s.sample_type =
+		v.key1
+		LEFT JOIN tb_dic_values vv
+		ON vv.`key1` = s.`sample_call`
+		WHERE (
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			s.case_id = #{item.case_id}
+		</foreach>
+		)
+		AND (
+		s.sample_call = 'father'
+		OR s.sample_call
+		= 'mother'
+		OR
+		s.sample_call = 'grandpa'
+		OR s.sample_call = 'uncle'
+		)
+		GROUP BY
+		s.`sample_code`
+		ORDER BY v.sort
+	</select>
+
+	<select id="queryChildSampleInfoList" parameterType="java.util.List"
+		resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		ss.*,
+		vv.value AS sample_callname
+		FROM
+		(SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON
+		s.sample_type =
+		v.key1
+		ORDER BY v.sort) ss
+		LEFT JOIN tb_dic_values vv
+		ON
+		ss.sample_call =
+		vv.key1
+		WHERE (
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			ss.case_id = #{item.case_id}
+		</foreach>
+		)
+		AND (
+		ss.sample_call = 'son'
+		OR
+		ss.sample_call = 'daughter'
+		OR
+		ss.sample_call = 'grandson'
+		OR
+		ss.sample_call = 'nephew'
+
+		)
+		ORDER BY
+		vv.sort
+	</select>
+
+	<select id="exsitBlackNumber" resultType="int" parameterType="string">
+		select count(*) from tb_upc_black_list where cardId=#{id_number}
+	</select>
+
+	<update id="returnCaseInfoState" parameterType="map">
+		update
+		tb_judicial_case_info set verify_state=0 where case_id=#{case_id}
+	</update>
+
+	<select id="queryCaseInfoByCaseCode" parameterType="string"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT ci.*,users.username as case_receiver FROM (SELECT * FROM tb_judicial_case_info WHERE case_code = #{case_code}) ci
+		LEFT JOIN tb_upc_users users ON ci.case_userid = users.`userid`
+	</select>
+
+	<update id="updateClient" parameterType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		update
+		tb_judicial_case_info set client=(
+		SELECT si.sample_username FROM
+		tb_judicial_sample_info si,tb_upc_dic_values
+		dv WHERE
+		dv.keyid=si.sample_call AND dv.keycode='call'
+		AND
+		si.`case_id`=#{case_id} ORDER BY dv.sort LIMIT 1) where
+		case_id=#{case_id}
+	</update>
+	
+	<insert id="addCaseSample" parameterType="map">
+		insert into tb_judicial_case_sample(case_id,fandm,child,id_card,birth_date,sample_count,case_area) 
+		values(#{case_id},#{fandm},#{child},#{id_card},#{birth_date},#{sample_count},#{case_area})
+	</insert>
+	
+	<update id="updateCaseSample" parameterType="map">
+		update tb_judicial_case_sample set
+		fandm=#{fandm},
+		child=#{child},
+		id_card=#{id_card},
+		birth_date=#{birth_date},
+		sample_count = #{sample_count},
+		case_area=#{case_area}
+		where case_id=#{case_id}
+	</update>
+	
+	<select id="getSampleCallKey" parameterType="String" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT t.keyid AS 'key',t.keyvalue AS 'value',t.`callstatus` FROM tb_upc_dic_values t
+		WHERE t.`keyid`=#{keyid} AND (t.keycode='call'OR t.keycode='000000004') limit 1
+	</select>
+	<update id="updatenewtimebycode" parameterType="map">
+		update
+		tb_judicial_case_info set
+		addextnew_time = #{addextnew_time} where case_code = #{case_code}
+	</update>
+	
+	<select id="queryCaseCodeNum" resultType="map" parameterType="map">
+		SELECT   
+		CASE  
+		  WHEN t.num IS NULL THEN '0001'  
+		  WHEN RIGHT(MAX(t.num),4)+1 &lt; 10 THEN CONCAT('000',RIGHT(MAX(t.num),4)+1)  
+		  WHEN RIGHT(MAX(t.num),4)+1 &lt; 100 THEN CONCAT('00',RIGHT(MAX(t.num),4)+1)  
+		  WHEN RIGHT(MAX(t.num),4)+1 &lt; 1000 THEN CONCAT('0',RIGHT(MAX(t.num),4)+1) 
+		  ELSE RIGHT(MAX(t.num),4)+1 END num FROM  tb_judicial_case_code t  
+		WHERE t.year LIKE '%${year}%' AND t.month LIKE '%${month}%' ;
+	</select>
+	
+	<insert id="insertCaseCodeNum" parameterType="map">
+		INSERT INTO tb_judicial_case_code(id,letter,year,month,num) VALUES (#{id},#{letter},#{year},#{month},#{num});
+	</insert>
+	
+	<insert id="insertSampleExpress" parameterType="map">
+		insert into tb_judicial_sample_express(id,case_id
+		 <if test="express_num != null">
+			,express_num
+		 </if>
+		  <if test="express_type != null">
+			,express_type
+		 </if>
+		 <if test="express_concat != null">
+			,express_concat
+		 </if>
+		  <if test="express_recive != null">
+			,express_recive
+		 </if> 
+		 <if test="express_remark != null">
+			,express_remark
+		 </if>
+		,express_time,update_time)
+		values (#{id},#{case_id}
+		<if test="express_num != null">
+			,#{express_num}
+		 </if>
+		  <if test="express_type != null">
+			,#{express_type}
+		 </if>
+		 <if test="express_concat != null">
+			,#{express_concat}
+		 </if>
+		  <if test="express_recive != null">
+			,#{express_recive}
+		 </if> 
+		 <if test="express_remark != null">
+			,#{express_remark}
+		 </if>
+		,sysdate(),now())
+	</insert>
+	
+	<insert id="updateSampleExpress" parameterType="map">
+		update tb_judicial_sample_express
+		set express_num = #{express_num},
+			express_type = #{express_type},
+			express_recive = #{express_recive},
+			express_remark = #{express_remark},
+			express_concat = #{express_concat},
+			express_time = sysdate(),
+			update_time = now()
+			where id = #{id}
+	</insert>
+	
+	<delete id="deleteSampleExpress" parameterType="map">
+		delete from tb_judicial_sample_express where id = #{id}
+	</delete>
+	
+	<select id="querySampleExpress" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialSampleExpressModel">
+		select t.*,v.value as express_type_name  from tb_judicial_sample_express t left join
+		(SELECT key1,VALUE FROM
+		tb_dic_values
+		WHERE
+		keycode='000000002') v on
+		t.express_type=v.key1 where t.case_id = #{case_id}
+	</select>
+	
+	<update id="updateCaseCompareDate" parameterType="map">
+		update tb_judicial_case_info set compare_date = #{compare_date} where case_code=#{case_code}
+	</update>
+	
+	<insert id="insertCaseCodeSecond" parameterType="map">
+		insert into tb_judicial_case_second(id,case_id,case_code,case_code_second,case_state) values(#{id},#{case_id},#{case_code},#{case_code_second},#{case_state})
+	</insert>
+	
+	<update id="updateCaseCodeSecond" parameterType="map">
+		update tb_judicial_case_second set
+		case_code_second=#{case_code_second}
+		where case_id = #{case_id}
+		and case_state = #{case_state}
+	</update>
+	
+	<select id="queryCaseCodeSecond" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialSecondModel">
+		select t.* from tb_judicial_case_second t
+		 where 1=1
+		 <if test="case_code != null and case_code != ''">
+			and (t.case_code = #{case_code} or t.case_code_second=#{case_code})
+		 </if>
+		  <if test=" case_state != null and case_state != ''">
+		 	 and t.case_state=#{case_state}
+		</if>
+	</select>
+	
+	<insert id="insertSampleCode" parameterType="map">
+        {call add_sample_code(#{count},#{create_per})}
+	</insert>
+	
+	<select id="queryApplySampleCode" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialApplySampleCodeModel">
+		SELECT t.*,u.`username` AS 'create_per_name' 
+		FROM tb_judicial_sample_code t
+		 LEFT JOIN tb_upc_users u ON t.`create_per`=u.`userid`
+		 where 1=1 
+	     <if test=" sample_code != null and sample_code != ''">
+	 	 	and t.sample_code like '%${sample_code}%' 
+		 </if>
+		 <if test=" create_per_name != null and create_per_name != ''">
+	 	 	and u.username like '%${create_per_name}%' 
+		 </if>
+		 <if test=" starttime != null and starttime != ''">
+	 	 	and t.create_time >= #{starttime}
+		 </if>
+		 <if test=" endtime != null and endtime != ''">
+	 	 	and  #{endtime} >= t.create_time
+		 </if>
+		 order by t.sample_code desc
+		 <if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		  </if>
+	</select>
+	
+	<select id="countApplySampleCode" parameterType="map" resultType="Integer">
+		SELECT count(1) FROM tb_judicial_sample_code t LEFT JOIN tb_upc_users u ON t.`create_per`=u.`userid`
+		 where 1=1 
+	     <if test=" sample_code != null and sample_code != ''">
+	 	 	and t.sample_code like '%${sample_code}%' 
+		 </if>
+		 <if test=" create_per_name != null and create_per_name != ''">
+	 	 	and u.username like '%${create_per_name}%' 
+		 </if>
+		 <if test=" starttime != null and starttime != ''">
+	 	 	and t.create_time >= #{starttime}
+		 </if>
+		 <if test=" endtime != null and endtime != ''">
+	 	 	and  #{endtime} >= t.create_time
+		 </if>
+	</select>
+	
+	<select id="queryMaxApplyBefore" resultType="Integer">
+		 SELECT CONVERT(IFNULL(MAX(sample_code)+1,CONCAT(DATE_FORMAT(NOW(), '%Y'),'00001')),SIGNED) FROM tb_judicial_sample_code WHERE sample_code LIKE CONCAT('%',DATE_FORMAT(NOW(), '%Y'),'%')
+	</select>
+	
+	<select id="queryMaxApplyAfter" resultType="Integer">
+		 SELECT MAX(sample_code) FROM tb_judicial_sample_code WHERE sample_code LIKE CONCAT('%',DATE_FORMAT(NOW(), '%Y'),'%')
+	</select>
+	
+	<select id="queryChangeCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT ci.*,IF(
+		ci.`roletype` = 104,
+		(SELECT
+		u3.username
+		FROM
+		tb_judicial_agent ag,tb_upc_users u3
+		WHERE ag.userid = ci.case_userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+		''
+		) AS agent
+		FROM (SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.case_areacode,
+		ci.case_userid,
+		ci.typeid,
+		ci.copies,
+		ci.parnter_name,
+		ci.`reagent_name`,
+		ci.`urgent_state`,
+		ci.`accept_time`,
+		ci.consignment_time,
+		ci.`print_count`,
+		ci.`client`,
+		DATE_FORMAT(
+		ci.`close_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		m.`text` AS `report_modelname`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.attach_need as attach_need_case,
+		ci.verify_state,
+		ci.`case_in_per`,
+		ci.source_type,
+		DATE_FORMAT(
+		ci.`sample_in_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS sample_in_time,
+		users.`username` AS case_receiver,
+		ci.receiver_area,
+		u2.`username` AS case_in_pername,
+		ci.sample_in_per,
+		ci.unit_type,
+		ci.case_type,
+		ci.sample_relation,
+		ci.case_state,
+		ci.confirm_code,
+		users.`roletype`
+		FROM
+		(SELECT 
+		      i.* 
+		    FROM
+			tb_judicial_casefee cf
+			LEFT JOIN 
+		      tb_judicial_case_info i 
+		      ON cf.`case_id`=i.`case_id`
+		    WHERE 1 = 1  AND cf.`case_type` = 'dna_change'
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(i.case_code) LIKE '%${case_code}%' or
+			upper(i.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and i.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=i.accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and i.consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=i.consignment
+		</if>
+		<if test=" client!=null and client!= ''">
+			and i.client LIKE '%${client}%'
+		</if>
+		<if test=" receiver_area != null and receiver_area != ''">
+			and i.receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" is_delete != null and is_delete != '' ">
+			and i.is_delete=#{is_delete}
+		</if>
+		<if test=" report_model !=null and report_model != ''">
+			and i.report_model =#{report_model}
+		</if>
+		<if test=" phone !=null and phone != ''">
+			and i.phone LIKE '%${phone}%'
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and i.case_userid =#{case_userid}
+		</if>
+		<if test=" sample_in_per !=null and sample_in_per != ''">
+			and i.sample_in_per =#{sample_in_per}
+		</if>
+		<if test=" case_type !=null and case_type != ''">
+			and i.case_type = #{case_type}
+		</if>
+		<if test=" case_state !=null and case_state != ''">
+			and i.case_state =#{case_state}
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and i.verify_state =#{verify_state}
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and i.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and ( i.case_in_per =#{userid} or i.case_userid=#{userid})
+		</if>
+		<if test=" receiver_area_user !=null and receiver_area_user != ''">
+			and i.receiver_area LIKE '%${receiver_area_user}%'
+		</if>
+		<if test=" source_type !=null and source_type != ''">
+			and i.source_type =#{source_type}
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			and i.confirm_code LIKE '%${confirm_code}%'
+		</if>
+         ) ci
+          LEFT JOIN 
+      (SELECT 
+        CODE,
+        TEXT,
+        TYPE 
+      FROM
+        tb_dic_print_model 
+      WHERE TYPE = 'dna' 
+      GROUP BY CODE) m 
+      ON ci.`report_model` = m.`code`
+		LEFT JOIN tb_upc_users users
+		ON ci.case_userid = users.`userid`
+		LEFT JOIN tb_upc_department dept
+		ON users.`deptcode` = dept.`deptcode`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		ORDER BY ci.case_code DESC,ci.is_delete desc
+		<if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>
+		) ci 
+	</select>
+
+	<select id="countChangeCaseInfo" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM 
+			tb_judicial_casefee cf LEFT JOIN
+  			tb_judicial_case_info ci ON cf.`case_id`=ci.`case_id`
+		 WHERE cf.`case_type`='dna_change'
+		<if test=" case_code != null and case_code != ''">
+			and (lower(case_code) LIKE '%${case_code}%' or
+			upper(case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" consignment_starttime!=null and  consignment_starttime != '' ">
+			and consignment>=#{consignment_starttime}
+		</if>
+		<if test=" consignment_endtime!=null and consignment_endtime != ''">
+			and #{consignment_endtime}>=consignment
+		</if>
+		<if test=" client!=null and client!= ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test=" receiver_area !=null and receiver_area != ''">
+			and ci.receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" is_delete != null and is_delete != '' ">
+			and is_delete=#{is_delete}
+		</if>
+		<if test=" report_model !=null and report_model != ''">
+			and ci.report_model =#{report_model}
+		</if>
+		<if test=" phone !=null and phone != ''">
+			and ci.phone LIKE '%${phone}%'
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid =#{case_userid}
+		</if>
+		<if test=" sample_in_per !=null and sample_in_per != ''">
+			and ci.sample_in_per =#{sample_in_per}
+		</if>
+		<if test=" case_type !=null and case_type != ''">
+			and ci.case_type =#{case_type}
+		</if>
+		<if test=" case_state !=null and case_state != ''">
+			and ci.case_state =#{case_state}
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and verify_state =#{verify_state}
+		</if>
+		<if test=" parnter_name !=null and parnter_name != ''">
+			and ci.parnter_name LIKE '%${parnter_name}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and ( ci.case_in_per =#{userid} or ci.case_userid=#{userid})
+		</if>
+		<if test=" receiver_area_user !=null and receiver_area_user != ''">
+			and receiver_area LIKE '%${receiver_area_user}%'
+		</if>
+		<if test=" source_type !=null and source_type != ''">
+			and source_type =#{source_type}
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			and confirm_code LIKE '%${confirm_code}%'
+		</if>
+	</select>
+	
+	<insert id="insertCompanyCodeCaseid" parameterType="map">
+		insert into tb_company_code_case_id values(#{case_id},#{company_code},#{case_code})
+	</insert>
+	
+	<update id="updateCompanyCodeCaseid" parameterType="map">
+		update tb_company_code_case_id t set t.case_code = #{case_code} where t.case_id = #{case_id}
+	</update>
+	
+	<select id="selectProvinceUser" parameterType="String" resultType="Integer">
+		select count(1) from tb_judicial_province_user where userid=#{userid}
+	</select>
+	 
+	 <!-- 添加子渊江苏省内案例物鉴字号 -->
+	<insert id="insertSerialNumber" parameterType="map">
+		insert into tb_judicial_serial_number (case_id,case_code,serial_number) values(#{case_id},#{case_code},#{serial_number})
+	</insert>
+</mapper>

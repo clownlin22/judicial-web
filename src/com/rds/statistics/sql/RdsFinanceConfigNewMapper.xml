@@ -1,0 +1,1549 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsFinanceConfigNewMapper">
+
+	<select id="queryAll" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceConfigModel">
+		select * from tb_finance_config
+		<where>
+			<if test="finance_program != null and finance_program != ''">
+				and finance_program like '%${finance_program}%'
+			</if>
+			<if test="program != null and program != ''">
+				and program like '%${program}%'
+			</if>
+			<if test="finance_program_type !=null and finance_program_type !=''">
+				and finance_program_type like '%${finance_program_type}%'
+			</if>
+			<if test="finance_manage_dept !=null and finance_manage_dept !=''">
+				and finance_manage_dept like '%${finance_manage_dept}%'
+			</if>
+			<if test="back_settlement_dept !=null and back_settlement_dept !=''">
+				and back_settlement_dept like '%${back_settlement_dept}%'
+			</if>
+		</where>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		select count(*) from tb_finance_config
+		<where>
+			<if test="finance_program != null and finance_program != ''">
+				and finance_program like '%${finance_program}%'
+			</if>
+			<if test="program != null and program != ''">
+				and program like '%${program}%'
+			</if>
+			<if test="finance_program_type !=null and finance_program_type !=''">
+				and finance_program_type like '%${finance_program_type}%'
+			</if>
+			<if test="finance_manage_dept !=null and finance_manage_dept !=''">
+				and finance_manage_dept like '%${finance_manage_dept}%'
+			</if>
+			<if test="back_settlement_dept !=null and back_settlement_dept !=''">
+				and back_settlement_dept like '%${back_settlement_dept}%'
+			</if>
+		</where>
+	</select>
+
+	<select id="queryProgramFinance" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceProgramModel">
+		SELECT SUM(t.`return_sum`) AS program_real_sum ,COUNT(t.`case_id`) AS
+		program_case_num,SUM(t.sample_count) AS sample_count,
+		SUM(t.`special_count1`) AS special_count1,SUM(t.`special_count2`) AS
+		special_count2
+		FROM `tb_all_case_finance_info` t
+		<where>
+			<if test="confirm_date != null and confirm_date != ''">
+				and t.`confirm_date` LIKE '%${confirm_date}%'
+			</if>
+			<if test="case_subtype !=null and case_subtype !=''">
+				and (t.`case_subtype` LIKE '%${case_subtype}%' or
+				t.case_type like '%${case_subtype}%')
+			</if>
+			<if test="partner !=null and partner !=''">
+				and t.`partner` = #{partner}
+			</if>
+			<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+				and t.`user_dept_level1` = #{user_dept_level1}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryCostProgramFinance" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceProgramModel">
+		SELECT SUM(t.`return_sum`) AS program_real_sum ,COUNT(t.`case_id`) AS
+		program_case_num,SUM(t.sample_count) AS sample_count
+		FROM
+		`tb_all_case_finance_info` t
+		<where>
+			<if test="confirm_date != null and confirm_date != ''">
+				and t.`confirm_date` LIKE '%${confirm_date}%'
+			</if>
+			<if test="case_subtype !=null and case_subtype !=''">
+				and (t.`case_subtype` LIKE '%${case_subtype}%' or
+				t.case_type like '%${case_subtype}%')
+			</if>
+			<if test="partner !=null and partner !=''">
+				and t.`partner` = #{partner}
+			</if>
+		</where>
+		group by
+	</select>
+
+	<insert id="insertProgramPrice" parameterType="map">
+		insert into
+		tb_finance_program_price(price_id,program_name,program_case_num,program_month,user_dept_level1,finance_dept)
+		values(#{price_id},#{program_name},#{program_case_num},#{program_month},#{user_dept_level1},#{finance_dept})
+	</insert>
+
+	<insert id="insertAptitudeFee" parameterType="map">
+		insert into
+		tb_finance_case_aptitude(aptitude_id,aptitude_month,aptitude_partner,aptitude_fee)
+		values(#{aptitude_id},#{aptitude_month},#{aptitude_partner},#{aptitude_fee})
+	</insert>
+
+	<insert id="insertOutsourcinFee" parameterType="map">
+		insert into
+		tb_finance_outsourcing_aptitude(outsourcing_id,outsourcing_month,outsourcing_partner,user_dept_level1,outsourcing_fee)
+		values(#{outsourcing_id},#{outsourcing_month},#{outsourcing_partner},#{user_dept_level1},#{outsourcing_fee})
+	</insert>
+
+	<insert id="insertChannelAptitudeFee" parameterType="map">
+		insert into
+		tb_finance_channel_case_aptitude(aptitude_id,aptitude_month,aptitude_partner,aptitude_fee,user_dept_level1)
+		values(#{aptitude_id},#{aptitude_month},#{aptitude_partner},#{aptitude_fee},#{user_dept_level1})
+	</insert>
+
+	<insert id="insertCostPrice" parameterType="map">
+		insert into
+		tb_finance_inside_cost(cost_id,program_name,program_case_num,program_month,user_dept_level1,finance_cost)
+		values(#{cost_id},#{program_name},#{program_case_num},#{program_month},#{user_dept_level1},#{finance_cost})
+	</insert>
+
+	<insert id="insertFinanceConfig" parameterType="map">
+		insert into
+		tb_finance_config(config_id,program,finance_program,finance_program_type,front_settlement,
+		finance_manage,back_settlement,back_remark,business_support,agency_price,experiment_price,price,
+		remark,finance_manage_dept,back_settlement_dept,back_settlement_dept1,update_per,update_time)
+		values(#{config_id},#{program},#{finance_program},#{finance_program_type},#{front_settlement},#{finance_manage},
+		#{back_settlement},#{back_remark},#{business_support},#{agency_price},#{experiment_price},#{price},
+		#{remark},#{finance_manage_dept},#{back_settlement_dept},#{back_settlement_dept1},#{update_per},now())
+	</insert>
+
+	<update id="updateFinanceConfig" parameterType="map">
+		update
+		tb_finance_config
+		set
+		program=#{program},
+		finance_program=#{finance_program},
+		finance_program_type=#{finance_program_type},
+		front_settlement=#{front_settlement},
+		finance_manage=#{finance_manage},
+		back_settlement=#{back_settlement},
+		back_remark=#{back_remark},
+		business_support=#{business_support},
+		agency_price=#{agency_price},
+		experiment_price=#{experiment_price},
+		price=#{price},
+		remark=#{remark},
+		finance_manage_dept=#{finance_manage_dept},
+		back_settlement_dept=#{back_settlement_dept},
+		back_settlement_dept1=#{back_settlement_dept1},
+		update_per=#{update_per}
+		where config_id=#{config_id}
+	</update>
+
+	<insert id="insertAptitudeConfig" parameterType="map">
+		insert into
+		tb_finance_config_aptitude(config_id,provice,partnername,aptitude_sample,aptitude_case,
+		experiment_sample,experiment_case,partner_start,partner_end,month_num,month_num_reduce,sample_special1,
+		sample_special2,remark,update_per,update_time)
+		values(#{config_id},#{provice},#{partnername},#{aptitude_sample},#{aptitude_case},#{experiment_sample},
+		#{experiment_case},#{partner_start},#{partner_end},#{month_num},#{month_num_reduce},#{sample_special1},
+		#{sample_special2},#{remark},#{update_per},now())
+	</insert>
+
+	<update id="updateApitudeConfig" parameterType="map">
+		update
+		tb_finance_config_aptitude
+		set
+		provice=#{provice},
+		partnername=#{partnername},
+		aptitude_sample=#{aptitude_sample},
+		aptitude_case=#{aptitude_case},
+		experiment_sample=#{experiment_sample},
+		experiment_case=#{experiment_case},
+		partner_start=#{partner_start},
+		partner_end=#{partner_end},
+		month_num=#{month_num},
+		month_num_reduce=#{month_num_reduce},
+		sample_special1=#{sample_special1},
+		sample_special2=#{sample_special2},
+		remark=#{remark},
+		update_per=#{update_per},
+		update_time=now()
+		where config_id=#{config_id}
+	</update>
+
+	<update id="updateApitudeConfigFlag" parameterType="map">
+		update
+		tb_finance_config_aptitude
+		set partner_flag=#{partner_flag},
+		update_per=#{update_per},
+		update_time=now()
+		where config_id=#{config_id}
+	</update>
+
+	<select id="queryAptitude" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceAptitudModel">
+		select * from tb_finance_config_aptitude t
+		<where>
+			<if test="provice != null and provice != ''">
+				and t.`provice` LIKE '%${provice}%'
+			</if>
+			<if test="partnername !=null and partnername !=''">
+				and t.`partnername` LIKE '%${partnername}%'
+			</if>
+			<if test="partner_flag !=null and partner_flag !=''">
+				and t.`partner_flag` = #{partner_flag}
+			</if>
+		</where>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryCountAptitude" parameterType="map" resultType="int">
+		select count(1) from tb_finance_config_aptitude t
+		<where>
+			<if test="provice != null and provice != ''">
+				and t.`provice` LIKE '%${provice}%'
+			</if>
+			<if test="partnername !=null and partnername !=''">
+				and t.`partnername` LIKE '%${partnername}%'
+			</if>
+			<if test="partner_flag !=null and partner_flag !=''">
+				and t.`partner_flag` = #{partner_flag}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryUserDept" resultType="String">
+		SELECT t.deptname FROM
+		`tb_upc_department` t WHERE t.parentid = '0' AND t.delstatus = '0'
+		ORDER BY t.sort
+	</select>
+
+	<select id="queryUserDeptSecond" parameterType="map" resultType="String">
+		SELECT t.deptname FROM `tb_upc_department` t WHERE t.`parentdeptcode`
+		IN (SELECT deptcode FROM tb_upc_department
+		WHERE deptname=#{deptname})
+		AND t.`delstatus`='0' ORDER BY t.`sort`
+	</select>
+	<select id="queryUserDeptThree" parameterType="map" resultType="String">
+		select t3.deptname as c from tb_upc_department t1
+		inner join
+		tb_upc_department t2 on t1.deptid=t2.parentid
+		inner join
+		tb_upc_department t3 on t2.deptid=t3.parentid
+		where
+		t1.deptname=#{deptname}
+		<if test="deptname1 !=null and deptname1 !=''">
+			and t2.deptname=#{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			and t3.deptname=#{deptname2}
+		</if>
+		and t1.delstatus='0' ORDER BY t1.`sort`;
+	</select>
+
+	<select id="queryDepServiceSum" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptServiceSum
+		FROM tb_finance_case_detail
+		t
+		WHERE DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >=
+		#{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND t.type in ('服务收入','代理收入')
+		<if test="deptname !=null and deptname !=''">
+			AND t.`user_dept_level1` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`user_dept_level2` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`user_dept_level3` = #{deptname2}
+		</if>
+		<if test="deptname3 !=null and deptname3 !=''">
+			AND t.`user_dept_level4` = #{deptname3}
+		</if>
+		<if test="deptname4 !=null and deptname4 !=''">
+			AND t.`user_dept_level5` = #{deptname4}
+		</if>
+	</select>
+	<select id="queryDepServiceSum2" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptServiceSum
+		FROM tb_finance_case_detail
+		t
+		WHERE DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >=
+		#{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND t.type in ('服务收入','代理收入')
+		AND t.`user_dept_level1` = '精准医学事业部'
+		AND t.`user_dept_level2` is null;
+	</select>
+
+	<select id="queryDepServiceSumSecond" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptServiceSum,
+		t.`user_dept_level2`
+		FROM
+		tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND
+		t.type=1
+		AND t.`user_dept_level1` = #{deptname}
+		AND t.`user_dept_level2`
+		= #{deptname1}
+	</select>
+
+	<select id="queryDeptWagesSum" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`wages`) AS wagesSum
+		FROM tb_finance_wages t
+		WHERE
+		t.`wages_month` >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		t.`wages_month`
+		<if test="deptname !=null and deptname !=''">
+			AND t.`user_dept_level1` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`user_dept_level2` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`user_dept_level3` = #{deptname2}
+		</if>
+	</select>
+	<select id="queryDeptWagesSum2" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`wages`) AS wagesSum
+		FROM tb_finance_wages t
+		WHERE
+		t.`wages_month` >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		t.`wages_month`
+		AND t.`user_dept_level1` = '精准医学事业部'
+		AND t.`user_dept_level2` =''
+	</select>
+
+	<select id="queryDeptWagesSumSecond" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`wages`) AS wagesSum,
+		t.`user_dept_level2`
+		FROM
+		tb_finance_wages t
+		WHERE t.`wages_month` >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= t.`wages_month`
+		AND t.`user_dept_level1` =
+		#{deptname}
+		AND t.`user_dept_level2` = #{deptname1}
+	</select>
+
+	<select id="queryDepSellSum" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptSellSum
+		FROM tb_finance_case_detail t
+		WHERE t.`confirm_date` >= #{confirm_date_start}
+		AND #{confirm_date_end}
+		>= t.`confirm_date`
+		AND t.type='一次性收入'
+		<if test="deptname !=null and deptname !=''">
+			AND t.`user_dept_level1` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`user_dept_level2` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`user_dept_level3` = #{deptname2}
+		</if>
+		<if test="deptname3 !=null and deptname3 !=''">
+			AND t.`user_dept_level4` = #{deptname3}
+		</if>
+		<if test="deptname4 !=null and deptname4 !=''">
+			AND t.`user_dept_level5` = #{deptname4}
+		</if>
+	</select>
+	<select id="queryDepHeZou" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptHeZou
+		FROM tb_finance_case_detail t
+		WHERE t.`confirm_date` >= #{confirm_date_start}
+		AND #{confirm_date_end}
+		>= t.`confirm_date`
+		AND t.type='合作方收入'
+		<if test="deptname !=null and deptname !=''">
+			AND t.`user_dept_level1` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`user_dept_level2` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`user_dept_level3` = #{deptname2}
+		</if>
+		<if test="deptname3 !=null and deptname3 !=''">
+			AND t.`user_dept_level4` = #{deptname3}
+		</if>
+		<if test="deptname4 !=null and deptname4 !=''">
+			AND t.`user_dept_level5` = #{deptname4}
+		</if>
+	</select>
+	<select id="queryDepSellSumSecond" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`return_sum`) AS deptSellSum,
+		t.`user_dept_level2`
+		FROM
+		tb_finance_case_detail t
+		WHERE t.`confirm_date`
+		>= #{confirm_date_start}
+		AND #{confirm_date_end} >= t.`confirm_date`
+		AND t.type=2
+		AND t.`user_dept_level1` = #{deptname}
+		AND
+		t.`user_dept_level2` = #{deptname1}
+	</select>
+
+	<select id="queryDeptHeZouFangCostSum" parameterType="map"
+		resultType="map">
+		select SUM(t.real_sum) as HeZouFangSum from tb_finance_case_detail_all t 
+		where  t.type=#{amoeba_program}
+		and t.accept_time >= #{confirm_date_start}
+		AND #{confirm_date_end} >= t.accept_time and confirm_date =''
+		<if test="deptname !=null and deptname !=''">
+			and t.user_dept_level1= #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			and t.user_dept_level2= #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			and t.user_dept_level3=#{deptname2}
+		</if>
+		<if test="deptname3 !=null and deptname3 !=''">
+			AND t.`user_dept_level4` = #{deptname3}
+		</if>
+		<if test="deptname4 !=null and deptname4 !=''">
+			AND t.`user_dept_level5` = #{deptname4}
+		</if>
+	</select>
+
+	<select id="queryDeptExternalCostSum" parameterType="map"
+		resultType="map">
+		<!-- SELECT SUM(t.`externalCost`) AS deptExternalCostSum, t.`user_dept_level1` 
+			FROM tb_finance_case_detail t WHERE t.`confirm_date` >= #{confirm_date_start} 
+			AND #{confirm_date_end} >= t.`confirm_date` AND t.`user_dept_level1` = #{deptname} -->
+		SELECT SUM(t.`mx1bxje`) AS deptExternalCostSum,
+		t.`ztsybmc` as
+		user_dept_level1
+		FROM `tb_finance_oa1` t
+		WHERE t.kmmc =
+		#{amoeba_program}
+		AND #{confirm_date_end} >= t.`operatedate`
+		AND
+		t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`ztsybmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`ztsybmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`ztsybmc` = #{deptname2}
+		</if>
+	</select>
+	<select id="queryDeptBeiYonCostSum" parameterType="map"
+		resultType="map">
+		SELECT SUM(t.`jkje`) AS deptExternalCostSum,
+		t.`sqgsmc` as
+		user_dept_level1
+		FROM `tb_finance_oa2` t
+		WHERE
+		#{confirm_date_end} >=
+		t.`operatedate`
+		AND
+		t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`sqgsmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`sqgsmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`sqgsmc` = #{deptname2}
+		</if>
+	</select>
+
+	<select id="querySaleManageSum" parameterType="map" resultType="map">
+		SELECT SUM(a.deptSaleManageSum) AS
+		deptSaleManageSum,a.user_dept_level1 FROM (
+		SELECT SUM(t.`mx1bxje`) AS
+		deptSaleManageSum,
+		t.`ztsybmc` AS user_dept_level1
+		FROM `tb_finance_oa1`
+		t
+		WHERE t.kmmc NOT IN ('耗材','委外检测成本','仪器设备','采购仪器设备付款')
+		AND
+		#{confirm_date_end} >= t.`operatedate`
+		AND t.`operatedate` >=
+		#{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`ztsybmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`ztsybmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`ztsybmc` = #{deptname2}
+		</if>
+		UNION ALL
+		SELECT SUM(t.`jkje`) AS deptSaleManageSum,t.`sqgsmc` AS
+		user_dept_level1
+		FROM tb_finance_oa2 t
+		WHERE #{confirm_date_end} >=
+		t.`operatedate`
+		AND t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`sqgsmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`sqgsmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`sqgsmc` = #{deptname2}
+		</if>
+		)a
+	</select>
+
+
+	<select id="queryDeptAptitudeCostSum" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`aptitudeCost`) AS deptAptitudeCostSum,
+		t.`insideCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE DATE_FORMAT(t.`confirm_date`,
+		'%Y-%m-%d') >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+	</select>
+
+	<select id="queryDeptAptitudeCostSumSecond" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`aptitudeCost`) AS deptAptitudeCostSum,
+		t.`insideCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND
+		t.`insideCostUnit` = #{deptname}
+		AND t.`insideCostUnit` = #{deptname1}
+	</select>
+
+	<select id="queryDeptMaterialCostSum" parameterType="map"
+		resultType="map">
+		<!-- SELECT SUM(t.`amoeba_sum`) AS materialSum, t.`amoeba_program`, t.`amoeba_deptment` 
+			FROM `tb_finance_amoeba_info` t WHERE t.`amoeba_month` >= #{confirm_date_start} 
+			AND #{confirm_date_end} >= t.`amoeba_month` AND t.`amoeba_deptment` = #{deptname} 
+			AND t.`amoeba_program` = #{amoeba_program} -->
+		SELECT SUM(t.`mx1bxje`) AS materialSum,
+		t.`ztsybmc` as amoeba_deptment,
+		t.kmmc as amoeba_program
+		FROM `tb_finance_oa1` t
+		WHERE t.kmmc =
+		#{amoeba_program}
+		AND #{confirm_date_end} >= t.`operatedate`
+		AND
+		t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`ztsybmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`ztsybmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`ztsybmc` = #{deptname2}
+		</if>
+	</select>
+
+	<select id="queryDeptInstrumentCostSum" parameterType="map"
+		resultType="map">
+		SELECT SUM(t.`mx1bxje`) AS instrumentSum,
+		t.`ztsybmc` as
+		amoeba_deptment,
+		t.kmmc as amoeba_program
+		FROM `tb_finance_oa1` t
+		WHERE
+		t.kmmc IN ('仪器设备','采购仪器设备付款')
+		AND #{confirm_date_end} >=
+		t.`operatedate`
+		AND t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`ztsybmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`ztsybmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`ztsybmc` = #{deptname2}
+		</if>
+	</select>
+
+	<select id="queryDeptDepreciationCostSum" parameterType="map"
+		resultType="map">
+		SELECT
+		SUM(t.`amoeba_sum`) AS depreciationSum,
+		t.`amoeba_program`,
+		t.`amoeba_deptment`
+		FROM
+		`tb_finance_amoeba_info` t
+		WHERE
+		t.`amoeba_month` >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		t.`amoeba_month`
+		AND t.`amoeba_program` = #{amoeba_program}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`amoeba_deptment` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`amoeba_deptment` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`amoeba_deptment` = #{deptname2}
+		</if>
+	</select>
+
+	<select id="queryDeptExternalCostSumSecond" parameterType="map"
+		resultType="map">
+		<!-- SELECT SUM(t.`externalCost`) AS deptExternalCostSum, t.`user_dept_level2` 
+			FROM tb_finance_case_detail t WHERE t.`confirm_date` >= #{confirm_date_start} 
+			AND #{confirm_date_end} >= t.`confirm_date` AND t.`user_dept_level2` = #{deptname} -->
+		SELECT SUM(t.`mx1bxje`) AS deptExternalCostSum,
+		t.`ssbmmc` as
+		user_dept_level2
+		FROM `tb_finance_oa1` t
+		WHERE t.kmmc =
+		#{amoeba_program}
+		AND #{confirm_date_end} >= t.`operatedate`
+		AND
+		t.`operatedate` >= #{confirm_date_start}
+		<if test="deptname !=null and deptname !=''">
+			AND t.`ztsybmc` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`ztsybmc` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`ztsybmc` = #{deptname2}
+		</if>
+	</select>
+
+	<select id="queryCostInsideSum" parameterType="map" resultType="map">
+		SELECT SUM(t.`manageCost`)+SUM(t.`insideCost`) AS
+		costInsideSum,t.user_dept_level1
+		FROM tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		<if test="deptname !=null and deptname !=''">
+			AND t.`user_dept_level1` = #{deptname}
+		</if>
+		<if test="deptname1 !=null and deptname1 !=''">
+			AND t.`user_dept_level2` = #{deptname1}
+		</if>
+		<if test="deptname2 !=null and deptname2 !=''">
+			AND t.`user_dept_level3` = #{deptname2}
+		</if>
+		<if test="deptname3 !=null and deptname3 !=''">
+			AND t.`user_dept_level4` = #{deptname3}
+		</if>
+		<if test="deptname4 !=null and deptname4 !=''">
+			AND t.`user_dept_level5` = #{deptname4}
+		</if>
+	</select>
+	<select id="queryCostInsideSum2" parameterType="map" resultType="map">
+		SELECT SUM(t.`manageCost`)+SUM(t.`insideCost`) AS
+		costInsideSum,t.user_dept_level1
+		FROM tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND t.`user_dept_level1` = '精准医学事业部'
+		AND t.`user_dept_level2` is null
+	</select>
+
+	<select id="queryCostInsideSumSecond" parameterType="map"
+		resultType="map">
+		SELECT SUM(t.`manageCost`)+SUM(t.`insideCost`) AS
+		costInsideSum,t.user_dept_level2
+		FROM tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		AND
+		t.`user_dept_level1` = #{deptname}
+		AND t.`user_dept_level2` =
+		#{deptname1}
+	</select>
+
+	<select id="queryDeptInsideSum" parameterType="map" resultType="map">
+		select sum(t.deptInsideSum) as deptInsideSum,t.insideCostUnit
+		from
+		(SELECT
+		SUM(t.`insideCost`) AS deptInsideSum,
+		t.`insideCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE DATE_FORMAT(t.`confirm_date`,
+		'%Y-%m-%d') >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		<if test="deptname !=null and deptname !=''">
+			and t.`insideCostUnit` = #{deptname}
+		</if>
+		UNION ALL
+		SELECT
+		SUM(t.`manageCost`) AS deptInsideSum,
+		t.`manageCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d') >= #{confirm_date_start}
+		AND
+		#{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		<if test="deptname !=null and deptname !=''">
+			and t.`manageCostUnit` = #{deptname}
+		</if>
+		) t
+	</select>
+	<select id="queryDeptInsideSum1" parameterType="map" resultType="map">
+	select sum(t.deptInsideSum) as deptInsideSum,t.insideCostUnit
+		from
+		(SELECT
+		SUM(t.`insideCost`) AS deptInsideSum,
+		t.`insideCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE DATE_FORMAT(t.`confirm_date`,
+		'%Y-%m-%d') >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		and (t.`insideCostUnit` = '司法鉴定事业部'  or t.`insideCostUnit` = '技术与服务管理部' or t.`insideCostUnit` = '检测事业部' )
+		) t
+	</select>
+	<select id="queryDeptInsideSum2" parameterType="map" resultType="map">
+		select sum(t.deptInsideSum) as deptInsideSum,t.insideCostUnit
+		from
+		(SELECT
+		SUM(t.`insideCost`) AS deptInsideSum,
+		t.`insideCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE DATE_FORMAT(t.`confirm_date`,
+		'%Y-%m-%d') >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		and (t.`insideCostUnit` = '生产技术部'  or t.`insideCostUnit` = '医学检验事业部' )
+		) t
+	</select>
+	<select id="queryDeptInsideSum3" parameterType="map" resultType="map">
+		SELECT
+		SUM(t.`manageCost`) AS deptInsideSum,
+		t.`manageCostUnit`
+		FROM
+		tb_finance_case_detail t
+		WHERE
+		DATE_FORMAT(t.`confirm_date`,
+		'%Y-%m-%d') >= #{confirm_date_start}
+		AND #{confirm_date_end} >=
+		DATE_FORMAT(t.`confirm_date`, '%Y-%m-%d')
+		and t.`manageCostUnit` ='公司总部'
+	</select>
+
+	<select id="queryFinanceCaseDetail" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceCaseDetailModel">
+		select * from tb_all_case_finance_info t
+		where 1=1
+		<if test="confirm_date != null and confirm_date != ''">
+			and t.`confirm_date` LIKE '%${confirm_date}%'
+		</if>
+	</select>
+
+	<insert id="insertFinanceCaseDetail" parameterType="map">
+		insert into
+		tb_finance_case_detail(id,case_id,case_code,case_user,case_area,case_type,case_subtype,confirm_date,return_sum,user_dept_level1,user_dept_level2,user_dept_level3,
+		insideCost,insideCostUnit,manageCost,manageCostUnit,externalCost,partner,aptitudeCost,experimentCost)
+		values
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.id}, #{item.case_id},#{item.case_code},
+			#{item.case_user},
+			#{item.case_area},#{item.case_type},#{item.case_subtype},#{item.confirm_date},#{item.return_sum},
+			#{item.user_dept_level1},#{item.user_dept_level2},#{item.user_dept_level3},#{item.insideCost},#{item.insideCostUnit},
+			#{item.manageCost},#{item.manageCostUnit},#{item.externalCost},#{item.partner},#{item.aptitudeCost},#{item.experimentCost})
+		</foreach>
+		<!-- ( #{id},#{case_id},#{case_user},#{case_area},#{case_type},#{confirm_date},#{return_sum},#{user_dept_level1},#{user_dept_level2},#{user_dept_level3}, 
+			#{insideCost},#{insideCostUnit},#{manageCost},#{manageCostUnit},#{externalCost},#{partner},#{aptitudeCost},#{aptitudeCost}) -->
+	</insert>
+
+	<insert id="insertContractStatistic" parameterType="map">
+		insert into tb_finance_case_detail
+		SELECT
+		UUID() AS id,
+		t.`contract_remittance_planid` AS case_id,
+		u.`username` AS case_user,
+		p.`contract_areaname` case_area,
+		re.`confirm_date`,
+		t.`remittance` AS
+		return_sum,
+		g.user_dept_level1,
+		g.user_dept_level2,
+		g.user_dept_level3,
+		t.`insideCost`,
+		t.`insideCostUnit`,
+		t.`manageCost`,
+		t.`manageUnit` AS
+		manageCostUnit,
+		t.`externalCost` ,
+		p.`contract_unit` AS partner,
+		0 as
+		aptitudeCost,
+		0 as experimentCost,
+		p.`contract_program` AS case_type,
+		''
+		AS case_subtype,
+		2 AS TYPE,
+		'' as case_code
+		FROM
+		`tb_finance_remittance_plan` t
+		LEFT JOIN `tb_finance_contract_plan` p
+		ON t.`contract_id` = p.`contract_id`
+		LEFT JOIN tb_upc_users u
+		ON
+		p.`contract_userid` = u.`userid`
+		INNER JOIN `tb_judicial_remittance` re
+		ON t.`remittance_id` = re.`remittance_id`
+		LEFT JOIN
+		(SELECT
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`),
+		t.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		t2.`deptname`
+		)
+		) AS
+		'user_dept_level1',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp;
+		ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t.`deptname`,
+		t1.`deptname`
+		)
+		) AS 'user_dept_level2',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t2.`deptname`,
+		t.`deptname`
+		)
+		) AS
+		'user_dept_level3',
+		t.deptcode
+		FROM
+		tb_upc_department t
+		LEFT JOIN
+		tb_upc_department t1
+		ON t1.`deptcode` = t.`parentdeptcode`
+		LEFT JOIN
+		tb_upc_department t2
+		ON t2.`deptcode` = t1.`parentdeptcode`) g
+		ON
+		u.`deptcode` = g.`deptcode`
+		where 1=1 and re.confirm_state=1 AND
+		g.user_dept_level1 &lt;&gt; '检测事业部'
+		<if test="confirm_date != null and confirm_date != ''">
+			and re.`confirm_date` LIKE '%${confirm_date}%'
+		</if>
+		union all
+		SELECT UUID() AS id,
+		p.contract_id AS case_id,
+		u.`username` AS
+		case_user,
+		p.`contract_areaname` case_area,
+		p.create_date AS
+		`confirm_date`,
+		p.`contract_price` AS return_sum,
+		g.user_dept_level1,
+		g.user_dept_level2,
+		g.user_dept_level3,
+		0 AS `insideCost`,
+		'' AS
+		`insideCostUnit`,
+		0 AS `manageCost`,
+		'' AS manageCostUnit,
+		0 AS
+		`externalCost` ,
+		p.`contract_unit` AS partner,
+		0 AS aptitudeCost,
+		0 AS
+		experimentCost,
+		p.`contract_program` AS case_type,
+		'' AS case_subtype,
+		2
+		AS TYPE,
+		'' AS case_code
+		FROM `tb_finance_contract_plan` p
+		LEFT JOIN
+		tb_upc_users u
+		ON p.`contract_userid` = u.`userid`
+		LEFT JOIN
+		(SELECT
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`),
+		t.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		t2.`deptname`
+		)
+		) AS
+		'user_dept_level1',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp;
+		ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t.`deptname`,
+		t1.`deptname`
+		)
+		) AS 'user_dept_level2',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t2.`deptname`,
+		t.`deptname`
+		)
+		) AS
+		'user_dept_level3',
+		t.deptcode
+		FROM
+		tb_upc_department t
+		LEFT JOIN
+		tb_upc_department t1
+		ON t1.`deptcode` = t.`parentdeptcode`
+		LEFT JOIN
+		tb_upc_department t2
+		ON t2.`deptcode` = t1.`parentdeptcode`) g
+		ON
+		u.`deptcode` = g.`deptcode`
+		WHERE 1=1 AND g.user_dept_level1='检测事业部'
+		<if test="confirm_date != null and confirm_date != ''">
+			and p.create_date LIKE '%${confirm_date}%'
+		</if>
+
+	</insert>
+
+	<insert id="insertKitSetStatistic" parameterType="map">
+		insert into tb_finance_case_detail
+		SELECT UUID() AS id,t.`id` AS
+		case_id,'' AS case_user,'' AS
+		case_area,t.`confirm_time` AS
+		confirm_date,0 AS
+		return_sum,user_dept_level1,
+		'' AS user_dept_level2,''
+		AS
+		user_dept_level3,t.insideCost,t.insideCostUnit,t.manageCost,t.manageCostUnit,0
+		AS externalCost,'' AS partner,0 AS aptitudeCost,0 AS experimentCost,
+		'试剂盒' AS case_type,'' AS case_subtype,3 AS TYPE,'' AS case_code FROM
+		`tb_finance_kit_settlement` t
+		WHERE 1=1 AND t.`confirm_state`=2
+		<if test="confirm_date != null and confirm_date != ''">
+			and t.`confirm_time` LIKE '%${confirm_date}%'
+		</if>
+	</insert>
+
+	<select id="queryCaseDetailAll" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceCaseDetailStatisticsModel">
+		SELECT t.* FROM `tb_finance_case_detail` t
+		WHERE 1=1
+		<if test="queryFlag == null">
+			<if test="user_dept_level1 != null and user_dept_level1 != ''">
+				and t.`user_dept_level1` LIKE '%${user_dept_level1}%'
+			</if>
+		</if>
+		<if test="user_dept_level2 != null and user_dept_level2 != ''">
+			and t.`user_dept_level2` LIKE '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 != null and user_dept_level3 != ''">
+			and t.`user_dept_level3` LIKE '%${user_dept_level3}%'
+		</if>
+		<if test="case_user != null and case_user != ''">
+			and t.`case_user` LIKE '%${case_user}%'
+		</if>
+		<if test="case_area != null and case_area != ''">
+			and t.`case_area` LIKE '%${case_area}%'
+		</if>
+		<if test="case_code != null and case_code != ''">
+			and t.`case_code` LIKE '%${case_code}%'
+		</if>
+		<if test="case_subtype != null and case_subtype != ''">
+			and t.`case_subtype` LIKE '%${case_subtype}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_end != ''">
+			and DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d') >=
+			#{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >=
+			DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d')
+		</if>
+		<if
+			test="insideCostUnit != null and insideCostUnit != '' and manageCostUnit != null and manageCostUnit != ''">
+			and (t.`insideCostUnit` LIKE '%${insideCostUnit}%' or
+			t.`manageCostUnit` LIKE '%${manageCostUnit}%')
+		</if>
+		<if
+			test=" insideCostUnit != null and insideCostUnit != '' and manageCostUnit == ''">
+			and t.`insideCostUnit` LIKE '%${insideCostUnit}%'
+		</if>
+		<if
+			test=" manageCostUnit != null and manageCostUnit != '' and insideCostUnit == ''">
+			and t.`manageCostUnit` LIKE '%${manageCostUnit}%'
+		</if>
+		<if test="case_type != null and case_type != ''">
+			and t.`case_type` LIKE '%${case_type}%'
+		</if>
+		<if test="type != null and type != ''">
+			and t.`type` LIKE '%${type}%'
+		</if>
+		<if test="aptitude_flag != null and aptitude_flag != ''">
+			and t.aptitudeCost >0
+		</if>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryCaseDetailAllCount" parameterType="map"
+		resultType="int">
+		SELECT count(1) FROM `tb_finance_case_detail` t WHERE 1=1
+		<if test="queryFlag == null">
+			<if test="user_dept_level1 != null and user_dept_level1 != ''">
+				and t.`user_dept_level1` LIKE '%${user_dept_level1}%'
+			</if>
+		</if>
+		<if test="user_dept_level2 != null and user_dept_level2 != ''">
+			and t.`user_dept_level2` LIKE '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 != null and user_dept_level3 != ''">
+			and t.`user_dept_level3` LIKE '%${user_dept_level3}%'
+		</if>
+		<if test="case_user != null and case_user != ''">
+			and t.`case_user` LIKE '%${case_user}%'
+		</if>
+		<if test="case_area != null and case_area != ''">
+			and t.`case_area` LIKE '%${case_area}%'
+		</if>
+		<if test="case_code != null and case_code != ''">
+			and t.`case_code` LIKE '%${case_code}%'
+		</if>
+		<if test="case_id != null and case_id != ''">
+			and t.`case_id` = #{case_id}
+		</if>
+		<if test="case_subtype != null and case_subtype != ''">
+			and t.`case_subtype` LIKE '%${case_subtype}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_end != ''">
+			and DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d') >=
+			#{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >=
+			DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d')
+		</if>
+		<if
+			test="insideCostUnit != null and insideCostUnit != '' and manageCostUnit != null and manageCostUnit != ''">
+			and (t.`insideCostUnit` LIKE '%${insideCostUnit}%' or
+			t.`manageCostUnit` LIKE '%${manageCostUnit}%')
+		</if>
+		<if
+			test=" insideCostUnit != null and insideCostUnit != '' and manageCostUnit == ''">
+			and t.`insideCostUnit` LIKE '%${insideCostUnit}%'
+		</if>
+		<if
+			test=" manageCostUnit != null and manageCostUnit != '' and insideCostUnit == ''">
+			and t.`manageCostUnit` LIKE '%${manageCostUnit}%'
+		</if>
+		<if test="case_type != null and case_type != ''">
+			and t.`case_type` LIKE '%${case_type}%'
+		</if>
+		<if test="type != null and type != ''">
+			and t.`type` LIKE '%${type}%'
+		</if>
+		<if test="aptitude_flag != null and aptitude_flag != ''">
+			and t.aptitudeCost >0
+		</if>
+	</select>
+
+	<select id="queryCaseDetailAllSum" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceCaseDetailStatisticsModel">
+		SELECT
+		'合计' as case_code,
+		'' as case_user,
+		'' as type,
+		SUM(CAST(t.`return_sum` AS DECIMAL(20,2))) AS return_sum,
+		SUM(CAST(t.`insideCost` AS DECIMAL(20,2))) AS insideCost,
+		SUM(CAST(t.`manageCost` AS DECIMAL(20,2))) AS manageCost,
+		SUM(CAST(t.`experimentCost` AS DECIMAL(20,2))) AS experimentCost,
+		SUM(CAST(t.`externalCost` AS DECIMAL(20,2))) AS externalCost,
+		SUM(CAST(t.`aptitudeCost` AS DECIMAL(20,2))) AS aptitudeCost
+		FROM
+		`tb_finance_case_detail` t WHERE 1=1
+		<if test="queryFlag == null">
+			<if test="user_dept_level1 != null and user_dept_level1 != ''">
+				and t.`user_dept_level1` LIKE '%${user_dept_level1}%'
+			</if>
+		</if>
+		<if test="user_dept_level2 != null and user_dept_level2 != ''">
+			and t.`user_dept_level2` LIKE '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 != null and user_dept_level3 != ''">
+			and t.`user_dept_level3` LIKE '%${user_dept_level3}%'
+		</if>
+		<if test="case_user != null and case_user != ''">
+			and t.`case_user` LIKE '%${case_user}%'
+		</if>
+		<if test="case_area != null and case_area != ''">
+			and t.`case_area` LIKE '%${case_area}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_end != ''">
+			and DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d') >=
+			#{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >=
+			DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d')
+		</if>
+		<if
+			test="insideCostUnit != null and insideCostUnit != '' and manageCostUnit != null and manageCostUnit != ''">
+			and (t.`insideCostUnit` LIKE '%${insideCostUnit}%' or
+			t.`manageCostUnit` LIKE '%${manageCostUnit}%')
+		</if>
+		<if
+			test=" insideCostUnit != null and insideCostUnit != '' and manageCostUnit == ''">
+			and t.`insideCostUnit` LIKE '%${insideCostUnit}%'
+		</if>
+		<if
+			test=" manageCostUnit != null and manageCostUnit != '' and insideCostUnit == ''">
+			and t.`manageCostUnit` LIKE '%${manageCostUnit}%'
+		</if>
+		<if test="case_type != null and case_type != ''">
+			and t.`case_type` LIKE '%${case_type}%'
+		</if>
+		<if test="type != null and type != ''">
+			and t.`type` LIKE '%${type}%'
+		</if>
+	</select>
+
+	<select id="queryUserDepartment" parameterType="map" resultType="map">
+		 SELECT
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`) &amp;&amp;
+		ISNULL(t3.`deptname`),
+		t.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`)&amp;&amp;
+		ISNULL(t3.`deptname`),
+		t1.`deptname`,
+		if(
+		ISNULL(t3.`deptname`),
+		t2.deptname
+		,t3.deptname)
+		)
+		) AS 'user_dept_level1',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`) &amp;&amp;
+		ISNULL(t3.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`)&amp;&amp;
+		ISNULL(t3.`deptname`),
+		t.`deptname`,
+		if(
+		ISNULL(t3.`deptname`),
+		t1.deptname
+		,t2.deptname)
+		)
+		) AS 'user_dept_level2',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp;
+		ISNULL(t2.`deptname`) &amp;&amp; ISNULL(t3.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`)&amp;&amp; ISNULL(t3.`deptname`),
+		t2.`deptname`,
+		if(
+		ISNULL(t3.`deptname`),
+		t.deptname
+		,t1.deptname)
+		)
+		) AS 'user_dept_level3',
+		IF(
+		ISNULL(t1.`deptname`) &amp;&amp; ISNULL(t2.`deptname`) &amp;&amp;
+		ISNULL(t3.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`)&amp;&amp;
+		ISNULL(t3.`deptname`),
+		t2.`deptname`,
+		if(
+		ISNULL(t3.`deptname`),
+		t3.deptname
+		,t.deptname)
+		)
+		) AS 'user_dept_level4'
+		FROM
+		tb_upc_department t
+		LEFT JOIN
+		tb_upc_department t1
+		ON t1.`deptcode` = t.`parentdeptcode`
+		LEFT JOIN
+		tb_upc_department t2
+		ON t2.`deptcode` = t1.`parentdeptcode`
+		LEFT JOIN tb_upc_department t3
+		ON t3.`deptcode` = t2.`parentdeptcode`
+		WHERE
+		1=1
+		<if test="deptcode != null and deptcode != ''">
+			and t.`deptcode`=#{deptcode}
+		</if>
+		<if test="deptid != null and deptid != ''">
+			and t.`deptid`=#{deptid}
+		</if>
+	</select>
+	<select id="queryUserDepartment2" parameterType="map" resultType="map">
+	 SELECT
+		IF(
+		ISNULL(t1.`deptid`) &amp;&amp; ISNULL(t2.`deptid`) &amp;&amp;
+		ISNULL(t3.`deptid`),
+		t.`deptid`,
+		IF(
+		ISNULL(t2.`deptid`)&amp;&amp;
+		ISNULL(t3.`deptid`),
+		t1.`deptid`,
+		if(
+		ISNULL(t3.`deptid`),
+		t2.deptid
+		,t3.deptid)
+		)
+		) AS 'user_dept_level1',
+		IF(
+		ISNULL(t1.`deptid`) &amp;&amp; ISNULL(t2.`deptid`) &amp;&amp;
+		ISNULL(t3.`deptid`),
+		t1.`deptid`,
+		IF(
+		ISNULL(t2.`deptid`)&amp;&amp;
+		ISNULL(t3.`deptid`),
+		t.`deptid`,
+		if(
+		ISNULL(t3.`deptid`),
+		t1.deptid
+		,t2.deptid)
+		)
+		) AS 'user_dept_level2',
+		IF(
+		ISNULL(t1.`deptid`) &amp;&amp;
+		ISNULL(t2.`deptid`) &amp;&amp; ISNULL(t3.`deptid`),
+		t1.`deptid`,
+		IF(
+		ISNULL(t2.`deptid`)&amp;&amp; ISNULL(t3.`deptid`),
+		t2.`deptid`,
+		if(
+		ISNULL(t3.`deptid`),
+		t.deptid
+		,t1.deptid)
+		)
+		) AS 'user_dept_level3',
+		IF(
+		ISNULL(t1.`deptid`) &amp;&amp; ISNULL(t2.`deptid`) &amp;&amp;
+		ISNULL(t3.`deptid`),
+		t1.`deptid`,
+		IF(
+		ISNULL(t2.`deptid`)&amp;&amp;
+		ISNULL(t3.`deptid`),
+		t2.`deptid`,
+		if(
+		ISNULL(t3.`deptid`),
+		t3.deptid
+		,t.deptid)
+		)
+		) AS 'user_dept_level4'
+		FROM
+		tb_upc_department t
+		LEFT JOIN
+		tb_upc_department t1
+		ON t1.`deptcode` = t.`parentdeptcode`
+		LEFT JOIN
+		tb_upc_department t2
+		ON t2.`deptcode` = t1.`parentdeptcode`
+		LEFT JOIN tb_upc_department t3
+		ON t3.`deptcode` = t2.`parentdeptcode`
+		WHERE
+		1=1
+		<if test="deptcode != null and deptcode != ''">
+			and t.`deptcode`=#{deptcode}
+		</if>
+		<if test="deptid != null and deptid != ''">
+			and t.`deptid`=#{deptid}
+		</if>
+	</select>
+
+	<select id="queryAmoebaInfoPage" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceAmoebaStatisticsModel">
+		SELECT t.*,u.`username` AS create_pername FROM tb_finance_amoeba_info
+		t LEFT JOIN tb_upc_users u ON t.`create_per`=u.`userid`
+		WHERE
+		t.`is_delete`=1
+		<if test="amoeba_program != null and amoeba_program != ''">
+			and t.`amoeba_program` LIKE '%${amoeba_program}%'
+		</if>
+		<if test="amoeba_deptment != null and amoeba_deptment != ''">
+			and t.`amoeba_deptment` LIKE '%${amoeba_deptment}%'
+		</if>
+		<if test="amoeba_month != null and amoeba_month != ''">
+			and t.`amoeba_month` LIKE '%${amoeba_month}%'
+		</if>
+		order by t.amoeba_month desc
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryCountAmoebaInfo" parameterType="map"
+		resultType="int">
+		SELECT count(1) FROM tb_finance_amoeba_info t LEFT JOIN tb_upc_users u
+		ON t.`create_per`=u.`userid`
+		WHERE t.`is_delete`=1
+		<if test="amoeba_program != null and amoeba_program != ''">
+			and t.`amoeba_program` LIKE '%${amoeba_program}%'
+		</if>
+		<if test="amoeba_deptment != null and amoeba_deptment != ''">
+			and t.`amoeba_deptment` LIKE '%${amoeba_deptment}%'
+		</if>
+		<if test="amoeba_month != null and amoeba_month != ''">
+			and t.`amoeba_month` LIKE '%${amoeba_month}%'
+		</if>
+	</select>
+
+	<insert id="insertAmoebaInfo" parameterType="map">
+		insert into
+		tb_finance_amoeba_info(amoeba_id,amoeba_program,amoeba_deptment,amoeba_month,amoeba_sum,create_per,create_date,sort,remark)
+		values
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.amoeba_id}, #{item.amoeba_program},
+			#{item.amoeba_deptment}, #{item.amoeba_month},#{item.amoeba_sum},
+			#{item.create_per},now(),#{item.sort},#{item.remark})
+		</foreach>
+	</insert>
+
+	<select id="selectUserLevel" parameterType="String" resultType="map">
+		select * from tb_finance_department where usercode=#{usercode}
+	</select>
+	
+	<select id="queryListBuMen" parameterType="String" resultType="map">
+			SELECT
+		IF(
+		ISNULL(t1.`deptname`)  &amp;&amp; ISNULL(t2.`deptname`),
+		t.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		t2.`deptname`
+		)
+		) AS
+		'deptname', 
+		IF(
+		ISNULL(t1.`deptname`)
+		 &amp;&amp; ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t.`deptname`,
+		t1.`deptname`
+		)
+		) AS
+		'deptname1', 
+		IF(
+		ISNULL(t1.`deptname`)
+		 &amp;&amp; ISNULL(t2.`deptname`),
+		t1.`deptname`,
+		IF(
+		ISNULL(t2.`deptname`),
+		t2.`deptname`,
+		t.`deptname`
+		)
+		) AS
+		'deptname2' 
+		FROM
+		tb_upc_department t
+		LEFT JOIN tb_upc_department t1
+		ON t1.`deptcode` =
+		t.`parentdeptcode`
+		LEFT JOIN tb_upc_department t2
+		ON t2.`deptcode` =
+		t1.`parentdeptcode`
+		WHERE t.deptid=#{listDeptTempId}
+	</select>
+
+	<!-- 部门树形结构 -->
+	<select id="queryDepartmentAll" parameterType="map"
+		resultType="com.rds.statistics.model.RdsStatisticsDepartmentModel">
+		select * from (
+		select t.deptid ,
+		t.deptname,
+		t.parentdeptcode,
+		t.parentid,
+		t.sort,
+		(case
+		when t.parentid='0' then
+		'无'
+		else
+		(select deptname
+		from tb_upc_department aa
+		where t.parentid = aa.deptid)
+		end) parentname,
+		t.deptcode,
+		(select case
+		when count(*) > 0 then
+		'false'
+		else
+		'true'
+		end
+		from
+		tb_upc_department a
+		where a.parentid = t.deptid and delstatus=0) leaf
+		from tb_upc_department t
+		where t.parentid = #{parentcode}
+		and
+		t.delstatus=0) tt
+		where 1=1
+		<if test="deptname != null and deptname != '' and deptname != 'null' ">
+			and (tt.deptname like '%${deptname}%' or tt.parentname
+			like
+			'%${deptname}%' )
+		</if>
+		order by tt.sort
+	</select>
+
+	<select id="queryDeptParentId" parameterType="String"
+		resultType="map">
+		select deptid from tb_upc_department where
+		deptcode=#{deptcode} and delstatus =0
+	</select>
+	<select id="queryBuMen" parameterType="String"
+		resultType="com.rds.statistics.model.RdsStatisticsDepartmentModel">
+		 select tt.deptid,tt.deptname  from tb_upc_department tt where deptid= #{listDeptTempId}
+	</select>
+	<select id="queryBuMen2" parameterType="String"
+		resultType="com.rds.statistics.model.RdsStatisticsDepartmentModel">
+		 select * from tb_upc_department where deptid= ( select parentid from tb_upc_department where deptid=#{listDeptTempId})
+	</select>
+	<select id="queryXiaJiBuMen" parameterType="String" resultType="com.rds.statistics.model.RdsStatisticsDepartmentModel">
+		SELECT
+			tt.deptid,tt.deptname,tt.parentname,tt.leaf 
+		FROM
+		(
+		SELECT
+		t.deptid,
+		t.deptname,
+		t.parentdeptcode,
+		t.parentid,
+		t.islaboratory,
+		(
+		CASE
+		WHEN t.parentid = '0' THEN
+		'无'
+		ELSE
+		(
+		SELECT
+		deptname
+		FROM
+		tb_upc_department aa
+		WHERE
+		t.parentid = aa.deptid
+		)
+		END
+		) parentname,
+		t.deptcode,
+		b.companyid,
+		b.companyname,
+		(
+		SELECT
+		CASE
+		WHEN count(*) > 0 THEN
+		'false'
+		ELSE
+		'true'
+		END
+		FROM
+		tb_upc_department a
+		WHERE
+		a.parentid = t.deptid
+		AND delstatus = 0
+		) leaf
+		FROM
+		tb_upc_department t
+		LEFT JOIN tb_upc_company b ON t.companyid = b.companyid
+		WHERE
+		t.parentid = #{listDeptTempId}
+		AND t.delstatus = 0
+		AND
+		b. STATUS = 1
+		) tt
+		WHERE
+		1 = 1
+		ORDER BY
+	    tt.deptname DESC
+	</select>
+</mapper>

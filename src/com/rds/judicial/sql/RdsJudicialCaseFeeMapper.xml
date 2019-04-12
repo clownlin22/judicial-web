@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseFeeMapper">
+	<select id="queryVerify" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceVerifyModel">
+		SELECT
+		f.`id`,
+		f.`id` as verify_id,
+		f.`stand_sum`,
+		f.`real_sum`,
+		f.`return_sum`,
+		f.`status`,
+		f.`finance_remark` as 'remark',
+		f.`update_date` AS 'date',
+		f.`type`,
+		c.`case_code`,
+		c.`receiver_id`,
+		u.`username`,
+		a.`areacode`,
+		ai.`areaname`
+		FROM
+		`tb_judicial_casefee` f
+		LEFT JOIN `tb_judicial_case_info` c
+		ON
+		f.`case_id` = c.`case_id`
+		LEFT
+		JOIN `tb_upc_area` a
+		ON a.`area_id` =
+		c.`receiver_id`
+		LEFT JOIN
+		`tb_upc_area_info` ai
+		ON a.`areacode` =
+		ai.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON u.`userid` = a.`userid`
+		WHERE
+		(f.`status`=0 OR
+		f.`status`=1)
+		AND c.is_delete = 0
+		<if test="search!=null and search!=''">
+			AND u.`username` like '%${search}%'
+		</if>
+		ORDER BY f.`update_date` DESC
+		LIMIT
+		#{start},#{limit}
+	</select>
+	<select id="queryVerifyCount" resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		`tb_judicial_casefee` f
+		LEFT JOIN
+		`tb_judicial_case_info` c
+		ON
+		f.`case_id` = c.`case_id`
+		LEFT
+		JOIN
+		`tb_upc_area` a
+		ON a.`area_id` =
+		c.`receiver_id`
+		LEFT JOIN
+		`tb_upc_area_info` ai
+		ON a.`areacode` =
+		ai.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON u.`userid` = a.`userid`
+		WHERE (f.`status`=0 OR
+		f.`status`=1)
+		<if test="search!=null and search!=''">
+			AND u.`username` like '%${search}%'
+		</if>
+	</select>
+	<update id="updatestatus" parameterType="map">
+		UPDATE
+		`tb_judicial_casefee` c
+		SET
+		c.`status` = 0,
+		c.`real_sum` = #{real_sum},
+		c.`return_sum` = #{return_sum}
+		WHERE c.`id` = #{verify_id}
+	</update>
+	<insert id="insertCaseFee" parameterType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		INSERT INTO
+		`tb_judicial_casefee` (
+		`id`,
+		`case_id`,
+		`stand_sum`,
+		`real_sum`,
+		`return_sum`,
+		discountPrice,
+		fees,
+		siteFee,
+		`discount`,
+		`date`,
+		`remark`,
+		`type`,
+		`status`,
+		`dailyid`
+		)
+		VALUES
+		(
+		#{id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},#{discountPrice},#{fees},#{siteFee},#{discount},#{date},#{remark},#{type},#{status},#{dailyid}
+		)
+	</insert>
+	<update id="update" parameterType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		UPDATE `tb_judicial_casefee` c
+		SET c.`case_id`= #{case_id} WHERE c.`id`= #{id}
+	</update>
+	<update id="updateCaseFee"
+		parameterType="com.rds.judicial.model.RdsJudicialConfirmReturnModel">
+		UPDATE
+		`tb_judicial_casefee` c
+		SET
+		c.`status` = #{status},
+		c.`discount`=#{discountrate},
+		c.`return_sum`=#{return_sum},
+		c.`remark`=#{remark}
+		WHERE c.`case_id` =
+		(SELECT
+		case_id
+		FROM
+		`tb_judicial_case_info` i
+		WHERE i.`case_code` = #{case_code})
+	</update>
+	<select id="isMonthlyCase"
+		parameterType="com.rds.judicial.model.RdsJudicialConfirmReturnModel"
+		resultType="Integer">
+		SELECT
+		c.`status`
+		FROM
+		`tb_judicial_casefee` c
+		LEFT JOIN
+		`tb_judicial_case_info` i
+		ON c.`case_id` = i.`case_id`
+		WHERE
+		i.`case_code` =#{case_code}
+	</select>
+
+
+	<select id="getCaseFeeInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		select cs.*,ca.username as receive_name,ca.areaname 
+		from (SELECT
+		ci.`case_code`,ci.receiver_id,ci.client,ci.remark AS 'case_remark',
+		cf.id as fee_id,cf.stand_sum,cf.real_sum,cf.return_sum,cf.discount,cf.status,ci.accept_time as date,
+		cf.finance_remark,cf.type,ci.sample_str,
+		DATE_FORMAT(cf.confirm_date,'%Y-%m-%d %H:%i:%s') as confirm_date,
+		cf.paragraphtime,cf.account,cf.remittanceName,cf.remittanceDate,cf.discountPrice
+		FROM
+		<choose>
+			<when test="case_type=='dna'">
+				(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.receiver_id,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+				where ci.is_delete &lt;&gt; 1
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				)
+			</when>
+			<when test="case_type=='alcohol'">(select t.*,si.`sample_name` as sample_str,t.state as 'is_delete' from tb_alcohol_case_info t
+						LEFT JOIN `tb_alcohol_sample_info` si
+							ON t.sample_id=si.`sample_id`  where t.state &lt;&gt; 7)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				case_id,case_no AS
+				case_code,company_name as client,receiver_id,'' as sample_str,remark,receive_time AS 'accept_time',is_delete
+				FROM
+				tb_trace_case_info where is_delete  &lt;&gt; 1 )
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,bi.case_number AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.`accept_date` as 'accept_time','0' as 'is_delete'
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				getchildclient (ci.case_id) AS CLIENT,
+				ci.receiver_id,
+				CONCAT(si.sample_str,',孩子:',ci.`child_name`) AS sample_str,
+				ci.remark,
+				gather_time as 'accept_time',
+				ci.is_delete
+				FROM
+				tb_children_case_info_old ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` = 'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				 where ci.is_delete=0)
+			</when>
+			<otherwise>(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.receiver_id,ci.remark,ci.`accept_time`,ci.is_delete,CONCAT(s.`fandm`,',',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+     			where ci.is_delete=0)
+			</otherwise>
+		</choose>
+		ci ,
+		tb_judicial_casefee cf WHERE
+		ci.`case_id`=cf.`case_id`
+		<if test="fee_state==0">
+			AND (cf.status=0 or cf.status=2)
+		</if>
+		<if test="fee_state==1">
+			AND (cf.status=1 or cf.status=3)
+		</if>
+		<if test="type_state!=-1">
+			and cf.type=#{type_state}
+		</if>
+		<if test="case_code!=null and case_code!=''">
+			AND ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="client!=null and client!=''">
+			and  (ci.client like '%${client}%' or ci.sample_str like '%${client}%')
+		</if>
+		<if test="paragraphtime_start !=null and paragraphtime_start !=''">
+			and cf.paragraphtime >= #{paragraphtime_start}
+		</if>
+		<if test="paragraphtime_end !=null and paragraphtime_end !=''">
+			and #{paragraphtime_end} >= cf.paragraphtime
+		</if>
+		<if test="account !=null and account !=''">
+			and cf.account like '%${account}%'
+		</if>
+		<if test="starttime !=null and starttime !=''">
+			and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+		</if>
+		<if test="endtime !=null and endtime !=''">
+			and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+		</if>
+		and
+		cf.case_type=#{case_type}
+		)cs left join tb_charge_standard ca
+		on cs.receiver_id=ca.id
+		where 1=1
+		<if test=" receiver!=null and receiver != ''">
+			and ca.username LIKE '%${receiver}%'
+		</if>
+		<if test=" areaname!=null and areaname != ''">
+			and ca.areaname LIKE '%${areaname}%'
+		</if>
+		<if test="usercode == 'subo_xuym' ">
+			and ca.username like '%徐元敏%'
+		</if>
+		order by
+		cs.date,cs.status desc,cs.real_sum
+		<if test="limit != null and limit != null ">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="countCaseFeeInfo" parameterType="map" resultType="int">
+		select count(*) from (SELECT
+		ci.`case_code`,ci.receiver_id,ci.client,ci.remark AS 'case_remark',
+		cf.id as fee_id,cf.stand_sum,cf.real_sum,cf.return_sum,cf.discount,cf.status,ci.accept_time as date,
+		cf.finance_remark,cf.type,ci.sample_str,
+		DATE_FORMAT(cf.confirm_date,'%Y-%m-%d %H:%i:%s') as confirm_date,
+		cf.paragraphtime,cf.account,cf.remittanceName,cf.remittanceDate,cf.discountPrice
+		FROM
+		<choose>
+			<when test="case_type=='dna'">
+				(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.receiver_id,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+				where ci.is_delete &lt;&gt; 1
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				)
+			</when>
+			<when test="case_type=='alcohol'">(select t.*,si.`sample_name` as sample_str,t.state as 'is_delete' from tb_alcohol_case_info t
+							LEFT JOIN `tb_alcohol_sample_info` si
+							ON t.sample_id=si.`sample_id`   where t.state &lt;&gt; 7)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				case_id,case_no AS
+				case_code,company_name as client,receiver_id,'' as sample_str,remark,receive_time AS 'accept_time',is_delete
+				FROM
+				tb_trace_case_info where is_delete  &lt;&gt; 1 )
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,bi.case_number AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.`accept_date` as 'accept_time','0' as 'is_delete'
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				getchildclient (ci.case_id) AS CLIENT,
+				ci.receiver_id,
+				CONCAT(si.sample_str,',孩子:',ci.`child_name`) AS sample_str,
+				ci.remark,
+				gather_time as 'accept_time',
+				ci.is_delete
+				FROM
+				tb_children_case_info_old ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` = 'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				 where ci.is_delete=0)
+			</when>
+			<otherwise>(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.receiver_id,ci.remark,ci.`accept_time`,ci.is_delete,CONCAT(s.`fandm`,',',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+     			where ci.is_delete=0)
+			</otherwise>
+		</choose>
+		ci ,
+		tb_judicial_casefee cf WHERE
+		ci.`case_id`=cf.`case_id`
+		<if test="fee_state==0">
+			AND (cf.status=0 or cf.status=2)
+		</if>
+		<if test="fee_state==1">
+			AND (cf.status=1 or cf.status=3)
+		</if>
+		<if test="type_state!=-1">
+			and cf.type=#{type_state}
+		</if>
+		<if test="case_code!=null and case_code!=''">
+			AND ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="client!=null and client!=''">
+			and  (ci.client like '%${client}%' or ci.sample_str like '%${client}%')
+		</if>
+		<if test="paragraphtime_start !=null and paragraphtime_start !=''">
+			and cf.paragraphtime >= #{paragraphtime_start}
+		</if>
+		<if test="paragraphtime_end !=null and paragraphtime_end !=''">
+			and #{paragraphtime_end} >= cf.paragraphtime
+		</if>
+		<if test="account !=null and account !=''">
+			and cf.account like '%${account}%'
+		</if>
+		<if test="starttime !=null and starttime !=''">
+			and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+		</if>
+		<if test="endtime !=null and endtime !=''">
+			and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+		</if>
+		and
+		cf.case_type=#{case_type}
+		)cs left join tb_charge_standard ca
+		on cs.receiver_id=ca.id
+		where 1=1
+		<if test=" receiver!=null and receiver != ''">
+			and ca.username LIKE '%${receiver}%'
+		</if>
+		<if test=" areaname!=null and areaname != ''">
+			and ca.areaname LIKE '%${areaname}%'
+		</if>
+		<if test="usercode == 'subo_xuym' ">
+			and ca.username like '%徐元敏%'
+		</if>
+	</select>
+
+	<update id="confirmCaseFee" parameterType="map">
+		update tb_judicial_casefee set
+		real_sum=#{real_sum},
+		return_sum=#{return_sum},
+		paragraphtime=#{paragraphtime},
+		account=#{account},
+		finance_remark=#{remark},type=#{type},
+		remittanceName=#{remittanceName},
+		remittanceDate=#{remittanceDate},
+		discountPrice=#{discountPrice}
+		 where id=#{fee_id}
+	</update>
+	
+	<update id="caseFeeConfirm" parameterType="map">
+		update tb_judicial_casefee set status=#{status},confirm_date=now(),update_user=#{update_user} where id IN (${ids})
+	</update>
+
+	<update id="insertOAnum" parameterType="map">
+		update
+		tb_judicial_casefee set oa_num=#{oa_num} where id=#{fee_id}
+	</update>
+</mapper>

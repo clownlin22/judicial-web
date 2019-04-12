@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsExperimentalDataMapper">
+
+
+	<select id="queryAllPage" parameterType="map" resultType="com.rds.statistics.model.RdsExperimentalDataModel">
+		       SELECT 
+					  case_code,
+					  sample_codes,
+					  consignment_time,
+					  accept_time,
+					  experiment_no,
+					  case_id,
+					  fandm,
+					  id_card,
+					  child,
+					  birth_date,
+					  identify_per,
+					  compare_date,
+					  ext_flag,
+					  final_result_flag,
+					  close_time,
+					  mail_time,
+					  mail_address,
+					  mail_phone,
+					  sample_count,
+					  experiment_date
+						FROM
+						tb_all_experimental_data
+			where 1=1
+             <if test="case_code != '' and case_code != null">
+				and  case_code like '%${case_code}%'
+			</if>	
+			<if test="sample_codes != '' and sample_codes != null">
+				and  sample_codes like concat('%',#{sample_codes},'%')
+			</if>
+			<if test="experiment_no != '' and experiment_no != null">
+			   and  experiment_no like concat('%',#{experiment_no},'%')
+			</if>
+			<if test="mail_phone != '' and mail_phone != null">
+				and  mail_phone like concat('%',#{mail_phone},'%')
+			</if>
+			<if test="accpet_start_time != '' and accpet_start_time != null">
+				and accept_time >= #{accpet_start_time}
+			</if>	
+			<if test="accpet_end_time != '' and accpet_end_time != null">
+				and #{accpet_end_time} >= accept_time
+			</if>	
+			<if test="consignment_start_time != '' and consignment_start_time != null">
+				and consignment_time >= #{consignment_start_time}
+			</if>
+			<if test="consignment_end_time != '' and consignment_end_time != null">
+				and #{consignment_end_time} >= consignment_time
+			</if>		
+			
+              
+	</select>
+	
+<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+           count(1)
+			  FROM
+			  tb_all_experimental_data
+			  where 1=1
+		<if test="case_code != '' and case_code != null">
+				and  case_code like concat('%',#{case_code},'%')
+			</if>	
+			<if test="sample_codes != '' and sample_codes != null">
+				and  sample_codes like concat('%',#{sample_codes},'%')
+			</if>
+			<if test="experiment_no != '' and experiment_no != null">
+			   and  experiment_no like concat('%',#{experiment_no},'%')
+			</if>
+			<if test="mail_phone != '' and mail_phone != null">
+				and  mail_phone like concat('%',#{mail_phone},'%')
+			</if>
+			<if test="accpet_start_time != '' and accpet_start_time != null">
+				and accept_time >= #{accpet_start_time}
+			</if>	
+			<if test="accpet_end_time != '' and accpet_end_time != null">
+				and #{accpet_end_time} >= accept_time
+			</if>	
+			<if test="consignment_start_time != '' and consignment_start_time != null">
+				and consignment_time >= #{consignment_start_time}
+			</if>
+			<if test="consignment_end_time != '' and consignment_end_time != null">
+				and #{consignment_end_time} >= consignment_time
+			</if>		
+			
+	</select>
+	<delete id="search_data" statementType="CALLABLE">
+	{CALL `search_data`}
+	</delete>
+</mapper>

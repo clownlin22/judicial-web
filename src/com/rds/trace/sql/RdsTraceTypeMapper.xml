@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceTypeMapper">
+    <insert id="insertType" parameterType="map">
+        insert into tb_trace_type_dic (type_id, type_name,remark,create_per,create_time)
+        values(#{type_id},#{type_name},#{remark},#{create_per},#{create_time});
+    </insert>
+
+    <select id="queryType" parameterType="map"
+            resultType="com.rds.trace.model.RdsTraceTypeModel">
+        select * from tb_trace_type_dic
+        where 1
+        <if test="type_name!=null and type_name!=''">
+            and type_name like '%${type_name}%'
+        </if>
+        <if test="type_id!=null and type_id!=''">
+            and type_id = #{type_id}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountType" parameterType="map" resultType="int">
+        select count(*) from tb_trace_type_dic
+        where 1
+        <if test="type_name!=null and type_name!=''">
+            and type_name like '%${type_name}%'
+        </if>
+        <if test="type_id!=null and type_id!=''">
+            and type_id = #{type_id}
+        </if>
+    </select>
+
+    <update id="updateType" parameterType="map">
+        update tb_trace_type_dic
+        set type_name = #{type_name},remark=#{remark},create_per#{create_per}
+        where type_id = #{type_id}
+    </update>
+
+    <delete id="deleteType" parameterType="map">
+        delete from tb_trace_type_dic
+        where type_id = #{type_id}
+    </delete>
+</mapper>

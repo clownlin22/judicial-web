@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialExceptionTypeMapper">
+	<select id="getType" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialExceptionTypeModel">
+		select * from `tb_judicial_exception_type` t limit
+		#{start},#{limit};
+	</select>
+	<select id="getTypeCount" parameterType="map" resultType="int">
+		select
+		count(1) from `tb_judicial_exception_type` t
+	</select>
+	<insert id="insertExceptionType"
+		parameterType="com.rds.judicial.model.RdsJudicialExceptionTypeModel">
+		INSERT INTO `tb_judicial_exception_type` (`type_id`,
+		`type_desc`) VALUES
+		(#{type_id},#{type_desc});
+	</insert>
+	<update id="updateExceptionType"
+		parameterType="com.rds.judicial.model.RdsJudicialExceptionTypeModel">
+		UPDATE tb_judicial_exception_type t SET t.`type_desc`=#{type_desc} WHERE
+		t.`type_id`=#{type_id};
+	</update>
+	<update id="deleteExceptionType" parameterType="map">
+		UPDATE tb_judicial_exception_type t SET t.`is_delete`=1 WHERE
+		t.`type_id`=#{type_id};
+	</update>
+</mapper>

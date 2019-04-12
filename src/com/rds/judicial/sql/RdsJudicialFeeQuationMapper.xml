@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialFeeQuationMapper">
+	<insert id="insertQuation" parameterType="com.rds.judicial.model.RdsJudicialFeeQuationModel">
+		INSERT INTO
+		`tb_judicial_feeequation` (`id`, `type_id`, `equation`,`discountrate`)
+		VALUES
+		(#{id},#{type_id},#{equation},#{discountrate});
+	</insert>
+	<select id="queryType" parameterType="map" resultType="map">
+		SELECT
+		f.`type_id`,
+		a.`userid`,
+		u.`username`,
+		a.`area_id`,
+		a.`areacode`,
+		i.`areaname`,
+		q.`equation`,
+		q.`discountrate`,
+		f.feetype
+		FROM
+		`tb_judicial_feetype` f
+		LEFT
+		JOIN `tb_upc_area` a
+		ON
+		a.`area_id` =
+		f.`area_id`
+		LEFT JOIN
+		`tb_judicial_feeequation` q
+		ON
+		q.`type_id` =
+		f.`type_id`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON a.`userid` =
+		u.`userid`
+		LEFT
+		JOIN
+		`tb_upc_area_info`
+		i
+		ON i.`areacode` = a.`areacode`
+		WHERE
+		a.`is_delete` =
+		0
+		AND f.`is_delete`=0
+		<if test="search!=null and search!=''">
+			AND u.`username` like '%${search}%'
+		</if>
+		AND f.feetype = #{feetype}
+		LIMIT #{start},#{limit}
+	</select>
+	<select id="queryTypeCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		`tb_judicial_feetype` f
+		LEFT JOIN `tb_upc_area` a
+		ON
+		a.`area_id` = f.`area_id`
+		LEFT JOIN `tb_judicial_feeequation` q
+		ON
+		q.`type_id` = f.`type_id`
+		LEFT JOIN `tb_upc_users` u
+		ON a.`userid` =
+		u.`userid`
+		LEFT JOIN `tb_upc_area_info` i
+		ON i.`areacode` = a.`areacode`
+		LEFT JOIN `tb_upc_dic_values` v
+		ON v.`keyid` = f.`feetype`
+		WHERE
+		a.`is_delete` = 0 AND f.`is_delete`=0
+		<if test="search!=null and search!=''">
+			AND u.`username` like '%${search}%'
+		</if>
+		AND f.feetype = #{feetype}
+	</select>
+	<select id="getEquation" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialFeeQuationModel">
+		SELECT
+		q.`equation`,
+		q.`discountrate`
+		FROM
+		`tb_judicial_feeequation` q
+		LEFT JOIN `tb_judicial_feetype` f
+		ON
+		f.`type_id` = q.`type_id`
+		WHERE f.`is_delete`=0 AND f.`area_id` =
+		#{areaid} AND f.feetype = #{case_type}
+	</select>
+	<update id="delete" parameterType="String">
+		UPDATE `tb_judicial_feetype` t
+		SET t.`is_delete`=1 WHERE t.`type_id`=#{id}
+	</update>
+	
+	<update id="updateFeetype" parameterType="map">
+	    update tb_judicial_feetype set area_id=#{area_id_update},feetype=#{feetype_update} where type_id=#{type_id}
+	</update>
+	
+	<update id="updateEquation" parameterType="com.rds.judicial.model.RdsJudicialFeeQuationModel">
+	    update tb_judicial_feeequation set equation=#{equation},discountrate=#{discountrate} where type_id=#{type_id}
+	</update>
+</mapper>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsSampleStatisticsMapper">
+
+	<select id="queryAll" parameterType="map" resultType="com.rds.statistics.model.RdsSampleStatisticsModel">
+		select * from tb_sample_statistics
+		<where>
+			<if test="sample_in_per != null and sample_in_per != ''">
+				and sample_in_per like '%${sample_in_per}%'
+			</if>
+			<if test="month !=null and month !=''">
+				and month like '%${month}%'
+			</if>
+			<if test="deptname !=null and deptname !=''">
+				and deptname like '%${deptname}%'
+			</if>
+		</where>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		select count(*) from tb_sample_statistics
+		<where>
+			<if test="sample_in_per != null and sample_in_per != ''">
+				and sample_in_per like '%${sample_in_per}%'
+			</if>
+			<if test="month !=null and month !=''">
+				and month like '%${month}%'
+			</if>
+			<if test="deptname !=null and deptname !=''">
+				and deptname like '%${deptname}%'
+			</if>
+		</where>
+	</select>
+	
+	 <delete id="sampleStatistisc" statementType="CALLABLE" parameterType="string">
+        {CALL sample_statistisc(#{sys_date,mode=IN,jdbcType=VARCHAR})}
+     </delete>
+     
+	<select id="queryAllSample" parameterType="map" resultType="com.rds.statistics.model.RdsSampleStatisticsModel">
+		SELECT 
+		DISTINCT 
+		 i.`sample_code`,
+		 i.`sample_username`,
+		  t.`sample_in_per`,
+		  t.`client`,
+		  t.`accept_time`,
+		  u.userid AS 'sample_in_per_id',
+		  d.`deptname`,
+		  d.deptcode,
+		  #{month} AS 'month'
+		FROM
+		  `tb_judicial_case_info` t 
+		  LEFT JOIN tb_judicial_sample_info i 
+		    ON t.`case_id` = i.`case_id` 
+		     LEFT JOIN tb_upc_users u 
+		    ON t.`sample_in_per`=u.`username`
+		    LEFT JOIN `tb_upc_department` d
+		    ON u.`deptcode`=d.`deptcode`
+		    WHERE t.`accept_time` like concat(#{month},'%') and u.userid=#{sample_in_per_id}  AND u.`roletype` &lt;&gt; '104' 
+		 UNION 
+		    SELECT 
+		    DISTINCT
+			i.`sample_code`,
+			i.`sample_username`,
+			t.`sample_in_per`,
+			t.`client`,
+			t.`accept_time`,
+			u.userid AS 'sample_in_per_id',
+			d.`deptname`,
+			d.deptcode,
+			#{month} AS MONTH
+		FROM
+		  `tb_judicial_case_info` t 
+		  LEFT JOIN tb_judicial_sample_info i 
+		    ON t.`case_id` = i.`case_id` 
+		    LEFT JOIN tb_upc_users u 
+		    ON t.`receiver_id`=u.`username`
+		    LEFT JOIN `tb_upc_department` d
+		    ON u.`deptcode`=d.`deptcode`
+		    WHERE t.`accept_time` like concat(#{month},'%') and u.userid=#{sample_in_per_id}  AND u.`roletype` &lt;&gt; '104' 
+		    <if test="start!=null and limit!=null">
+				limit #{start},#{limit}
+			</if>
+	</select>
+	
+		<select id="queryAllSampleCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM (
+		SELECT 
+		DISTINCT 
+		  i.`sample_code`,
+		 i.`sample_username`,
+		  t.`sample_in_per`,
+		  t.`client`,
+		  t.`accept_time`
+		FROM
+		  `tb_judicial_case_info` t 
+		  LEFT JOIN tb_judicial_sample_info i 
+		    ON t.`case_id` = i.`case_id` 
+		     LEFT JOIN tb_upc_users u 
+		    ON t.`sample_in_per`=u.`username`
+		    WHERE t.`accept_time` like concat(#{month},'%') and u.userid=#{sample_in_per_id}  AND u.`roletype` &lt;&gt; '104' 
+		 UNION 
+		    SELECT 
+		    DISTINCT
+			 i.`sample_code`,
+		 i.`sample_username`,
+		  t.`sample_in_per`,
+		  t.`client`,
+		  t.`accept_time`
+		FROM
+		  `tb_judicial_case_info` t 
+		  LEFT JOIN tb_judicial_sample_info i 
+		    ON t.`case_id` = i.`case_id` 
+		    LEFT JOIN tb_upc_users u 
+		    ON t.`receiver_id`=u.`username`
+		    WHERE t.`accept_time` like concat(#{month},'%') and u.userid=#{sample_in_per_id}  AND u.`roletype` &lt;&gt; '104' ) a
+	</select>
+	
+	
+</mapper>

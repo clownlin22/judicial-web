@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialBillMapper">
+	<insert id="insert" parameterType="map">
+		INSERT INTO
+		`tb_judicial_case_bill` (`bill_id`, `case_id`, `bill_code`,
+		`bill_charge`,`bill_per`, `date`, `remark`)
+		VALUES (#{bill_id},
+		#{case_id},
+		#{bill_code}, #{bill_charge},#{bill_per}, #{date},
+		#{remark});
+	</insert>
+	<delete id="delete" parameterType="map">
+		DELETE FROM
+		`tb_judicial_case_bill` WHERE `bill_id` =
+		#{bill_id};
+	</delete>
+	<select id="queryAllPage" parameterType="map" resultType="map">
+		SELECT
+		feeinfo.`case_id`,
+		feeinfo.`case_code`,
+		feeinfo.`case_fee`,
+		feeinfo.`is_bill`,
+		casebill.`bill_id`,
+		casebill.`bill_charge`,
+		casebill.`bill_code`,
+		casebill.`username`,
+		casebill.`date`,
+		casebill.`remark`
+		FROM
+		(SELECT
+		bill.`bill_id`,
+		bill.`bill_code`,
+		bill.`bill_charge`,
+		bill.`date`,
+		bill.`remark`,
+		bill.`case_id`,
+		users.`username`
+		FROM
+		`tb_judicial_case_bill` bill
+		LEFT JOIN
+		`tb_upc_users` users
+		ON bill.`bill_per` = users.`userid`
+		where 1=1
+		<if test=" starttime!=null and  starttime != '' ">
+			and date>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=date
+		</if>
+		<if test="bill_per!=null and bill_per != ''">
+			AND users.`username` like '%${bill_per}%'
+		</if>
+		<if test="bill_code!=null and bill_code!=''">
+			AND bill_code = #{bill_code}
+		</if>
+		)
+		casebill
+		LEFT JOIN
+		(SELECT
+		caseinfo.`case_id`,
+		caseinfo.`is_bill`,
+		caseinfo.`case_code`,
+		feepercase.return_sum as case_fee
+		FROM
+		`tb_judicial_case_info`
+		caseinfo
+		LEFT JOIN
+		`tb_judicial_casefee` feepercase
+		ON
+		caseinfo.case_id =
+		feepercase.case_id
+		WHERE caseinfo.`is_delete` = 0
+		AND
+		caseinfo.is_archived = 0
+		AND caseinfo.is_bill = 1
+		<if test="case_code!='' and case_code != null">
+			AND caseinfo.case_code like '%${case_code}%'
+		</if>
+		) feeinfo
+		ON feeinfo.case_id
+		=
+		casebill.`case_id`
+		LIMIT #{start},#{end}
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		(SELECT
+		*
+		FROM
+		`tb_judicial_case_bill`
+		LEFT JOIN
+		`tb_upc_users`
+		ON
+		`tb_judicial_case_bill`.`bill_per` =
+		`tb_upc_users`.`userid`
+		where 1=1
+		<if test=" starttime!=null and  starttime != '' ">
+			and date>=#{starttime}
+		</if>
+		<if test="bill_per!=null and bill_per != ''">
+			AND `tb_upc_users`.`username` = #{bill_per}
+		</if>
+		<if test="bill_code!=null and bill_code!=''">
+			AND `tb_judicial_case_bill`.bill_code = #{bill_code}
+		</if>
+
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=date
+		</if>
+		)
+		casebill
+		LEFT JOIN
+		(SELECT
+		caseinfo.`case_id`,
+		caseinfo.`is_bill`,
+		caseinfo.`case_code`,
+		feepercase.return_sum as case_fee
+		FROM
+		`tb_judicial_case_info`
+		caseinfo
+		LEFT JOIN
+		`tb_judicial_casefee` feepercase
+		ON
+		caseinfo.case_id =
+		feepercase.case_id
+		WHERE caseinfo.`is_delete` = 0
+		AND
+		caseinfo.is_archived = 0
+		AND caseinfo.is_bill = 1
+		<if test="case_code!='' and case_code != null">
+			AND caseinfo.case_code like '%${case_code}%'
+		</if>
+		) feeinfo
+		ON feeinfo.case_id
+		=
+		casebill.`case_id`
+
+	</select>
+	<select id="queryByCaseId" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialBillModel">
+		SELECT * FROM `tb_judicial_case_bill` WHERE `case_id` =
+		#{case_id}
+	</select>
+	<select id="queryByBillId" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialBillModel">
+		SELECT * FROM `tb_judicial_case_bill` WHERE `bill_id` =
+		#{bill_id}
+	</select>
+</mapper>

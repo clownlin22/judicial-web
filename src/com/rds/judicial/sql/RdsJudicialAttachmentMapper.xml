@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialAttachmentMapper">
+    <insert id="insertAttachment" parameterType="map">
+        insert into tb_judicial_experiment_attachment (uuid,
+        attachment_path, attachment_date, upload_userid)
+        values(#{uuid},#{attachment_path},now(),
+        #{upload_userid})
+    </insert>
+
+    <delete id="deleteAttachement" parameterType="map">
+        delete from tb_judicial_experiment_attachment where uuid = #{uuid}
+    </delete>
+
+    <select id="queryAttachment" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialAttachmentModel">
+         SELECT a.*,u.`username` AS 'upload_username',u1.`username` AS 'download_username' 
+         FROM tb_judicial_experiment_attachment a 
+        LEFT JOIN tb_upc_users u ON a.`upload_userid` = u.`userid`
+        LEFT JOIN tb_upc_users u1 ON a.`down_userid` = u1.`userid`
+        WHERE 1=1 
+        <if test=" attachment_name !=null and attachment_name != '' ">
+            and a.attachment_path like '%${attachment_name}%'
+        </if>
+        <if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.attachment_date,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.attachment_date,1,10) 
+        </if>
+        <if test="uuid !=null and uuid != '' ">
+            and a.uuid=#{uuid} 
+        </if>
+        <if test="start!=null and limit!=null">
+            order by a.attachment_date
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountAttachment" parameterType="map"
+            resultType="int">
+       SELECT count(1)
+         FROM tb_judicial_experiment_attachment a 
+        LEFT JOIN tb_upc_users u ON a.`upload_userid` = u.`userid`
+        LEFT JOIN tb_upc_users u1 ON a.`down_userid` = u1.`userid`
+        WHERE 1=1 
+        <if test=" attachment_name !=null and attachment_name != '' ">
+            and a.attachment_path like '%${attachment_name}%'
+        </if>
+        <if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+         <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.attachment_date,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.attachment_date,1,10) 
+        </if>
+        <if test="uuid !=null and uuid != '' ">
+            and a.uuid=#{uuid} 
+        </if>
+    </select>
+    
+    <update id="updateAttachment" parameterType="map">
+    	update tb_judicial_experiment_attachment t set 
+    	t.down_flag = t.down_flag + 1,
+    	t.download_time = now(),
+    	t.down_userid=#{down_userid}
+    	where t.uuid=#{uuid}
+    </update>
+
+ 	<insert id="insertExperimentLog" parameterType="map">
+        insert into tb_judicial_experiment_log (uuid,sample_code,
+        uploadPer, uploadTime)
+        values(#{uuid},#{sample_code},#{uploadPer},now())
+    </insert>
+    
+    <update id="updateExperimentLog" parameterType="map"  >
+    	update tb_judicial_experiment_log t set 
+    	t.downloadPer = #{downloadPer},
+    	t.downloadTime = now()
+    	where t.sample_code=#{sample_code}
+    </update>
+    
+    <select id="queryExperimentLog" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialAttachmentModel">
+		SELECT 
+		      u.`username` AS 'upload_username',
+		      u1.`username` AS 'download_username',
+		      a.`uploadTime` AS 'attachment_date',
+		      a.`downloadTime` AS 'download_time',
+		      a.sample_code
+		    FROM
+		      tb_judicial_experiment_log a 
+		      LEFT JOIN tb_upc_users u 
+		        ON a.`uploadPer` = u.`userid` 
+		      LEFT JOIN tb_upc_users u1 
+		        ON a.`downloadPer` = u1.`userid` 
+		 where 1=1
+		<if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.uploadTime,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.uploadTime,1,10) 
+        </if>
+         <if test="down_start_time !=null and down_start_time != '' ">
+            and SUBSTRING(a.downloadTime,1,10)  >= #{down_start_time}
+        </if>
+        <if test="down_end_time !=null and down_end_time != '' ">
+            and #{down_end_time} >= SUBSTRING(a.downloadTime,1,10) 
+        </if>
+        <if test="sample_code !=null and sample_code != '' ">
+            and a.sample_code like '%${sample_code}%' 
+        </if>  
+        <if test="start!=null and limit!=null">
+            order by a.`uploadTime` desc
+            limit #{start},#{limit}
+        </if> 
+       
+    </select>
+    
+    <select id="countExperimentLog" parameterType="map" resultType="int">
+        SELECT 
+		     count(1)
+		    FROM
+		      tb_judicial_experiment_log a 
+		      LEFT JOIN tb_upc_users u 
+		        ON a.`uploadPer` = u.`userid` 
+		      LEFT JOIN tb_upc_users u1 
+		        ON a.`downloadPer` = u1.`userid` 
+		where 1=1
+		<if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.uploadTime,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.uploadTime,1,10) 
+        </if>
+         <if test="down_start_time !=null and down_start_time != '' ">
+            and SUBSTRING(a.downloadTime,1,10)  >= #{down_start_time}
+        </if>
+        <if test="down_end_time !=null and down_end_time != '' ">
+            and #{down_end_time} >= SUBSTRING(a.downloadTime,1,10) 
+        </if>
+        <if test="sample_code !=null and sample_code != '' ">
+            and a.sample_code like '%${sample_code}%' 
+        </if>  
+    </select>
+    
+</mapper>

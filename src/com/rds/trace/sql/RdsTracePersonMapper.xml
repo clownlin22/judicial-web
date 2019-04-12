@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTracePersonMapper">
+    <insert id="insertPerson" parameterType="map">
+        insert into tb_trace_person_info (uuid, case_id,person_name, id_number, address)
+        values(#{uuid},#{case_id},#{person_name},#{id_number},#{address})
+    </insert>
+
+    <select id="queryPerson" parameterType="map" resultType="com.rds.trace.model.RdsTracePersonInfoModel">
+        select * from tb_trace_person_info where 1
+        <if test="uuid!=null and uuid!=''">
+            and uuid = #{uuid}
+        </if>
+        <if test="person_name!=null and person_name!=''">
+            and person_name = #{person_name}
+        </if>
+        <if test="id_number!=null and id_number!=''">
+            and id_number = #{id_number}
+        </if>
+        <if test="address!=null and address!=''">
+            and address = #{address}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and case_id = #{case_id}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountPerson" parameterType="map" resultType="int">
+        select count(*) from tb_trace_person_info where 1
+        <if test="uuid!=null and uuid!=''">
+            and uuid = #{uuid}
+        </if>
+        <if test="person_name!=null and person_name!=''">
+            and person_name = #{person_name}
+        </if>
+        <if test="id_number!=null and id_number!=''">
+            and id_number = #{id_number}
+        </if>
+        <if test="address!=null and address!=''">
+            and address = #{address}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and case_id = #{case_id}
+        </if>
+    </select>
+
+    <update id="updatePerson" parameterType="map">
+        update tb_trace_person_info set
+        person_name = #{person_name},
+        id_number = #{id_number},
+        address = #{address}
+        where uuid=#{uuid}
+    </update>
+
+    <delete id="deletePerson" parameterType="string">
+        delete from tb_trace_person_info where case_id = #{case_id}
+    </delete>
+</mapper>

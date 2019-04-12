@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseExceptionMapper">
+
+	<select id="getCaseException" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseExceptionInfoModel">
+		SELECT
+		cf.`id` AS 'fee_id',
+		cf.status AS fee_status,
+		cf.`type` AS fee_type,
+		cf.remittance_id,
+		ai.username as 'case_receiver',
+		IF(
+		ai.`roletype` = 104,
+		(SELECT
+		u3.username
+		FROM
+		tb_judicial_agent ag,tb_upc_users u3
+		WHERE ag.userid = ai.userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+		''
+		) AS agent,
+ 		ci.`accept_time`,
+		ci.receiver_area,
+		if(TIMESTAMPDIFF(SECOND,
+		ci.sample_in_time,
+		IF(mi.mail_time IS NULL ,NOW(),mi.mail_time)
+		)>172800,0,1) as
+		is_super_time,
+		if(TIMESTAMPDIFF(SECOND,
+		ci.sample_in_time,
+		now())>172800,0,1) as is_to_time,
+		IF(ca.case_id IS NULL,1,0) as
+		per_photo,
+		DATE_FORMAT(ci.`close_time`,'%Y-%m-%d %H:%i:%s') AS
+		close_time,
+		DATE_FORMAT(mi.mail_time,'%Y-%m-%d %H:%i:%s') AS mail_time,
+		DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d %H:%i:%s') AS sample_in_time,
+		ci.case_code AS case_code,
+		ci.verify_state AS verify_state,
+		ci.`case_id` AS case_id,
+		ci.client,
+		IF(nend.case_code IS NULL,0,1) AS
+		is_report
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN tb_upc_users ai 
+		ON ci.`case_userid` = ai.userid
+		<if test="other_type!='' and other_type !=null">
+			left join(SELECT case_id FROM tb_judicial_case_exception
+			WHERE exception_type=#{other_type} GROUP BY case_id) ex
+			on
+			ex.case_id=ci.case_id
+		</if>
+		LEFT JOIN
+		(SELECT * FROM tb_judicial_case_attachment group by case_id
+		<!--  
+		 WHERE
+		attachment_type=3-->) ca
+		ON ci.`case_id` = ca.`case_id`
+		INNER JOIN
+		tb_judicial_casefee cf
+		ON cf.`case_id`= ci.`case_id`
+		LEFT JOIN
+		(SELECT
+		MIN(mail_time) AS mail_time, case_id
+		FROM tb_judicial_mail_info
+		GROUP BY case_id) mi
+		ON mi.case_id = ci.`case_id`
+		LEFT JOIN (
+		(SELECT case_code FROM tb_judicial_sub_case_info s
+		WHERE s.result IS NULL OR s.result = '' GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT(case_code) FROM tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT(case_code) FROM tb_judicial_checknegreport WHERE check_flag = 'N')
+		) nend
+		ON ci.`case_code`=nend.case_code
+		WHERE
+		ci.`is_delete` = 0
+		<if test="other_type!=''  and other_type !=null">
+			and ex.case_id is not null
+		</if>
+		<if test="fee_state==1">
+			and cf.status=0
+		</if>
+		<if test="fee_state==2">
+			and cf.status &lt;&gt; 0
+		</if>
+		<if test="is_report==0">
+			and nend.case_code IS NULL
+		</if>
+		<if test="is_report==1">
+			and nend.case_code IS not NULL
+		</if>
+		<if test="is_super_time==0">
+			and TIMESTAMPDIFF(SECOND,
+			ci.sample_in_time,
+			IF(mi.mail_time IS NULL ,NOW(),mi.mail_time)
+			)>172800
+		</if>
+		<if test="is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test="is_mail==1">
+			and mi.case_id is null
+		</if>
+		<if test="is_super_time==1">
+			and 172800>=TIMESTAMPDIFF(SECOND,
+			ci.sample_in_time,
+			IF(mi.mail_time IS NULL ,NOW(),mi.mail_time)
+			)
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" case_receiver!=null and case_receiver != ''">
+			and ai.username LIKE '%${case_receiver}%'
+		</if>
+		<if test=" receiver_area !=null and receiver_area != ''">
+			and ci.receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" client!=null and client != ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and SUBSTRING(ci.`accept_time`,1,10)>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=SUBSTRING(ci.`accept_time`,1,10)
+		</if>
+		order by ci.sample_in_time
+		limit #{start},#{limit}
+	</select>
+
+	<select id="countCaseException" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN tb_upc_users ai
+		ON ci.`case_userid` = ai.userid
+		<if test="other_type!=''  and other_type !=null">
+			left join(SELECT case_id FROM tb_judicial_case_exception
+			WHERE exception_type=#{other_type} GROUP BY case_id) ex
+			on
+			ex.case_id=ci.case_id
+		</if>
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE
+		s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT
+		DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE
+		check_flag = 'N')
+		) nend
+		ON ci.`case_code`=nend.case_code
+		INNER JOIN
+		tb_judicial_casefee cf
+		ON cf.`case_id` =
+		ci.`case_id`
+		LEFT
+		JOIN
+		(SELECT
+		MIN(mail_time) AS
+		mail_time,
+		case_id
+		FROM
+		tb_judicial_mail_info
+		GROUP BY
+		case_id) mi
+		ON
+		mi.case_id = ci.`case_id`
+		WHERE
+		ci.`is_delete` = 0
+		<if test="other_type!=''  and other_type !=null">
+			and ex.case_id is not null
+		</if>
+		<if test="fee_state==1">
+			and cf.status=0
+		</if>
+		<if test="fee_state==2">
+			and cf.status &lt;&gt; 0
+		</if>
+		<if test="is_report==0">
+			and nend.case_code IS NULL
+		</if>
+		<if test="is_report==1">
+			and nend.case_code IS not NULL
+		</if>
+		<if test=" client!=null and client != ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test="is_super_time==0">
+			and TIMESTAMPDIFF(SECOND,
+			ci.sample_in_time,
+			IF(mi.mail_time IS NULL ,NOW(),mi.mail_time)
+			)>172800
+		</if>
+		<if test="is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test="is_mail==1">
+			and mi.case_id is null
+		</if>
+		<if test="is_super_time==1">
+			and 172800>=TIMESTAMPDIFF(SECOND,
+			ci.sample_in_time,
+			IF(mi.mail_time IS NULL ,NOW(),mi.mail_time)
+			)
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" case_receiver!=null and case_receiver != ''">
+			and ai.username LIKE '%${case_receiver}%'
+		</if>
+		<if test=" receiver_area !=null and receiver_area != ''">
+			and ci.receiver_area LIKE '%${receiver_area}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and SUBSTRING(ci.`accept_time`,1,10)>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=SUBSTRING(ci.`accept_time`,1,10)
+		</if>
+	</select>
+
+	<select id="getOtherException" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseExceptionModel">
+		SELECT
+		ce.exception_id,ce.case_id,ce.exception_type,ce.exception_desc,
+		DATE_FORMAT(ce.`exception_time`,'%Y-%m-%d %H:%i:%s') AS
+		exception_time,
+		DATE_FORMAT(ce.`handle_time`,'%Y-%m-%d %H:%i:%s') AS
+		handle_time,
+		ce.exception_per,ce.is_handle,ce.handle_per,et.`type_desc`
+		as
+		exception_type_str,u.username
+		as exception_pername FROM
+		tb_judicial_case_exception
+		ce,tb_judicial_exception_type
+		et,tb_upc_users u WHERE
+		ce.`exception_type`=et.`type_id` AND
+		ce.`exception_per`=u.`userid` and
+		ce.case_id=#{case_id}
+	</select>
+
+	<insert id="saveExceptionInfo" parameterType="map">
+		insert into
+		tb_judicial_case_exception(exception_id,case_id,exception_type,exception_desc,exception_time,exception_per)
+		values(#{exception_id},#{case_id},#{exception_type},#{exception_desc},now(),#{exception_per})
+	</insert>
+
+	<select id="getExceptionTypes" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select type_id as
+		'key',type_desc as value from tb_judicial_exception_type
+		where
+		is_delete=0
+	</select>
+
+	<delete id="deleteExceptionInfo" parameterType="map">
+		update
+		tb_judicial_case_exception set is_handle=2 where
+		exception_id=#{exception_id}
+	</delete>
+
+	<delete id="handleExceptionInfo" parameterType="map">
+		update
+		tb_judicial_case_exception set is_handle=1,handle_time=now() where
+		exception_id=#{exception_id}
+	</delete>
+
+	<update id="updateExceptionInfo" parameterType="map">
+		update
+		tb_judicial_case_exception set
+		exception_type=#{exception_type_update},
+		exception_desc=#{exception_desc} where exception_id=#{exception_id}
+	</update>
+	
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseExceptionInfo">
+		SELECT  ai.*, GROUP_CONCAT(si.`sample_call`,'-',si.sample_username,'-',si.sample_type)  AS sampleInfo FROM
+			  (SELECT 
+				    tt.*,
+				    GROUP_CONCAT(
+					      '案例编码:',
+					      ci.case_code ,
+					      ' ',
+					      IFNULL(ci.name1, ' 和 '),
+					      IFNULL(ci.name2, ' 和 '),
+					      IFNULL(ci.name3, ' 和 '),
+					      ' 比对结果:',
+					      IF(
+					        ci.`result` = 'passed',
+					        '肯定',
+					        IF(
+					          ci.`result` = 'failed',
+					          '否定',
+					          '实验未结束'
+					        )
+					      )
+					    ) AS experimentInfo 
+			  FROM
+			    (SELECT 
+			      t.*,
+			      t.receiver_area as 'areaname',
+			      u.`username` AS case_receiver,
+			      u1.`username` AS case_in_pername,
+			      tm.text,
+			      IF(
+			        u.`roletype` = 104,
+			        (SELECT 
+			          u2.username 
+			        FROM
+			          tb_judicial_agent ag,
+			          tb_upc_users u2 
+			        WHERE ag.userid = u.userid 
+			          AND u2.userid = ag.peruserid 
+			          AND ag.delstatus = 0 and u2.delstatus is null),
+			        ''
+			      ) AS agent,
+			      c.`paragraphtime`,
+			      c.`type`,
+			      c.`account`,
+			      c.`stand_sum`,
+			      c.`return_sum`,
+			      c.`real_sum`,
+			      c.`finance_remark` AS 'financeRemark'
+			    FROM
+			      tb_judicial_case_info t  
+			      LEFT JOIN tb_upc_users u 
+			        ON t.`case_userid` = u.`userid` 
+			      LEFT JOIN tb_upc_users u1 
+			        ON u1.`userid` = t.`case_in_per` 
+			      LEFT JOIN 
+			        (SELECT 
+			          CODE,
+			          TEXT,
+			          TYPE 
+			        FROM
+			          tb_dic_print_model 
+			        WHERE TYPE = 'dna' 
+			        GROUP BY CODE) tm 
+			        ON tm.code = t.`report_model` 
+			      LEFT JOIN `tb_judicial_casefee` c 
+			        ON t.`case_id` = c.`case_id` 
+			    WHERE t.case_id = #{case_id} 
+			    <if test=" fee_id !=null and  fee_id != '' ">
+			   	 	and c.id=#{fee_id}
+				</if> ) tt 
+			    LEFT JOIN ( SELECT 
+      i.*,t.`sample_username` AS name1,t1.`sample_username` AS name2,t2.`sample_username` AS name3
+    FROM
+      tb_judicial_sub_case_info i 
+      LEFT JOIN tb_judicial_sample_info t 
+        ON i.`sample_code1` = t.`sample_code` 
+      LEFT JOIN tb_judicial_sample_info t1 
+        ON i.`sample_code2` = t1.`sample_code` 
+      LEFT JOIN tb_judicial_sample_info t2 
+        ON i.`sample_code3` = t2.`sample_code`
+        where 1=1 and i.case_code=#{case_code} ) ci 
+			      ON tt.case_code = ci.`case_code` 
+			  GROUP BY ci.`case_code`) ai 
+			  LEFT JOIN 
+			    (SELECT 
+			      si.`case_id`,
+			      si.`sample_username`,
+			      v.`keyvalue` AS sample_call,
+			      v1.`keyvalue` AS sample_type 
+			    FROM
+			      `tb_judicial_sample_info` si 
+			      LEFT JOIN `tb_upc_dic_values` v 
+			        ON si.`sample_call` = v.`keyid` 
+			      LEFT JOIN tb_upc_dic_values v1 
+			        ON si.`sample_type` = v1.`keyid`
+			       WHERE v.`keycode`='call' AND v1.`keycode`='000000004' and si.`case_id`=#{case_id}
+			        ) si 
+			    ON ai.`case_id` = si.`case_id` 
+			GROUP BY si.`case_id` 
+	</select>
+	<select id="getExportExceptionByPage" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialCaseExportExceptionModel">
+		SELECT 
+		  i.`case_code`,
+		  u.`username`,
+		  i.`client`,
+		  i.`accept_time`,
+		  e.`exception_desc`,
+		  DATE_FORMAT(
+		    e.`exception_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS exception_time,
+		  et.type_desc,
+		  IF(
+			u.`roletype` = 104,
+			(SELECT
+			u3.username
+			FROM
+			tb_judicial_agent ag,tb_upc_users u3
+			WHERE ag.userid = u.userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+			''
+			) AS agent
+		FROM
+		  `tb_judicial_case_exception` e 
+		  left join tb_judicial_exception_type et
+		  on et.type_id = e.exception_type
+		  LEFT JOIN tb_judicial_case_info i 
+		    ON e.`case_id` = i.`case_id` 
+		  LEFT JOIN tb_upc_users u 
+		    ON i.`case_userid` = u.`userid` 
+		WHERE 1=1 
+		<if test=" starttime!=null and  starttime != '' ">
+			and SUBSTRING(e.`exception_time` ,1,10)>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=SUBSTRING(e.`exception_time`,1,10)
+		</if>
+		  AND e.`exception_desc` NOT LIKE '%否定%' 
+		order by i.accept_time
+		limit #{start},#{limit}
+	</select>
+	<select id="countExportException"  parameterType="map" resultType="int">
+		SELECT count(e.case_id)
+		FROM
+		  `tb_judicial_case_exception` e 
+		  LEFT JOIN tb_judicial_case_info i 
+		    ON e.`case_id` = i.`case_id` 
+		  LEFT JOIN tb_upc_users u 
+		    ON i.`case_userid` = u.`userid` 
+		WHERE 1=1 
+		<if test=" starttime!=null and  starttime != '' ">
+			and SUBSTRING(e.`exception_time` ,1,10)>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=SUBSTRING(e.`exception_time`,1,10)
+		</if>
+		  AND e.`exception_desc` NOT LIKE '%否定%'
+	</select>
+	<select id="getExportException" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialCaseExportExceptionModel">
+		SELECT 
+		  i.`case_code`,
+		  u.`username`,
+		  i.`client`,
+		  i.`accept_time`,
+		  e.`exception_desc`,
+		  DATE_FORMAT(
+		    e.`exception_time`,
+		    '%Y-%m-%d %H:%i:%s'
+		  ) AS exception_time,
+		  et.type_desc,
+		  IF(
+			u.`roletype` = 104,
+			(SELECT
+			u3.username
+			FROM
+			tb_judicial_agent ag,tb_upc_users u3
+			WHERE ag.userid = u.userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+			''
+			) AS agent
+		FROM
+		  `tb_judicial_case_exception` e 
+		  left join tb_judicial_exception_type et
+		  on et.type_id = e.exception_type
+		  LEFT JOIN tb_judicial_case_info i 
+		    ON e.`case_id` = i.`case_id` 
+		  LEFT JOIN tb_upc_users u 
+		    ON  i.`case_userid` = u.`userid` 
+		WHERE 1=1 
+		<if test=" starttime!=null and  starttime != '' ">
+			and SUBSTRING(e.`exception_time` ,1,10)>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=SUBSTRING(e.`exception_time`,1,10)
+		</if>
+		  AND e.`exception_desc` NOT LIKE '%否定%' 
+		order by i.accept_time
+	</select>
+	
+</mapper>

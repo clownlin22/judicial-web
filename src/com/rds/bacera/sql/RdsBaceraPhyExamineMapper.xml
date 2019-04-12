@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraPhyExamineMapper" >
+	<resultMap id="phyExamine" type="com.rds.bacera.model.RdsBaceraPhyExamineModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='sex' property="sex" />
+		<result column='model_type' property="model_type" />
+		<result column='remark' property="remark" />
+		<result column='cancelif' property="cancelif" />
+		
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		<result column='areaname' property="areaname" />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='finance_remark' property="finance_remark" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='expressremark' property="expressremark" />
+		<result column='recive' property="recive" />
+		<result column='expresstime' property="expresstime" />
+		
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		<result column='discountPrice' property="discountPrice" />
+		
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+	</resultMap>
+	<!-- 插入 physical_examination-->
+	<insert id="insert" parameterType="map">
+	insert into tb_physical_examination
+	(id,num
+			<if test="date != '' and date != null">
+				,date
+			</if>
+		,name,sex,model_type,ownperson,remark,create_date
+			<if test="inputperson != '' and inputperson != null">
+				,inputperson
+			</if>
+	)values(#{id},#{num}
+			<if test="date != '' and date != null">
+				,#{date}
+			</if>
+			,#{name},#{sex},#{model_type},#{ownperson},#{remark},now()
+			<if test="inputperson != '' and inputperson != null">
+				,#{inputperson}
+			</if>
+			)
+	</insert>
+	<!-- 更新 -->
+	<update id="update" parameterType="map">
+		update tb_physical_examination 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>		
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>	
+			<if test="sex != null">
+				,sex=#{sex}
+			</if>
+			<if test="model_type != null">
+				,model_type=#{model_type}
+			</if>	
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>	
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_physical_examination where id = #{id}
+	</delete>
+	
+	<!-- 分页查询phyExamine信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="phyExamine">
+		 SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`name`,
+			  a.sex,
+			  a.`date`,
+			  a.`model_type`,
+			  a.`ownperson` AS ownperson,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.fees,
+			  fi.siteFee,
+			  fi.`account_type`,
+			  fi.remarks as 'finance_remark',
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  a.`cancelif`,
+			  i.expressremark
+			FROM
+			  tb_physical_examination a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="phyExamine_starttime != '' and phyExamine_starttime != null">
+				and a.date >= #{phyExamine_starttime}
+			</if>	
+			<if test="phyExamine_endtime != '' and phyExamine_endtime != null">
+				and #{phyExamine_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			order by a.num asc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<!-- 查询法医病理信息总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) 
+			FROM
+			  tb_physical_examination a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			 where 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="phyExamine_starttime != '' and phyExamine_starttime != null">
+				and a.date >= #{phyExamine_starttime}
+			</if>	
+			<if test="phyExamine_endtime != '' and phyExamine_endtime != null">
+				and #{phyExamine_endtime} >= a.date
+			</if>		
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_physical_examination where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+</mapper>

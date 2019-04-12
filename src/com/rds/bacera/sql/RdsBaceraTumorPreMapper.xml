@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraTumorPreMapper" >
+	<resultMap id="tumor" type="com.rds.bacera.model.RdsBaceraTumorPerModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='age' property="age" />
+		<result column='testitems' property="testitems" />
+		<result column='diagnosis' property="diagnosis" />
+		<result column='checkper' property="checkper" />
+		<result column='phonenum' property="phonenum" />	
+		<result column='hospital' property="hospital" />
+		
+		<result column='agentid' property="agentid" />
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	<!-- 插入肿瘤个体检测信息-->
+	<insert id="insert" parameterType="map">
+	insert into tb_tumor_individual
+	(id,num
+			<if test="date != '' and date != null">
+				,date
+			</if>
+		,name,age,testitems,diagnosis,checkper,ownperson,remark,phonenum,hospital
+			<if test="inputperson != '' and inputperson != null">
+				,inputperson
+			</if>
+	)values(#{id},#{num}
+			<if test="date != '' and date != null">
+				,#{date}
+			</if>
+			,#{name},#{age},#{testitems},#{diagnosis},#{checkper},#{ownperson},#{remark},#{phonenum},#{hospital}
+			<if test="inputperson != '' and inputperson != null">
+				,#{inputperson}
+			</if>
+			)
+	</insert>
+	<!-- 更新法医病理信息 -->
+	<update id="update" parameterType="map">
+		update tb_tumor_individual 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>	
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>	
+			<if test="age != null">
+				,age=#{age}
+			</if>	
+			<if test="testitems != null">
+				,testitems=#{testitems}
+			</if>	
+			<if test="phonenum != null">
+				,phonenum=#{phonenum}
+			</if>	
+			<if test="checkper != null">
+				,checkper=#{checkper}
+			</if>	
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>	
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>	
+			<if test="hospital != null">
+				,hospital=#{hospital}
+			</if>	
+			<if test="diagnosis != null">
+				,diagnosis=#{diagnosis}
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_tumor_individual where id = #{id}
+	</delete>
+	<!-- 分页查询肿瘤个体信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="tumor">
+		 SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`name`,
+			  a.`date`,
+			  a.`age`,
+			  a.`testitems`,
+			  a.`diagnosis`,
+			  a.`phonenum`,
+			  a.`ownperson`,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`remark`,
+			  a.`hospital`,
+			  a.`checkper`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  i.expressremark,
+			  a.`cancelif` 
+			FROM
+			  tb_tumor_individual a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="tumorPer_starttime != '' and tumorPer_starttime != null">
+				and a.date >= #{tumorPer_starttime}
+			</if>	
+			<if test="tumorPer_endtime != '' and tumorPer_endtime != null">
+				and #{tumorPer_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="hospital != '' and hospital != null">
+				AND a.`hospital` like concat('%', #{hospital}, '%') 
+			</if>
+			<if test="checkper != '' and checkper != null">
+				AND a.`checkper` like concat('%', #{checkper}, '%') 
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			order by a.num asc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<!-- 查询法医病理信息总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) 
+			FROM
+			  tb_tumor_individual a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="tumorPer_starttime != '' and tumorPer_starttime != null">
+				and a.date >= #{tumorPer_starttime}
+			</if>	
+			<if test="tumorPer_endtime != '' and tumorPer_endtime != null">
+				and #{tumorPer_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="hospital != '' and hospital != null">
+				AND a.`hospital` like concat('%', #{hospital}, '%') 
+			</if>
+			<if test="checkper != '' and checkper != null">
+				AND a.`checkper` like concat('%', #{checkper}, '%') 
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_tumor_individual where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+	<select id="queryTumorPerItems" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraTumorPerItemsModel">
+		select * from tb_tumorper_items 
+		where 1=1 
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+		<if test="items_name != '' and items_name != null">
+			and items_name = #{items_name}
+		</if>
+		 <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+	</select>
+	
+	<select id="countTumorPerItems" parameterType="map"  resultType="Integer">
+		select count(id) from tb_tumorper_items 
+		where 1=1 
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+		<if test="items_name != '' and items_name != null">
+			and items_name = #{items_name}
+		</if>
+	</select>
+	
+	<insert id="saveTumorPerItems" parameterType="map">
+		insert into tb_tumorper_items(id,items_name,inputperson,create_time,fees,remark) 
+		values (#{id},#{items_name},#{inputperson},#{create_time},#{fees},#{remark})
+	</insert>
+	
+	<update id="updateTumorPerItems" parameterType="map">
+		update tb_tumorper_items set 
+		items_name = #{items_name},
+		inputperson = #{inputperson},
+		create_time = sysdate(),
+		fees = #{fees},
+		remark = #{remark}
+	</update>
+	
+	<delete id="deleteTumorPerItems" parameterType="map">
+		update tb_tumorper_items set delflag='1' where id=#{id}
+ 	</delete>
+	
+</mapper>

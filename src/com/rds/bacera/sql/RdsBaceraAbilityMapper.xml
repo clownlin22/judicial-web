@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraAbilityMapper" >
+	<resultMap id="abilityModel" type="com.rds.bacera.model.RdsBaceraAbilityModel">
+		<id column="ability_id" property="ability_id"/>
+		<result column='ability_num' property="ability_num"/>
+		<result column='ability_name' property="ability_name" />
+		<result column='participate_num' property="participate_num" />
+		<result column='ability_company' property="ability_company" />
+		<result column='sample_type' property="sample_type" />
+		<result column='identify_starttime' property="identify_starttime" />
+		<result column='identify_endtime' property="identify_endtime" />
+		<result column='contacts_per' property="contacts_per" />
+		<result column='contacts_phone' property="contacts_phone" />
+		<result column='contacts_mail' property="contacts_mail" />
+		<result column='ownperson' property="ownperson" />
+		<result column='sample_per' property="sample_per" />
+		<result column='sample_date' property="sample_date" />
+		<result column='sample_express_per' property="sample_express_per" />
+		<result column='ability_result' property="ability_result" />
+		<result column='ability_remark' property="ability_remark" />
+		<result column='department_concatid' property="department_concatid" />
+		<result column='department_name' property="department_name" />
+		<result column='department_chargename' property="department_chargename" />
+		<result column='experiment_chargename' property="experiment_chargename" />
+		<result column='report_chargename' property="report_chargename" />
+		<result column='finished_date' property="finished_date" />
+		<result column='report_sendname' property="report_sendname" />
+		<result column='report_concat' property="report_concat" />
+		<result column='report_senddate' property="report_senddate" />
+		<result column='report_sendinfo' property="report_sendinfo" />
+		<result column='report_reciveinfo' property="report_reciveinfo" />
+		<result column='report_type' property="report_type" />
+		<result column='report_num' property="report_num" />
+		<result column='attachment_id' property="attachment_id" />
+		<result column='delete' property='delete' />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='finance_remark' property="finance_remark" />
+		<result column='discountPrice' property="discountPrice" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_ability_verification
+		(ability_id,ability_name,ability_num,participate_num,ability_company,sample_type,identify_starttime,
+		identify_endtime,contacts_per,contacts_phone,contacts_mail,ownperson,sample_per,sample_date,
+		sample_express_per,department_concatid,ability_result,ability_remark,case_in_per,case_in_time
+		)values(#{ability_id},#{ability_name},#{ability_num},#{participate_num},#{ability_company},#{sample_type},#{identify_starttime},
+		#{identify_endtime},#{contacts_per},#{contacts_phone},#{contacts_mail},#{ownperson},#{sample_per},#{sample_date},
+		#{sample_express_per},#{department_concatid},#{ability_result},#{ability_remark},#{case_in_per},now() )
+	</insert>
+	
+	<insert id="insertAbilityDepartment" parameterType="map">
+		insert into tb_ability_department
+		(department_concatid,department_name,department_chargename,experiment_chargename,report_chargename,finished_date,report_sendname,
+		report_concat,report_senddate,report_sendinfo,report_reciveinfo,report_type,report_num,report_status)
+		values(#{department_concatid},#{department_name},#{department_chargename},#{experiment_chargename},#{report_chargename},#{finished_date},#{report_sendname},
+		#{report_concat},#{report_senddate},#{report_sendinfo},#{report_reciveinfo},#{report_type},#{report_num},#{report_status} )
+	</insert>
+	
+	<insert id="insertAbilityAttachment" parameterType="com.rds.bacera.model.RdsBaceraCaseAttachmentModel">
+	insert into tb_ability_attachment(ability_id,attachment_id,attachment_path,attachment_type,create_per,create_date)
+	 values(#{ability_id},#{attachment_id},#{attachment_path},#{attachment_type},#{create_per},#{create_date})
+	</insert>
+	
+	<select id="queryAttacmByAbility" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraCaseAttachmentModel">
+		select * from tb_ability_attachment where ability_id = #{ability_id} and isdelete='1'
+	</select>
+	
+	<update id="update" parameterType="map">
+		update tb_ability_verification 
+		set 
+				ability_name=#{ability_name}
+				,ability_num=#{ability_num}
+				,participate_num=#{participate_num}
+				,ability_company=#{ability_company}
+				,sample_type=#{sample_type}
+				,identify_starttime=#{identify_starttime}
+				,identify_endtime=#{identify_endtime}
+				,contacts_per=#{contacts_per}
+				,contacts_phone=#{contacts_phone}
+				,contacts_mail=#{contacts_mail}
+				,ownperson=#{ownperson}
+				,sample_per=#{sample_per}
+				,sample_date=#{sample_date}
+				,sample_express_per=#{sample_express_per}
+				,ability_result=#{ability_result}
+				,ability_remark=#{ability_remark}
+				,case_in_per=#{case_in_per}
+				,case_in_time=now()
+			where ability_id = #{ability_id}
+	</update>
+	
+	<update id="updateAbilityDepartment" parameterType="map">
+		update tb_ability_department 
+		set 
+				department_name=#{department_name}
+				,department_chargename=#{department_chargename}
+				,experiment_chargename=#{experiment_chargename}
+				,report_chargename=#{report_chargename}
+				,finished_date=#{finished_date}
+				,report_sendname=#{report_sendname}
+				,report_concat=#{report_concat}
+				,report_senddate=#{report_senddate}
+				,report_sendinfo=#{report_sendinfo}
+				,report_reciveinfo=#{report_reciveinfo}
+				,report_type=#{report_type}
+				,report_num=#{report_num}
+				,report_status=#{report_status}
+			where department_concatid = #{department_concatid}
+	</update>
+	
+	<select id="queryAbilityPathById" parameterType="String" resultType="String">
+		SELECT attachment_path FROM `tb_ability_attachment` WHERE attachment_id =
+		#{attachment_id}
+	</select>
+	<!-- 根据id删除信息 -->
+	<update id="delete" parameterType="map">
+		update tb_ability_verification t set t.delete = 2 where t.ability_id = #{ability_id}
+	</update>
+	
+	<update id="delAttachment" parameterType="map">
+		update tb_ability_attachment t set t.isdelete=2 where t.attachment_id=#{attachment_id}
+	</update>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="abilityModel">
+		 SELECT 
+			  av.*,ad.*,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks as 'finance_remark',
+			  fi.remittanceDate,
+			  fi.remittanceName
+			FROM
+			  tb_ability_verification av
+			  LEFT JOIN `tb_ability_department` ad
+			 ON av.department_concatid = ad.`department_concatid`
+			  LEFT JOIN tb_finance_info fi
+			  ON av.`ability_id` = fi.`id`
+			  WHERE 1=1
+			<if test="case_in_per != '' and case_in_per != null">
+				and av.case_in_per =#{case_in_per}
+			</if>
+			<if test="isdelete != '' and isdelete != null">
+				and av.delete =#{isdelete}
+			</if>
+			<if test="ability_name != '' and ability_name != null">
+				and av.ability_name like concat('%', #{ability_name}, '%') 
+			</if>	
+			<if test="ability_num != '' and ability_num != null">
+				and av.ability_num like concat('%', #{ability_num}, '%') 
+			</if>
+			<if test="participate_num != '' and participate_num != null">
+				and av.participate_num like concat('%', #{participate_num}, '%') 
+			</if>
+			<if test="ability_company != '' and ability_company != null">
+				and av.ability_company like concat('%', #{ability_company}, '%') 
+			</if>
+			<if test="sample_type != '' and sample_type != null">
+				and av.sample_type like concat('%', #{sample_type}, '%') 
+			</if>
+			<if test="identify_starttime != '' and identify_starttime != null">
+				and av.identify_starttime >= #{identify_starttime}
+			</if>	
+			<if test="identify_endtime != '' and identify_endtime != null">
+				and #{identify_endtime} >= av.identify_endtime
+			</if>	
+			<if test="contacts_per != '' and contacts_per != null">
+				and av.contacts_per  like concat('%', #{contacts_per}, '%') 
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and av.`ownperson` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="sample_per != '' and sample_per != null">
+				and av.`sample_per`  like concat('%', #{sample_per}, '%') 
+			</if>	
+			<if test="department_name != '' and department_name != null">
+				AND ad.`department_name` like concat('%', #{department_name}, '%') 
+			</if>
+			<if test="department_chargename != '' and department_chargename != null">
+				AND ad.`department_chargename` like concat('%', #{department_chargename}, '%') 
+			</if>
+			<if test="report_chargename != '' and report_chargename != null">
+				AND ad.`report_chargename` like concat('%', #{report_chargename}, '%') 
+			</if>
+			<if test="department_name != '' and department_name != null">
+				AND ad.`department_name` like concat('%', #{department_name}, '%') 
+			</if>
+			<if test="finished_date_starttime != '' and finished_datee_starttime != null">
+				AND ad.`finished_date` >= #{finished_date_starttime}
+			</if>	
+			<if test="finished_date_endtime != '' and finished_date_endtime != null">
+				and #{finished_date_endtime} >= ad.`finished_date`
+			</if>
+			<if test="report_sendname != '' and report_sendname != null">
+				AND ad.`report_sendname` like concat('%', #{report_sendname}, '%') 
+			</if>
+			<if test="report_sendinfo != '' and report_sendinfo != null">
+				AND ad.`report_sendinfo` like concat('%', #{report_sendinfo}, '%') 
+			</if>
+			<if test="report_senddate_endtime != '' and report_senddate_endtime != null">
+				AND #{report_senddate_endtime} >= ad.`report_senddate`
+			</if>
+			<if test="report_senddate_starttime != '' and report_senddate_starttime != null">
+				AND ad.`report_senddate` >= #{report_senddate_starttime}
+			</if>	
+			order by av.ability_num desc
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		 SELECT 
+			 count(1)
+			FROM
+			  tb_ability_verification av
+			  LEFT JOIN `tb_ability_department` ad
+			 ON av.department_concatid = ad.`department_concatid`
+			  LEFT JOIN tb_finance_info fi
+			  ON av.`ability_id` = fi.`id`
+			  WHERE 1=1
+			<if test="case_in_per != '' and case_in_per != null">
+				and av.case_in_per =#{case_in_per}
+			</if>
+			<if test="isdelete != '' and isdelete != null">
+				and av.delete =#{isdelete}
+			</if>
+			<if test="ability_name != '' and ability_name != null">
+				and av.ability_name like concat('%', #{ability_name}, '%') 
+			</if>	
+			<if test="ability_num != '' and ability_num != null">
+				and av.ability_num like concat('%', #{ability_num}, '%') 
+			</if>
+			<if test="participate_num != '' and participate_num != null">
+				and av.participate_num like concat('%', #{participate_num}, '%') 
+			</if>
+			<if test="ability_company != '' and ability_company != null">
+				and av.ability_company like concat('%', #{ability_company}, '%') 
+			</if>
+			<if test="sample_type != '' and sample_type != null">
+				and av.sample_type like concat('%', #{sample_type}, '%') 
+			</if>
+			<if test="identify_starttime != '' and identify_starttime != null">
+				and av.identify_starttime >= #{identify_starttime}
+			</if>	
+			<if test="identify_endtime != '' and identify_endtime != null">
+				and #{identify_endtime} >= av.identify_endtime
+			</if>	
+			<if test="contacts_per != '' and contacts_per != null">
+				and av.contacts_per  like concat('%', #{contacts_per}, '%') 
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and av.`ownperson` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="sample_per != '' and sample_per != null">
+				and av.`sample_per`  like concat('%', #{sample_per}, '%') 
+			</if>	
+			<if test="department_name != '' and department_name != null">
+				AND ad.`department_name` like concat('%', #{department_name}, '%') 
+			</if>
+			<if test="department_chargename != '' and department_chargename != null">
+				AND ad.`department_chargename` like concat('%', #{department_chargename}, '%') 
+			</if>
+			<if test="report_chargename != '' and report_chargename != null">
+				AND ad.`report_chargename` like concat('%', #{report_chargename}, '%') 
+			</if>
+			<if test="department_name != '' and department_name != null">
+				AND ad.`department_name` like concat('%', #{department_name}, '%') 
+			</if>
+			<if test="finished_date_starttime != '' and finished_datee_starttime != null">
+				AND ad.`finished_date` >= #{finished_date_starttime}
+			</if>	
+			<if test="finished_date_endtime != '' and finished_date_endtime != null">
+				and #{finished_date_endtime} >= ad.`finished_date`
+			</if>
+			<if test="report_sendname != '' and report_sendname != null">
+				AND ad.`report_sendname` like concat('%', #{report_sendname}, '%') 
+			</if>
+			<if test="report_sendinfo != '' and report_sendinfo != null">
+				AND ad.`report_sendinfo` like concat('%', #{report_sendinfo}, '%') 
+			</if>
+			<if test="report_senddate_endtime != '' and report_senddate_endtime != null">
+				AND #{report_senddate_endtime} >= ad.`report_senddate`
+			</if>
+			<if test="report_senddate_starttime != '' and report_senddate_starttime != null">
+				AND ad.`report_senddate` >= #{report_senddate_starttime}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_ability_verification where 1=1 
+		<if test="ability_num != '' and ability_num != null">
+			and ability_num = #{ability_num}
+		</if>
+		<if test="ability_id != '' and ability_id != null">
+			and ability_id = #{ability_id}
+		</if>
+	</select>
+</mapper>

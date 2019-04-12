@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceRegisterMapper">
+    <select id="queryCaseInfo" parameterType="map"
+            resultType="com.rds.trace.model.RdsTraceCaseInfoModelExt">
+        select a.*,c.stand_sum,c.real_sum,c.return_sum,b.areaname,b.username,c.status as finance_status,c.invoice_number
+         from tb_trace_case_info a
+        inner join tb_judicial_casefee c on a.case_id=c.case_id
+        LEFT JOIN tb_charge_standard b ON a.receiver_id=b.id
+        where 1=1
+        <if test="case_no!=null and case_no!=''">
+            and a.case_no LIKE '%${case_no}%'
+        </if>
+        <if test="invoice_number !=null and invoice_number !=''">
+            and c.invoice_number LIKE '%${invoice_number}%'
+        </if>
+        <if test="start_time!=null and start_time!=''">
+            and a.receive_time>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=a.receive_time
+        </if>
+        <if test="is_delete!=-1">
+            and a.is_delete = #{is_delete}
+        </if>
+        <if test="print_param==1">
+            and  a.status = 4
+            and a.is_delete = 0
+        </if>
+        <if test="status!=-1 and status!=null">
+            and a.status = #{status}
+        </if>
+        <if test="year!=null and status!=''">
+            and a.year = #{year}
+        </if>
+        order by a.receive_time desc,a.case_no asc
+        limit #{start},#{limit}
+    </select>
+    <select id="queryCountCaseInfo" parameterType="map"
+            resultType="int">
+        select count(*) from (
+        select a.*,b.areaname,b.username from tb_trace_case_info a
+        inner join tb_judicial_casefee c on a.case_id=c.case_id
+        LEFT JOIN tb_charge_standard b ON a.receiver_id=b.id
+        where 1
+        <if test="case_no!=null and case_no!=''">
+            and a.case_no = #{case_no}
+        </if>
+        <if test="invoice_number !=null and invoice_number !=''">
+            and c.invoice_number LIKE '%${invoice_number}%'
+        </if>
+        <if test="start_time!=null and start_time!=''">
+            and a.receive_time>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=a.receive_time
+        </if>
+        <if test="is_delete!=-1">
+            and a.is_delete = #{is_delete}
+        </if>
+        <if test="print_param==1">
+            and  a.status = 4
+            and a.is_delete = 0
+        </if>
+        <if test="status!=-1 and status!=null">
+            and a.status = #{status}
+        </if>
+        <if test="year!=null and status!=''">
+            and a.year = #{year}
+        </if>) z
+    </select>
+    <select id="queryCountCaseInfoByYear" parameterType="int" resultType="int">
+        select count(*) from tb_trace_case_info where year = #{year}
+    </select>
+    <insert id="insertCaseInfo" parameterType="map">
+        insert into tb_trace_case_info(case_id, case_no,
+        year, month, day, company_name, case_type,
+        case_attachment_desc, case_local,identification_requirements,
+        receiver_id,receive_time, status,is_delete,identification_date)
+        values(#{case_id},#{case_no},#{year},#{month},
+        #{day},#{company_name},#{case_type},#{case_attachment_desc},#{case_local},
+        #{identification_requirements},#{receiver_id},#{receive_time},0,0,#{identification_date})
+    </insert>
+    <update id="updateCaseInfo" parameterType="map">
+        update tb_trace_case_info
+        set case_no = #{case_no},
+        company_name = #{company_name},
+        case_type = #{case_type},
+        case_attachment_desc = #{case_attachment_desc},
+        identification_requirements = #{identification_requirements},
+        identification_date = #{identification_date},
+        case_local = #{case_local},
+        receive_time = #{receive_time},
+        receiver_id = #{receiver_id}
+        where case_id = #{case_id}
+    </update>
+    <update id="deleteCaseInfo" parameterType="string">
+        update tb_trace_case_info set is_delete=1
+        where case_id = #{case_id}
+    </update>
+    <update id="updateStatus" parameterType="map">
+        update tb_trace_case_info set status=#{status}
+        where case_id = #{case_id}
+    </update>
+    <select id="queryCaseNo" parameterType="int" resultType="int">
+        select max(case_no)+1 as case_no
+         from tb_trace_case_info
+         where year = #{year}
+         group by year
+    </select>
+    <select id="queryCaseId" parameterType="map" resultType="string">
+        select case_id from tb_trace_case_info
+        where  case_no = #{case_no} and year = #{year}
+    </select>
+    <select id="queryByCaseId" parameterType="string"
+            resultType="com.rds.trace.model.RdsTraceCaseInfoModelExt">
+        select * from tb_trace_case_info where case_id = #{case_id}
+    </select>
+    
+    <insert id="addCaseFee" parameterType="map">
+		insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,discount,status,update_date,type,case_type,invoice_number)
+		values(#{id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},'1.0',3,now(),0,'trace',#{invoice_number})
+	</insert>
+	
+	<update id="updateCaseFee" parameterType="map">
+		update tb_judicial_casefee 
+		set stand_sum = #{stand_sum},
+		 	real_sum=#{real_sum},
+		 	return_sum=#{return_sum},
+		 	invoice_number=#{invoice_number}
+		where case_id = #{case_id}
+	</update>
+
+    <select id="exportInfo" parameterType="map" resultType="com.rds.trace.model.RdsTraceCaseInfoModelExt">
+        select a.*,b.areaname,b.username,ifnull(e.verify_baseinfo_state,0) as verify_baseinfo_state,f.*,mi.mail_info
+        from tb_trace_case_info a
+        inner join tb_judicial_casefee c on a.case_id=c.case_id
+        LEFT JOIN tb_charge_standard b ON a.receiver_id=b.id
+        left join
+        (select b.verify_baseinfo_state,b.verify_baseinfo_person,b.verify_baseinfo_remark,
+        b.verify_baseinfo_time,c.* from tb_trace_baseinfo_verify b
+        inner join (select case_id,max(verify_baseinfo_time) as maxtime from tb_trace_baseinfo_verify
+        group by case_id) c on b.verify_baseinfo_time = c.maxtime) e on a.case_id = e.case_id
+        left join tb_judicial_casefee f on a.case_id = f.case_id
+         LEFT JOIN
+		(SELECT 
+  GROUP_CONCAT( d.`keyvalue`,'-',i.`mail_time`,'-',i.`mail_code`) AS mail_info,m.`case_id`
+FROM `tb_mail_case_link` m 
+  LEFT JOIN `tb_mail_info` i 
+    ON m.`mail_id` = i.`mail_id` 
+    LEFT JOIN tb_upc_dic_values d ON i.`mail_type`=d.`keyid`
+    GROUP BY m.`case_id`) mi
+		ON
+		mi.`case_id` = a.`case_id`
+        where a.is_delete = 0
+        <if test="case_no!=null and case_no!=''">
+            and a.case_no LIKE '%${case_no}%'
+        </if>
+        <if test="invoice_number !=null and invoice_number !=''">
+            and c.invoice_number LIKE '%${invoice_number}%'
+        </if>
+        <if test="start_time!=null and start_time!=''">
+            and a.receive_time>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=a.receive_time
+        </if>
+        <if test="is_delete!=-1">
+            and a.is_delete = #{is_delete}
+        </if>
+        <if test="status!=-1 and status!=null">
+            and a.status = #{status}
+        </if>
+        <if test="year!=null and status!=''">
+            and a.year = #{year}
+        </if>
+        order by a.case_no asc
+    </select>
+    
+    <update id="traceMailDely" parameterType="map">
+    	update tb_trace_case_info set dely_reson = #{dely_reson},dely_create_time = now(),dely_person=#{dely_person}
+    	where case_id=#{case_id}
+    </update>
+</mapper>

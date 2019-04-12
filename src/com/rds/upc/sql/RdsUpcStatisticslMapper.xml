@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcStatisticslMapper" >
+	<resultMap id="statisticsl" type="com.rds.upc.model.RdsUpcStatisticslModel">
+		<result column='key' property="key"/>
+		<result column='value' property="value"/>
+	</resultMap>
+	<resultMap id="stResult" type="com.rds.upc.model.RdsUpcStResultModel">
+		<result column='provice_name' property="provice_name"/>
+		<result column='city_name' property="city_name"/>
+		<result column='county_name' property="county_name"/>
+		<result column='month1' property="month1"/>
+		<result column='month2' property="month2"/>
+		<result column='month3' property="month3"/>
+		<result column='month4' property="month4"/>
+		<result column='month5' property="month5"/>
+		<result column='month6' property="month6"/>
+		<result column='month7' property="month7"/>
+		<result column='month8' property="month8"/>
+		<result column='month9' property="month9"/>
+		<result column='month10' property="month10"/>
+		<result column='month11' property="month11"/>
+		<result column='month12' property="month12"/>
+		<result column='month13' property="month13"/>
+		<result column='month14' property="month14"/>
+		<result column='month15' property="month15"/>
+		<result column='month16' property="month16"/>
+		<result column='month17' property="month17"/>
+		<result column='month18' property="month18"/>
+		<result column='month19' property="month19"/>
+		<result column='month20' property="month20"/>
+		<result column='month21' property="month21"/>
+		<result column='month22' property="month22"/>
+		<result column='month23' property="month23"/>
+		<result column='month24' property="month24"/>
+	</resultMap>
+	<!-- 所有省份信息 -->
+	<select id="queryAllProvice" parameterType="map" resultMap="statisticsl">
+		SELECT t.`provice_id` as 'key',t.`provice_name` as 'value' 
+		FROM t_tj_lsv t 
+		<if test="user_code != 'admin' and user_code != 'chir'">
+			INNER JOIN `tb_upc_area_info`i ON t.`county_id` = i.`code` INNER JOIN
+			`tb_upc_area` a ON i.`areacode` = a.`areacode` WHERE
+			a.`userid`=#{user_id} AND a.`is_delete` = '0' AND
+			i.`is_delete`='0'
+		</if>
+		GROUP BY t.`provice_name` ORDER BY t.`provice_id` ASC
+	</select>
+	
+	<!-- 所有市信息 -->
+	<select id="queryAllCity" parameterType="map" resultMap="statisticsl">
+		SELECT t.`city_id` as 'key',t.`city_name` as 'value' FROM  t_tj_lsv t
+		<if test="user_code != 'admin' and user_code != 'chir'">
+			INNER JOIN `tb_upc_area_info`i ON t.`county_id` = i.`code` INNER JOIN
+			`tb_upc_area` a ON i.`areacode` = a.`areacode` 
+		</if>
+		 where 1=1
+		 <if test="user_code != 'admin' and user_code != 'chir'">
+		 and a.`userid`=#{user_id} AND a.`is_delete` = '0' AND
+			i.`is_delete`='0'
+		</if>
+		<if test="provice_id != 'null' and provice_id != '' and provice_id != null">
+			and t.`provice_id`=#{provice_id}
+		 </if>
+		 GROUP BY t.`city_id` ORDER BY t.`city_id` ASC
+	</select>
+	
+		<!-- 所有县信息 -->
+	<select id="queryAllCounty" parameterType="map" resultMap="statisticsl">
+		SELECT t.`county_id` as 'key',t.`county_name` as 'value' FROM  t_tj_lsv t 
+		<if test="user_code != 'admin' and user_code != 'chir'">
+			INNER JOIN `tb_upc_area_info`i ON t.`county_id` = i.`code` INNER JOIN
+			`tb_upc_area` a ON i.`areacode` = a.`areacode` 
+		</if>
+		WHERE 1=1
+		<if test="user_code != 'admin' and user_code != 'chir'">
+		  and a.`userid`=#{user_id} AND a.`is_delete` = '0' AND
+			i.`is_delete`='0'
+		</if>
+		<if test="city_id != 'null' and city_id != '' and city_id != null">
+			and t.`city_id`=#{city_id}
+		 </if>
+		 GROUP BY t.`county_id` ORDER BY t.`county_id` ASC
+	</select>
+	
+	<select id="queryAllStatisticsl" parameterType="map" resultMap="stResult" >
+		SELECT t.`provice_name`,t.`city_name`,t.`county_name`,
+		 SUM((CASE WHEN t.month=#{month1} THEN t.quantity ELSE 0 END )) month1
+		,SUM((CASE WHEN t.month=#{month2} THEN t.quantity ELSE 0 END )) month2
+		,SUM((CASE WHEN t.month=#{month3} THEN t.quantity ELSE 0 END )) month3
+		,SUM((CASE WHEN t.month=#{month4} THEN t.quantity ELSE 0 END )) month4
+		,SUM((CASE WHEN t.month=#{month5} THEN t.quantity ELSE 0 END )) month5
+		,SUM((CASE WHEN t.month=#{month6} THEN t.quantity ELSE 0 END )) month6
+		,SUM((CASE WHEN t.month=#{month7} THEN t.quantity ELSE 0 END )) month7
+		,SUM((CASE WHEN t.month=#{month8} THEN t.quantity ELSE 0 END )) month8
+		,SUM((CASE WHEN t.month=#{month9} THEN t.quantity ELSE 0 END )) month9
+		,SUM((CASE WHEN t.month=#{month10} THEN t.quantity ELSE 0 END )) month10
+		,SUM((CASE WHEN t.month=#{month11} THEN t.quantity ELSE 0 END )) month11
+		,SUM((CASE WHEN t.month=#{month12} THEN t.quantity ELSE 0 END )) month12
+		,SUM((CASE WHEN t.month=#{month13} THEN t.quantity ELSE 0 END )) month13
+		,SUM((CASE WHEN t.month=#{month14} THEN t.quantity ELSE 0 END )) month14
+		,SUM((CASE WHEN t.month=#{month15} THEN t.quantity ELSE 0 END )) month15
+		,SUM((CASE WHEN t.month=#{month16} THEN t.quantity ELSE 0 END )) month16
+		,SUM((CASE WHEN t.month=#{month17} THEN t.quantity ELSE 0 END )) month17
+		,SUM((CASE WHEN t.month=#{month18} THEN t.quantity ELSE 0 END )) month18
+		,SUM((CASE WHEN t.month=#{month19} THEN t.quantity ELSE 0 END )) month19
+		,SUM((CASE WHEN t.month=#{month20} THEN t.quantity ELSE 0 END )) month20
+		,SUM((CASE WHEN t.month=#{month21} THEN t.quantity ELSE 0 END )) month21
+		,SUM((CASE WHEN t.month=#{month22} THEN t.quantity ELSE 0 END )) month22
+		,SUM((CASE WHEN t.month=#{month23} THEN t.quantity ELSE 0 END )) month23
+		,SUM((CASE WHEN t.month=#{month24} THEN t.quantity ELSE 0 END )) month24
+		 FROM t_tj_lsv	t
+		<if test="user_code != 'admin' and user_code != 'chir' ">
+			INNER JOIN `tb_upc_area_info`i ON t.`county_id` = i.`code` INNER JOIN  `tb_upc_area` a ON i.`areacode` = a.`areacode`
+		</if>
+		WHERE 1=1
+		<if test="user_code != 'admin' and user_code != 'chir' ">
+			and	a.`userid`=#{user_id} AND a.`is_delete` = 0 AND i.`is_delete`='0'
+		</if>
+		<if test="provice_id != 'null' and provice_id != '' and provice_id != null">
+			and t.`provice_id`=#{provice_id}
+		</if>
+		<if test="city_id != 'null' and city_id != '' and city_id != null">
+			and t.`city_id`=#{city_id}
+		</if>
+		<if test="county_id != 'null' and county_id != '' and county_id != null">
+			and t.`county_id`=#{county_id}
+		</if>
+		GROUP BY t.`provice_name`,t.`city_name`,t.`county_name`
+		order by month24 desc
+	</select>
+	
+</mapper>

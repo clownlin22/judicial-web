@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialReagentsMapper">
+    <insert id="insert" parameterType="map">
+        insert into tb_judicial_reagents (reagent_name, enable_flag,laboratory_no)
+        values(#{reagent_name},#{enable_flag},#{laboratory_no});
+    </insert>
+
+    <select id="queryAll" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialReagentsModel">
+        select * from tb_judicial_reagents
+        where laboratory_no = #{laboratory_no}
+        <if test="reagent_name!=null and reagent_name!=''">
+            and reagent_name like '%${reagent_name}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryAllCount" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_reagents
+        where laboratory_no = #{laboratory_no}
+        <if test="reagent_name!=null and reagent_name!=''">
+            and reagent_name like '%${reagent_name}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+    </select>
+
+    <update id="update" parameterType="map">
+        update tb_judicial_reagents set enable_flag = #{enable_flag}
+        where reagent_name = #{reagent_name}
+        and laboratory_no = #{laboratory_no}
+    </update>
+
+    <delete id="delete" parameterType="map">
+        delete from tb_judicial_reagents
+        where reagent_name = #{reagent_name}
+        and laboratory_no = #{laboratory_no}
+    </delete>
+
+    <select id="queryOneReagent" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialReagentsModel">
+        select * from tb_judicial_reagents
+        where reagent_name = #{reagent_name}
+        and laboratory_no = #{laboratory_no}
+    </select>
+
+    <select id="queryExtFlag" parameterType="map" resultType="string">
+        select ext_flag from tb_judicial_reagents where reagent_name = #{reagent_name}
+        and laboratory_no = #{laboratory_no}
+    </select>
+
+    <select id="queryReagentAtelier" parameterType="string" resultType="string">
+        select distinct atelier from tb_judicial_reagents where reagent_name = #{reagent_name};
+    </select>
+
+    <select id="queryReagentByCaseCode" parameterType="string" resultType="map">
+        select reagent_name,reagent_name_ext from tb_judicial_case_info
+          where case_code = #{case_code};
+    </select>
+
+    <select id="queryOrder" parameterType="map" resultType="string">
+        select name from tb_dic_print_gene where model = #{model}
+        and reagent_name = #{reagent_name}
+        order by sort
+    </select>
+    
+    <select id="newqueryOrder" parameterType="map" resultType="map">
+        select * from tb_dic_print_gene where model = #{model}
+        and reagent_name = #{reagent_name}
+        order by sort
+    </select>
+</mapper>

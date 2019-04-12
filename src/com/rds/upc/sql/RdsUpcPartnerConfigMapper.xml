@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcPartnerConfigMapper" >
+	<resultMap id="partnerConfig" type="com.rds.upc.model.RdsUpcPartnerConfigModel">
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_partner_config(id,parnter_name,areacode,create_date,create_per,qualificationFee,remark,report_model)
+		values (#{id},#{parnter_name},#{areacode},sysdate(),#{create_per},#{qualificationFee},#{remark},#{report_model})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_partner_config
+			set parnter_name = #{parnter_name},
+				areacode = #{areacode},
+				create_per = #{create_per},
+				create_date = sysdate(),
+				qualificationFee=#{qualificationFee},
+				remark = #{remark},
+				report_model=#{report_model}
+				where id = #{id}
+	</update>
+	
+	<delete id="delete" parameterType="map">
+		update tb_partner_config t set t.delete=2 where t.id in (${id})
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="partnerConfig">
+		select t.*,i.areaname,pm.`text`,t.report_model from tb_partner_config t 
+		 LEFT JOIN 
+		    (SELECT 
+		      CONCAT(
+		        IFNULL(CONCAT(m.`name`, '-'), ''),
+		        IFNULL(CONCAT(e.`name`, '-'), ''),
+		        IFNULL(t.`name`, '')
+		      ) AS 'areaname',
+		      t.`id` 
+		    FROM
+		      tb_dic_area_info t 
+		      LEFT JOIN tb_dic_area_info e 
+		        ON t.`parentID` = e.`id` 
+		      LEFT JOIN tb_dic_area_info m 
+		        ON e.`parentID` = m.`id`) i 
+		        on t.areacode = i.id
+		      LEFT JOIN tb_dic_print_model pm
+		        ON pm.`code`=t.`report_model`
+			WHERE 1=1 AND t.`delete`=1
+			<if test="parnter_name != null and parnter_name != ''">
+				and t.parnter_name like '%${parnter_name}%'
+			</if>	
+			<if test="areaname != null and areaname != ''">
+				and i.areaname like '%${areaname}%'
+			</if>
+			GROUP BY t.`parnter_name`
+			limit #{start},#{end}
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="partnerConfig">
+		SELECT DISTINCT t.`parnter_name` FROM tb_partner_config t where t.delete=1
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_partner_config t 
+		 LEFT JOIN 
+		    (SELECT 
+		      CONCAT(
+		        IFNULL(CONCAT(m.`name`, '-'), ''),
+		        IFNULL(CONCAT(e.`name`, '-'), ''),
+		        IFNULL(t.`name`, '')
+		      ) AS 'areaname',
+		      t.`id` 
+		    FROM
+		      tb_dic_area_info t 
+		      LEFT JOIN tb_dic_area_info e 
+		        ON t.`parentID` = e.`id` 
+		      LEFT JOIN tb_dic_area_info m 
+		        ON e.`parentID` = m.`id`) i 
+		        on t.areacode = i.id
+			where 1=1 and t.delete = 1
+			<if test="parnter_name != null and parnter_name != ''">
+				and t.parnter_name like '%${parnter_name}%'
+			</if>	
+			<if test="areaname != null and areaname != ''">
+				and i.areaname like '%${areaname}%'
+			</if>	
+	</select>
+	
+	<select id="queryQartnerExist" parameterType="map" resultType="Integer">
+		SELECT 
+		  COUNT(1) 
+		FROM
+		  `tb_partner_config` t 
+		WHERE t.`areacode` IN 
+		  (SELECT 
+		    t.id 
+		  FROM
+		    tb_dic_area_info t 
+		  WHERE t.`id` = #{areacode} 
+		  UNION
+		  SELECT 
+		    e.`id` 
+		  FROM
+		    tb_dic_area_info t 
+		    LEFT JOIN tb_dic_area_info e 
+		      ON t.`parentID` = e.`id` 
+		  WHERE t.`id` = #{areacode} 
+		  UNION
+		  SELECT 
+		    m.`id` 
+		  FROM
+		    tb_dic_area_info t 
+		    LEFT JOIN tb_dic_area_info e 
+		      ON t.`parentID` = e.`id` 
+		    LEFT JOIN tb_dic_area_info m 
+		      ON e.`parentID` = m.`id` 
+		  WHERE t.id = #{areacode}) and t.delete = 1 
+		  <if test="id != null and id != ''">
+				and t.id =#{id}
+			</if>
+	</select>
+	
+	<select id="getCaseTask" parameterType="String" resultType="String">
+         SELECT pc.`parnter_name` FROM tb_partner_config pc WHERE pc.`report_model`=#{report_model}
+          LIMIT 1
+        <!-- 
+        SELECT 
+		  t.`parnter_name`
+		FROM
+		  `tb_partner_config` t 
+		WHERE t.`areacode` IN 
+		  (SELECT 
+		    t.id 
+		  FROM
+		    tb_dic_area_info t 
+		  WHERE t.`id` = #{areacode} 
+		  UNION
+		  SELECT 
+		    e.`id` 
+		  FROM
+		    tb_dic_area_info t 
+		    LEFT JOIN tb_dic_area_info e 
+		      ON t.`parentID` = e.`id` 
+		  WHERE t.`id` = #{areacode}
+		  UNION
+		  SELECT 
+		    m.`id` 
+		  FROM
+		    tb_dic_area_info t 
+		    LEFT JOIN tb_dic_area_info e 
+		      ON t.`parentID` = e.`id` 
+		    LEFT JOIN tb_dic_area_info m 
+		      ON e.`parentID` = m.`id` 
+		  WHERE t.id = #{areacode}) and t.delete = 1
+		  LIMIT 1
+		   -->
+    </select>
+    
+    <select id="getLaboratoryNo" parameterType="String" resultType="String">
+        SELECT 
+		  t.laboratory_no
+		FROM
+		  `tb_partner_config` t 
+		WHERE  t.parnter_name=#{parnter_name}
+		  LIMIT 1
+    </select>
+    
+    <insert id="insertPartnerModel" parameterType="map">
+    	insert into tb_partner_model_config(id,userid,code,create_per,create_date) values(#{id},#{userid},#{code},#{create_per},sysdate())
+    </insert>
+    
+    <delete id="deletePartnerModel" parameterType="map">
+    	delete from tb_partner_model_config where userid=#{userid}
+    </delete>
+</mapper>

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraInvasivePreAttachmentMapper">
+
+    
+    <insert id="insertAttachment" parameterType="map">
+        insert into tb_Invasive_pre_attachment (case_id,uuid,
+        attachment_path, attachment_date, upload_userid)
+        values(#{id},#{uuid},#{attachment_path},now(),
+        #{upload_userid})
+    </insert>
+
+    <delete id="deleteAttachement" parameterType="map">
+        delete from tb_Invasive_pre_attachment where case_id = #{id}
+    </delete>
+    
+    <select id="queryAttachment" parameterType="map"
+            resultType="com.rds.bacera.model.RdsBaceraInvasivePreAttachmentModel">
+           SELECT 
+          
+		  a.`id`,
+		  a.`name`,
+		  a.`num`,
+		  a.`date`,
+		  a.`code`,
+		  a.`hospital`,
+		  a.`inspectionunit`,
+		  a.`sampledate`,
+		  a.`ownperson`,
+		  a.`emailflag`,
+		  s.`username` AS ownpersonname,
+		  a.`remark`,
+		  a.`cancelif`,
+		  x.`uuid`,
+          c.`type`,
+          u2.`toEmails` AS receiveAddress,
+		  a.`process_instance_id`,
+		  a.`verify_state`,
+		  u.`username` AS 'upload_username',u1.`username` AS 'download_username',
+		x.attachment_path,
+           x.attachment_date,x.upload_userid,x.down_flag,x.download_time,x.down_userid
+           ,r.confirm_state,
+		  RES.ID_ AS task_id,
+		  RES.TASK_DEF_KEY_ AS task_def_key,
+		  RES.NAME_ AS task_name,
+		  RES.SUSPENSION_STATE_ AS suspension_state,
+		  IF(
+		    a.process_instance_id,
+		    (SELECT 
+		      ID_ 
+		    FROM
+		      ACT_HI_TASKINST 
+		    WHERE PROC_INST_ID_ = a.process_instance_id 
+		    ORDER BY START_TIME_ DESC 
+		    LIMIT 1, 1),
+		    ''
+		  ) AS last_task_id 
+		FROM
+		  tb_invasive_prenatal a 
+		   LEFT JOIN `tb_judicial_casefee` c
+				    ON a.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+		   LEFT JOIN tb_Invasive_pre_attachment X ON x.`case_id` = a.`id`
+        LEFT JOIN tb_upc_users u ON x.`upload_userid` = u.`userid`
+        LEFT JOIN tb_upc_users u1 ON x.`down_userid` = u1.`userid`
+        LEFT JOIN tb_invasive_ownperson_toEmails u2 ON  a.`ownperson` = u2.ownperson
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+             LEFT JOIN tb_upc_users s ON a.`ownperson` = s.`userid` 
+		WHERE 1 = 1 
+        <if test=" attachment_name !=null and attachment_name != '' ">
+            and x.attachment_path like '%${attachment_name}%'
+        </if>
+          <if test=" name !=null and name != '' ">
+            and name like '%${name}%'
+        </if>
+        <if test=" emailflag !=null and emailflag != '' ">
+            and a.`emailflag` =#{emailflag}
+        </if>
+         <if test=" confirm_state == '' ">
+            and r.`confirm_state` is null
+        </if>
+        <if test=" confirm_state != ''and confirm_state !=null ">
+            and r.`confirm_state` =#{confirm_state}
+        </if>
+        <if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(x.attachment_date,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(x.attachment_date,1,10) 
+        </if>
+        <if test="invasive_starttime != '' and invasive_starttime != null">
+			and a.date >= #{invasive_starttime}
+		</if>	
+		<if test="invasive_endtime != '' and invasive_endtime != null">
+			and #{invasive_endtime} >= a.date
+		</if>	
+       <if test="id !=null and id != '' ">
+            and a.`id`=#{id}
+        </if>
+         <if test="uuid !=null and uuid != '' ">
+            and x.`uuid`=#{uuid}
+        </if>
+         <if test="num !=null and num != '' ">
+            and a.`num` like '%${num}%'
+        </if>
+        <if test="verify_state !=null and verify_state !='' ">
+            and a.`verify_state`=#{verify_state}
+        </if>
+         order by a.`date` 
+        <if test="start!=null and limit!=null">
+           
+            limit #{start},#{limit}
+        </if>
+    </select>
+   
+    <select id="queryCountAttachment" parameterType="map"
+            resultType="int">
+      
+		SELECT COUNT(1) FROM tb_Invasive_pre_attachment 
+            where case_id=#{id} 
+        
+    </select>
+    
+     <select id="queryAllCount" parameterType="map"
+            resultType="int">
+		 SELECT COUNT(1)
+		FROM
+		 tb_invasive_prenatal a 
+		   LEFT JOIN `tb_judicial_casefee` c
+				    ON a.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+		   LEFT JOIN tb_Invasive_pre_attachment X ON x.`case_id` = a.`id`
+        LEFT JOIN tb_upc_users u ON x.`upload_userid` = u.`userid`
+        LEFT JOIN tb_upc_users u1 ON x.`down_userid` = u1.`userid`
+        LEFT JOIN tb_invasive_ownperson_toEmails u2 ON  a.`ownperson` = u2.ownperson
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+             LEFT JOIN tb_upc_users s ON a.`ownperson` = s.`userid` 
+		WHERE 1 = 1 
+        <if test=" attachment_name !=null and attachment_name != '' ">
+            and x.attachment_path like '%${attachment_name}%'
+        </if>
+          <if test=" name !=null and name != '' ">
+            and name like '%${name}%'
+        </if>
+        <if test=" emailflag !=null and emailflag != '' ">
+            and a.`emailflag` =#{emailflag}
+        </if>
+         <if test=" confirm_state == '' ">
+            and r.`confirm_state` is null
+        </if>
+        <if test=" confirm_state != ''and confirm_state !=null ">
+            and r.`confirm_state` =#{confirm_state}
+        </if>
+        <if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(x.attachment_date,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(x.attachment_date,1,10) 
+        </if>
+        <if test="invasive_starttime != '' and invasive_starttime != null">
+			and a.date >= #{invasive_starttime}
+		</if>	
+		<if test="invasive_endtime != '' and invasive_endtime != null">
+			and #{invasive_endtime} >= a.date
+		</if>	
+       <if test="id !=null and id != '' ">
+            and a.`id`=#{id}
+        </if>
+         <if test="uuid !=null and uuid != '' ">
+            and x.`uuid`=#{uuid}
+        </if>
+         <if test="num !=null and num != '' ">
+            and a.`num` like '%${num}%'
+        </if>
+        <if test="verify_state !=null and verify_state !='' ">
+            and a.`verify_state`=#{verify_state}
+        </if>
+    </select>
+
+    <select id="queryCountSameAttachment" parameterType="map"
+            resultType="int">
+		SELECT COUNT(1) FROM tb_Invasive_pre_attachment 
+            where attachment_path=#{attachment_path} 
+        
+    </select>
+    
+    <update id="updateAttachment" parameterType="map">
+    	update tb_Invasive_pre_attachment t set 
+    	t.down_flag = t.down_flag + 1,
+    	t.download_time = now(),
+    	t.down_userid=#{down_userid}
+    	where t.uuid=#{uuid}
+    </update>
+    
+    
+ 
+ 	<insert id="insertExperimentLog" parameterType="map">
+        insert into tb_judicial_experiment_log (uuid,sample_code,
+        uploadPer, uploadTime)
+        values(#{uuid},#{sample_code},#{uploadPer},now())
+    </insert>
+    
+    <update id="updateExperimentLog" parameterType="map"  >
+    	update tb_judicial_experiment_log t set 
+    	t.downloadPer = #{downloadPer},
+    	t.downloadTime = now()
+    	where t.sample_code=#{sample_code}
+    </update>
+    
+    <select id="queryExperimentLog" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialAttachmentModel">
+		SELECT 
+		      u.`username` AS 'upload_username',
+		      u1.`username` AS 'download_username',
+		      a.`uploadTime` AS 'attachment_date',
+		      a.`downloadTime` AS 'download_time',
+		      a.sample_code
+		    FROM
+		      tb_judicial_experiment_log a 
+		      LEFT JOIN tb_upc_users u 
+		        ON a.`uploadPer` = u.`userid` 
+		      LEFT JOIN tb_upc_users u1 
+		        ON a.`downloadPer` = u1.`userid` 
+		 where 1=1
+		<if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.uploadTime,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.uploadTime,1,10) 
+        </if>
+         <if test="down_start_time !=null and down_start_time != '' ">
+            and SUBSTRING(a.downloadTime,1,10)  >= #{down_start_time}
+        </if>
+        <if test="down_end_time !=null and down_end_time != '' ">
+            and #{down_end_time} >= SUBSTRING(a.downloadTime,1,10) 
+        </if>
+        <if test="sample_code !=null and sample_code != '' ">
+            and a.sample_code like '%${sample_code}%' 
+        </if>  
+        <if test="start!=null and limit!=null">
+            order by a.`uploadTime` desc
+            limit #{start},#{limit}
+        </if> 
+       
+    </select>
+    
+    <select id="countExperimentLog" parameterType="map" resultType="int">
+        SELECT 
+		     count(1)
+		    FROM
+		      tb_judicial_experiment_log a 
+		      LEFT JOIN tb_upc_users u 
+		        ON a.`uploadPer` = u.`userid` 
+		      LEFT JOIN tb_upc_users u1 
+		        ON a.`downloadPer` = u1.`userid` 
+		where 1=1
+		<if test=" upload_username !=null and upload_username != '' ">
+            and u.username like '%${upload_username}%'
+        </if>
+        <if test=" download_username !=null and download_username != '' ">
+            and u1.username like '%${download_username}%'
+        </if>
+        <if test="start_time !=null and start_time != '' ">
+            and SUBSTRING(a.uploadTime,1,10)  >= #{start_time}
+        </if>
+        <if test="end_time !=null and end_time != '' ">
+            and #{end_time} >= SUBSTRING(a.uploadTime,1,10) 
+        </if>
+         <if test="down_start_time !=null and down_start_time != '' ">
+            and SUBSTRING(a.downloadTime,1,10)  >= #{down_start_time}
+        </if>
+        <if test="down_end_time !=null and down_end_time != '' ">
+            and #{down_end_time} >= SUBSTRING(a.downloadTime,1,10) 
+        </if>
+        <if test="sample_code !=null and sample_code != '' ">
+            and a.sample_code like '%${sample_code}%' 
+        </if>  
+    </select>
+    
+</mapper>

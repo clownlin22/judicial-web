@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.alcohol.mapper.RdsAlcoholAttachmentMapper">
+	<select id="getAttachment" parameterType="map" resultType="map">
+		SELECT aa.*,ci.`case_code` FROM tb_alcohol_attachment aa LEFT JOIN
+		tb_alcohol_case_info ci ON ci.`case_id`=aa.`case_id` WHERE 1=1
+		<if test="case_code!=null and case_code != ''">
+			and case_code like '%${case_code}%'
+		</if>
+		limit #{start},#{limit}
+	</select>
+	<select id="getAtt" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholAttachmentModel">
+		select * from tb_alcohol_attachment where case_id=#{case_id};
+	</select>
+	<select id="getAttachmentCount" parameterType="map" resultType="Integer">
+		SELECT count(1) FROM tb_alcohol_attachment aa LEFT JOIN
+		tb_alcohol_case_info ci ON ci.`case_id`=aa.`case_id` WHERE 1=1
+		<if test="case_code!=null and case_code != ''">
+			and case_code like '%${case_code}%'
+		</if>
+	</select>
+	<select id="getCaseID" parameterType="String" resultType="String">
+		select
+		case_id from tb_alcohol_case_info ci where ci.case_code = #{case_code}
+	</select>
+
+	<insert id="insertHeadPhoto" parameterType="com.rds.alcohol.model.RdsAlcoholAttachmentModel">
+		INSERT INTO
+		`tb_alcohol_attachment` (`att_id`, `att_path`, `case_id`, `att_type`)
+		VALUES (#{att_id}, #{att_path}, #{case_id}, #{att_type});
+	</insert>
+
+	<insert id="insertAttachment" parameterType="map">
+		INSERT INTO
+		`tb_alcohol_attachment` (`att_id`, `att_path`, `case_id`, `att_type`)
+		VALUES (#{att_id}, #{att_path}, #{case_id}, #{att_type});
+	</insert>
+
+	<delete id="deleteCasePhoto" parameterType="com.rds.alcohol.model.RdsAlcoholAttachmentModel">
+		delete from tb_alcohol_attachment where 1=1
+		<if test=" att_id !=null and att_id != ''">
+			and att_id =#{att_id}
+		</if>
+	</delete>
+	<delete id="deletAttInfo" parameterType="map">
+		delete from tb_alcohol_attachment where att_id=#{params}
+	</delete>
+
+	<select id="getPrintAtt" parameterType="String" resultType="map">
+		SELECT a.*,t.`case_code` FROM `tb_alcohol_attachment` a
+		LEFT JOIN
+		`tb_alcohol_case_info` t ON a.`case_id`=t.`case_id`
+		WHERE
+		a.`att_id`=#{att_id} limit 0,1
+	</select>
+	<update id="updatephoto" parameterType="com.rds.alcohol.model.RdsAlcoholAttachmentModel">
+		update tb_alcohol_attachment set att_type=#{att_type} where att_id=#{att_id}
+	</update>
+</mapper>

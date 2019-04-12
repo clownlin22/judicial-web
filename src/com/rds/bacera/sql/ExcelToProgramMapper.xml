@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.ExcelToProgramMapper" >
+	<insert id="insertTables" parameterType="map" >
+		insert into tb_finance_oa1(requestid,id,sqr,sqrxm,tdr,tdrxm,ssbm,ssbmmc,ssgs,ssgsmc,sqrq,mx1bxje,bxsm,mx1fykm,kmmc,mx1cdzt,ztmc1,mx1cdlx,ztejmc,ztsybmc,operatedate,operatetime,type)
+		values(#{requestid},#{id},#{sqr},#{sqrxm},#{tdr},#{tdrxm},#{ssbm},#{ssbmmc},#{ssgs},#{ssgsmc},#{sqrq},#{mx1bxje},#{bxsm},#{mx1fykm},#{kmmc}
+		,#{mx1cdzt},#{ztmc1},#{mx1cdlx},#{ztejmc},#{ztsybmc},#{operatedate},#{operatetime},#{type})
+	</insert>
+	<insert id="insertTables2" parameterType="map" >
+		insert into tb_finance_oa2(requestid,id,sqr,sqrxm,sqbm,sqbmmc,sqgs,sqgsmc,sqrq,jkje,nr,operatedate,operatetime)
+		values(#{requestid},#{id},#{sqr},#{sqrxm},#{sqbm},#{sqbmmc},#{sqgs},#{sqgsmc},#{sqrq},#{jkje},#{nr},#{operatedate},#{operatetime})
+	</insert>
+	<insert id="insertTables3" parameterType="map" >
+		insert into tb_finance_wages(id,user_dept_level1,user_dept_level2,user_dept_level3,user_dept_level4,user_dept_level5,wages_name,wages_month,wages,wages_social,wages_accumulation,wages_middle,wages_end,wages_other)
+		values(UUID(),#{user_dept_level1},#{user_dept_level2},#{user_dept_level3},#{user_dept_level4},#{user_dept_level5},#{wages_name},#{wages_month},#{wages},#{wages_social},#{wages_accumulation},#{wages_middle},#{wages_end},#{wages_other})
+	</insert>
+	<insert id="insertYXBtemp" parameterType="map">
+		insert into tb_yxb_temp(id,username,concat,adress,code,type,operatetime)
+		values(UUID(),#(username),#{concat},#{adress},#{code},#{type},now())
+	</insert>
+	<select id="selectYXBcodeTemp" parameterType="map" resultType="map">
+		select * from tb_yxb_code_temp where code = #{code}
+	</select>
+	<update id="updateYXBcodeTemp" parameterType="map">
+		update tb_yxb_code_temp set use=2 where code=#{code}
+	</update>
+	
+	<select id="selectCaseId" resultType="map">
+		SELECT * FROM t
+	</select>
+</mapper>

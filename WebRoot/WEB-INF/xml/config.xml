@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<config>
+         <sample_date>20160121</sample_date>
+         <sample_relay_num>1</sample_relay_num>
+         
+         <case_date>20160121</case_date>
+         <case_relay_num>1</case_relay_num>
+         
+         <mail_exception_id>a41fd30823eb4e8ba4325b6370eacefa</mail_exception_id>
+         <mail_exception_desc>report is ready , financial unconfirmed</mail_exception_desc>
+         
+         <finance_special>1</finance_special>
+         <finance_date>20160121</finance_date>
+         
+         <case_code_num>1</case_code_num>
+         <case_code_date>2017</case_code_date>
+         
+         <case_medical_num>1</case_medical_num>
+         <case_medical_date>201702</case_medical_date>
+         
+         <case_finance_num>1</case_finance_num>
+         <case_finance_date>20170201</case_finance_date>
+         
+</config>

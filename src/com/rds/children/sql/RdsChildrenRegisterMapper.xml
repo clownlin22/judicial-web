@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenRegisterMapper">
+
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenCaseInfoModel">
+		select ci.*,IF(
+		ci.`roletype` = 104,
+		(SELECT
+		u3.username
+		FROM
+		tb_judicial_agent ag,tb_upc_users u3
+		WHERE ag.userid = ci.case_userid AND u3.userid=ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+		''
+		) AS agent,
+		IF(
+		ci.last_task_id,
+		(select count(1) from ACT_HI_COMMENT where TASK_ID_=ci.last_task_id),
+		0
+		) AS has_comment
+		from (
+		SELECT 
+		  ci.*,
+		  u.`username` AS 'case_username',
+		  u1.`username` AS 'case_in_pername',
+		  u.roletype,
+		  ag.`agentia_name`,
+		  tf.`tariff_name`,
+		  RES.ID_ AS task_id,
+		  RES.TASK_DEF_KEY_ AS task_def_key,
+		  RES.NAME_ AS task_name,
+		  RES.SUSPENSION_STATE_ AS suspension_state,
+		  IF(
+		  ci.process_instance_id,
+		  (select ID_ from ACT_HI_TASKINST where PROC_INST_ID_=ci.process_instance_id order by START_TIME_ desc LIMIT 1,1),
+		  ''
+		  ) AS last_task_id
+		FROM
+		  tb_children_case_info ci 
+		  LEFT JOIN ACT_RU_TASK RES
+			ON ci.process_instance_id = RES.PROC_INST_ID_
+		  LEFT JOIN tb_children_tariff tf 
+		    ON tf.tariff_id = ci.tariff_id 
+		  LEFT JOIN tb_upc_users u 
+		    ON ci.`case_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1 
+		    ON ci.`case_in_per` = u1.`userid` 
+		  LEFT JOIN tb_dic_agentia ag 
+		    ON ag.`agentia_id` = ci.agentia_id 
+		    where 1=1 
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name!=null and child_name!= '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (ci.case_userid=#{userid} or ci.case_in_per = #{userid})
+		</if>
+		<if test=" tariff_id !=null and tariff_id != ''">
+			and ci.tariff_id=#{tariff_id}
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and ci.verify_state=#{verify_state}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" mail_code !=null and mail_code != ''">
+			and ci.mail_code like '%${mail_code}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and ci.id_number like '%${id_number}%'
+		</if>
+		<if test=" is_delete!=-1">
+			and ci.is_delete = #{is_delete}
+		</if>
+		ORDER BY ci.case_code DESC
+		<if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>) ci
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="int">
+		SELECT 
+		  count(1) 
+		FROM
+		  tb_children_case_info ci 
+		  LEFT JOIN tb_children_tariff tf 
+		    ON tf.tariff_id = ci.tariff_id 
+		  LEFT JOIN tb_dic_agentia ag 
+		    ON ag.`agentia_id` = ci.agentia_id 
+		    where 1=1
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name!=null and child_name!= '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and ci.verify_state=#{verify_state}
+		</if>
+		<if test=" mail_code !=null and mail_code != ''">
+			and ci.mail_code like '%${mail_code}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and ci.id_number like '%${id_number}%'
+		</if>
+		<if test=" userid !=null and userid != ''">
+			and (ci.case_userid=#{userid} or ci.case_in_per = #{userid})
+		</if>
+		<if test=" is_delete!=-1">
+			and ci.is_delete =#{is_delete}
+		</if>
+	</select>
+
+	<select id="getCustodyInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenCustodyInfoModel">
+		select cu.*,di.keyvalue as custody_callname from
+		tb_children_custody_info
+		cu,
+		(select * from tb_upc_dic_values where
+		keycode='custody_call') di where
+		di.keyid=cu.custody_call and
+		cu.case_id=#{case_id}
+		order by cu.custody_call
+	</select>
+
+	<select id="getGatherInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenGatherInfoModel">
+		select * from tb_children_gather_info where id=#{gather_id}
+	</select>
+
+	<update id="deleteCaseInfo" parameterType="map">
+		update tb_children_case_info SET is_delete=1 where case_id=#{case_id}
+	</update>
+
+	<insert id="addGatherInfo" parameterType="com.rds.children.model.RdsChildrenGatherInfoModel">
+		insert into
+		tb_children_gather_info(id,gather_name,id_number,phone,company_name)
+		values(#{id},#{gather_name},#{id_number},#{phone},#{company_name})
+	</insert>
+
+	<delete id="deleteGatherInfo" parameterType="map">
+		delete from
+		tb_children_gather_info where id=#{gather_id}
+	</delete>
+
+	<insert id="addCustodyInfo" parameterType="com.rds.children.model.RdsChildrenCustodyInfoModel">
+		insert into
+		tb_children_custody_info(custody_id,custody_name,id_number,phone,custody_call,case_id)
+		values(#{custody_id},#{custody_name},#{id_number},#{phone},#{custody_call},#{case_id})
+	</insert>
+
+	<delete id="deleteCustodyInfo" parameterType="map">
+		delete from
+		tb_children_custody_info where case_id=#{case_id}
+	</delete>
+
+	<insert id="addCaseInfo" parameterType="map">
+		insert into
+		tb_children_case_info(case_id,case_code,sample_code,case_userid,case_areacode,
+		case_areaname,address,child_name,birth_date,child_sex,
+		id_number,birth_hospital,house_area,life_area,gather_time,
+		gather_id,case_in_per,case_in_time,agentia_id,mail_area,
+		invoice,tariff_id,mail_name,mail_code,remark,process_instance_id)
+		
+		values(#{case_id},#{case_code},#{sample_code},#{case_userid},#{case_areacode},
+		#{case_areaname},#{address},#{child_name},#{birth_date},#{child_sex},
+		#{id_number},#{birth_hospital},#{house_area},#{life_area},#{gather_time},
+		#{gather_id},#{case_in_per},now(),#{agentia_id},#{mail_area},
+		#{invoice},#{tariff_id},#{mail_name},#{mail_code},#{remark},#{process_instance_id})
+	</insert>
+
+	<update id="updateCaseInfo" parameterType="map">
+		update
+		tb_children_case_info set 
+		sample_code=#{sample_code},
+		case_userid=#{case_userid},
+		case_areacode=#{case_areacode},
+		case_areaname=#{case_areaname},
+		address=#{address},
+		child_name=#{child_name},
+		birth_date=#{birth_date},
+		child_sex=#{child_sex},
+		id_number=#{id_number},
+		birth_hospital=#{birth_hospital},
+		house_area=#{house_area},
+		life_area=#{life_area},
+		gather_time=#{gather_time},
+		gather_id=#{gather_id},
+		mail_area=#{mail_area},
+		agentia_id=#{agentia_id},
+		tariff_id=#{tariff_id},
+		invoice=#{invoice},
+		mail_name=#{mail_name},
+		mail_code=#{mail_code},
+		remark=#{remark}
+		where
+		case_id=#{case_id}
+	</update>
+
+	<select id="exsitCaseCode" resultType="int">
+		select count(*) from
+		tb_children_case_info where case_code=#{case_code}
+		and is_delete = 0
+	</select>
+	
+	<select id="exsitSampleCode" resultType="int">
+		select count(*) from
+		tb_children_case_info where is_delete = 0
+		<if test=" sample_code !=null and sample_code != '' ">
+			and sample_code =#{sample_code}
+		</if>
+		<if test=" case_id !=null and case_id != '' ">
+			and case_id =#{case_id}
+		</if>
+	</select>
+	
+	<!-- 获取套餐类型 -->
+	<select id="getTariff" resultType="com.rds.children.model.RdsChildrenTariffModel">
+		SELECT t.* FROM `tb_children_tariff` t where t.tariff_state = '0'
+	</select>
+
+	<insert id="insertHeadPhoto" parameterType="com.rds.children.model.RdsChildrenCasePhotoModel">
+		INSERT INTO `tb_children_case_photo` 
+		(`photo_id`,`case_id`, `photo_path`,`upload_time`,upload_user,photo_type)
+		VALUES
+		(#{photo_id},#{case_id},#{photo_path},now(),#{upload_user},#{photo_type})
+	</insert>
+	
+	<select id="queryCasePhoto" parameterType="map"  resultType="com.rds.children.model.RdsChildrenCasePhotoModel">
+		select  ci.`case_code`,ci.child_name,ci.id_number,ci.sample_code,u.username as upload_username,ci.case_id,
+		cp.photo_id,cp.photo_path,cp.upload_time,cp.upload_user,cp.photo_type from tb_children_case_info ci 
+		left join tb_children_case_photo cp on ci.case_id=cp.case_id
+		left join tb_upc_users u on cp.upload_user=u.userid
+		where 1=1 and ci.is_delete = 0 
+		<if test=" photo_id !=null and photo_id != '' ">
+			and cp.photo_id =#{photo_id}
+		</if>
+		<if test=" case_id != null and case_id != '' ">
+			and ci.case_id =#{case_id}
+		</if>
+		<if test=" child_name!=null and child_name != '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and ci.id_number like '%${id_number}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" photo_type !=null and photo_type != ''">
+			and cp.photo_type =#{photo_type}
+		</if>
+		<if test=" gather_time_start !=null and  gather_time_start != '' ">
+			and ci.gather_time>=#{gather_time_start}
+		</if>
+		<if test=" gather_time_end !=null and gather_time_end != ''">
+			and #{gather_time_end}>=ci.gather_time
+		</if>
+		order by ci.case_code desc
+		<if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryCasePhotoCount" parameterType="map"  resultType="int">
+		select count(1) from tb_children_case_info ci 
+		left join tb_children_case_photo cp on ci.case_id=cp.case_id
+		where 1=1 and ci.is_delete = 0 
+		<if test=" photo_id !=null and photo_id != '' ">
+			and cp.photo_id =#{photo_id}
+		</if>
+		<if test=" case_id !=null and case_id != '' ">
+			and ci.case_id =#{case_id}
+		</if>
+		<if test=" child_name!=null and child_name != '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" id_number !=null and id_number != ''">
+			and ci.id_number like '%${id_number}%'
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" photo_type !=null and photo_type != ''">
+			and cp.photo_type =#{photo_type}
+		</if>
+		<if test=" gather_time_start !=null and  gather_time_start != '' ">
+			and ci.gather_time>=#{gather_time_start}
+		</if>
+		<if test=" gather_time_end !=null and gather_time_end != ''">
+			and #{gather_time_end}>=ci.gather_time
+		</if>
+	</select>
+	
+	<delete id="deleteCasePhoto" parameterType="com.rds.children.model.RdsChildrenCasePhotoModel">
+		delete from tb_children_case_photo 
+		where 1=1
+		<if test=" case_id !=null and case_id != ''">
+			and case_id =#{case_id}
+		</if>
+		<if test=" photo_type !=null and photo_type != ''">
+			and photo_type =#{photo_type}
+		</if>
+		<if test=" photo_id !=null and photo_id != ''">
+			and photo_id =#{photo_id}
+		</if>
+	</delete>
+	
+	<select id="exportInfo" parameterType="map" resultType="com.rds.children.model.RdsChildrenCaseInfoModel">
+		SELECT 
+		  ci.*,
+		  u.`username` AS case_username,
+		  ag.`agentia_id`,
+		  ag.`agentia_name`,
+		  tf.tariff_id,
+		  tf.tariff_name,
+		  cf.stand_sum,
+		  cf.real_sum ,
+		  cf.return_sum ,
+		  cf.`paragraphtime`,
+		  cf.`finance_remark` AS financeRemark,
+		  cci.`custody_name` AS father_name,
+		  cci.`id_number` AS father_id_number,
+		  cci.`phone` AS father_phone,
+		  cii.`custody_name` AS mother_name,
+		  cii.`id_number` AS mother_id_number,
+		  cii.`phone` AS mother_phone ,
+		  re.`confirm_date`,
+		  re.confirm_state
+		FROM
+		  tb_children_case_info ci 
+		  INNER JOIN tb_judicial_casefee cf 
+		    ON cf.case_id = ci.case_id 
+	 	 LEFT JOIN `tb_judicial_remittance` re 
+    		ON re.remittance_id = cf.remittance_id 
+		    LEFT JOIN tb_upc_users u ON ci.`case_userid` = u.`userid`
+		  LEFT JOIN `tb_dic_agentia` ag 
+		    ON ag.`agentia_id` = ci.agentia_id 
+		  LEFT JOIN tb_children_tariff tf 
+		    ON tf.tariff_id = ci.tariff_id 
+		  LEFT JOIN `tb_children_custody_info` cci 
+		    ON cci.`case_id` = ci.case_id 
+		    AND cci.`custody_call` = 'father' 
+		  LEFT JOIN tb_children_custody_info cii 
+		    ON cii.`case_id` = ci.case_id 
+		    AND cii.`custody_call` = 'mother' 
+		    where 1=1 
+		    <if test=" case_code!=null and case_code != ''">
+				and ci.case_code LIKE '%${case_code}%'
+			</if>
+			<if test=" sample_code !=null and sample_code != ''">
+				and ci.sample_code LIKE '%${sample_code}%'
+			</if>
+			<if test=" child_name!=null and child_name!= '' ">
+				and ci.child_name like '%${child_name}%'
+			</if>
+			<if test=" starttime!=null and  starttime != '' ">
+				and ci.gather_time>=#{starttime}
+			</if>
+			<if test=" endtime!=null and endtime != ''">
+				and #{endtime}>=ci.gather_time
+			</if>
+			<if test=" case_userid !=null and case_userid != ''">
+				and ci.case_userid=#{case_userid}
+			</if>
+			<if test=" userid !=null and userid != ''">
+				and (ci.case_userid=#{userid} or ci.case_in_per = #{userid})
+			</if>
+			<if test=" tariff_id !=null and tariff_id != ''">
+				and ci.tariff_id=#{tariff_id}
+			</if>
+			<if test=" verify_state !=null and verify_state != ''">
+				and ci.verify_state=#{verify_state}
+			</if>
+			<if test=" case_areaname !=null and case_areaname != ''">
+				and ci.case_areaname like '%${case_areaname}%'
+			</if>
+			<if test=" mail_code !=null and mail_code != ''">
+				and ci.mail_code like '%${mail_code}%'
+			</if>
+			<if test=" id_number !=null and id_number != ''">
+				and ci.id_number like '%${id_number}%'
+			</if>
+			<if test=" is_delete!=-1">
+				and ci.is_delete = #{is_delete}
+			</if>
+		    ORDER BY ci.`case_code`
+	</select>
+	
+	<update id="updateCaseState" parameterType="map">
+		update tb_children_case_info set verify_state=#{verify_state} where case_id=#{case_id}
+	</update>
+	
+	<select id="queryProductCasePhoto" parameterType="map"  resultType="com.rds.children.model.RdsChildrenCasePhotoModel">
+		select  ci.`case_code`,ci.child_name,ci.id_number,ci.sample_code,u.username as upload_username,ci.case_id,
+		cp.photo_id,cp.photo_path,cp.upload_time,cp.upload_user,cp.photo_type from tb_children_case_info ci 
+		left join tb_children_case_photo cp on ci.case_id=cp.case_id
+		left join tb_upc_users u on cp.upload_user=u.userid
+		where 1=1 AND (cp.`photo_type`=3 OR cp.`photo_type`=4)
+		<if test=" case_id != null and case_id != '' ">
+			and ci.case_id =#{case_id}
+		</if>
+	</select>
+	
+	<select id="getcaseinfobyself" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenCaseInfoModel">
+		select * from tb_children_case_info where case_id=#{case_id}
+	</select>
+	
+	<select id="queryOrderbyid" parameterType="map" resultType="map">
+        SELECT * FROM `tb_children_locus_info` WHERE  `case_id`= #{case_id}
+    </select>
+</mapper>

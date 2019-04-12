@@ -1,0 +1,1829 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseDailyMapper">
+	<select id="getCase_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		WHERE ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND
+		ci.is_archived = 0 AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`sample_in_time`)=#{days}
+	</select>
+	<select id="getCase_data_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date)
+		AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN
+		tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP
+		BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR
+		s.result = ''
+		GROUP
+		BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		WHERE ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		TO_DAYS(NOW())-TO_DAYS(dd.`compare_date`)=#{days} and dp.`companyid`=#{key}
+		AND pp.case_code IS
+		NULL
+	</select>
+	<select id="getCase_datareg_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+			LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date)
+		AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN
+		tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP
+		BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR
+		s.result = ''
+		GROUP
+		BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived
+		= 0 and
+		TO_DAYS(NOW())-TO_DAYS(dd.`compare_date`)=#{days}
+		AND
+		TO_DAYS(NOW())-TO_DAYS(ci.accept_time)=#{days}
+		AND
+		pp.case_code
+		IS
+		NULL
+	</select>
+	<select id="getCase_print_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		WHERE ci.accept_time is
+		not
+		null and dp.`companyid`=#{key} AND
+		ci.is_delete = 0
+		AND ci.is_archived = 0 and ci.`close_time`
+		IS
+		NOT
+		NULL AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`close_time`)=#{days}
+
+	</select>
+	<select id="getCase_printin2d_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		WHERE
+		ci.`accept_time` IS NOT NULL and dp.`companyid`=#{key}
+		AND
+		ci.is_delete = 0
+		AND ci.is_archived =
+		0
+		and
+		#{days}+2>=TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)
+		AND
+		ci.`close_time`
+		IS NOT NULL
+		AND
+		#{days}+2>=TO_DAYS(NOW())-TO_DAYS(ci.`close_time`)
+	</select>
+	<select id="getCase_mail_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		mi.`case_id`,
+		MIN(mi.`mail_time`) AS mail_time
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY
+		mi.`case_id`) mi
+		ON mi.`case_id` =
+		ci.`case_id`
+		WHERE ci.`is_delete`=0 AND ci.`is_archived`=0 AND mi.`mail_time` IS
+		NOT NULL and dp.`companyid`=#{key} and dp.`companyid`=#{key}
+		AND
+		TO_DAYS(NOW())-TO_DAYS(mi.mail_time)=#{days}
+
+	</select>
+	<select id="getCase_comfirm_fee_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_casefee cf
+		WHERE
+		cf.`confirm_date` IS NOT NULL
+		AND
+		TO_DAYS(NOW())-TO_DAYS(cf.confirm_date)=#{days}
+
+	</select>
+	<select id="getCase_mailin2d_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		mi.`case_id`,
+		MIN(mi.`mail_time`) AS mail_time
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY
+		mi.`case_id`) mi
+		ON mi.`case_id` =
+		ci.`case_id`
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived = 0 and
+		#{days}+2>=TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)
+		AND
+		mi.`mail_time`
+		IS NOT NULL
+		AND
+		#{days}+2>=TO_DAYS(NOW())-TO_DAYS(mi.`mail_time`)
+	</select>
+	<select id="getCase_mailfromnow_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN (select * from tb_judicial_mail_info mi group by mi.case_id) mi
+		ON mi.`case_id` = ci.`case_id`
+		WHERE ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		ci.`close_time` IS NOT NULL and dp.`companyid`=#{key}
+		AND
+		mi.`mail_info` IS NULL
+		AND
+		ci.`close_time` >= '2016-02-01'
+	</select>
+	<select id="getCase_nomail_sum" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(select * from
+		tb_judicial_mail_info mi group by mi.case_id) mi
+		ON
+		ci.`case_id` =
+		mi.`case_id`
+		WHERE ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		mi.`mail_time` IS NULL and dp.`companyid`=#{key}
+		AND
+		ci.`accept_time` >=
+		'2016-02-01' and
+		TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)>#{days}+2
+	</select>
+	<select id="getCase_exception2d_nodata_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		tb_judicial_mail_info mi
+		ON ci.`case_id` = mi.`case_id`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		WHERE mi.`mail_time` IS NULL and dp.`companyid`=#{key}
+		AND
+		ci.`accept_time` >= '2016-02-01' 
+		AND ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)>#{days}+2
+		AND pp.case_code
+		IS
+		NOT NULL
+	</select>
+	<select id="getCase_exception_nofee_sum" resultType="int"
+		parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(select * from tb_judicial_mail_info mi group by mi.case_id) mi
+		ON
+		ci.`case_id` = mi.`case_id`
+		LEFT JOIN
+		tb_judicial_casefee cf
+		ON
+		cf.`case_id`=ci.`case_id`
+		WHERE mi.`mail_time`
+		IS NULL and dp.`companyid`=#{key}
+		AND ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		ci.`accept_time` >= '2016-02-01'
+		AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)>#{days}+2
+		AND
+		cf.`confirm_date` IS NULL and cf.type=0 
+	</select>
+	<insert id="insertCaseDaily" parameterType="com.rds.judicial.model.RdsJudicialCaseDailyModel">
+		INSERT INTO
+		`tb_judicial_task_daily2` (`daily_id`, `case_sum`,
+		`case_data_sum`,
+		`case_print_sum`, `case_exception_sum`,
+		`case_comfirm_fee_sum`,
+		`case_mail_sum`, `remark`, `task_date`,
+		`case_accept`,
+		`sample_receive`, `sample_relay`, `case_confirm`,
+		`sample_verify`,
+		`data_today_register_yes`, `print_today_data_yes`,
+		`print_today_data_tod`, `fee_today_register_yes`,
+		`fee_today_register_tod`, `mail_today_data_yes`,
+		`mail_today_data_tod`) VALUES (#{daily_id}, #{case_sum},
+		#{case_data_sum}, #{case_print_sum}, #{case_exception_sum},
+		#{case_comfirm_fee_sum}, #{case_mail_sum}, #{remark}, #{task_date},
+		#{case_accept}, #{sample_receive}, #{sample_relay}, #{case_confirm},
+		#{sample_verify}, #{data_today_register_yes}, #{print_today_data_yes},
+		#{print_today_data_tod}, #{fee_today_register_yes},
+		#{fee_today_register_tod}, #{mail_today_data_yes},
+		#{mail_today_data_tod});
+
+	</insert>
+	<select id="getInfo" resultType="com.rds.judicial.model.RdsJudicialCaseDailyModel">
+		SELECT * FROM
+		`tb_judicial_task_daily2` d WHERE
+		TO_DAYS(NOW())-TO_DAYS(d.`task_date`)=1 LIMIT 0,1
+	</select>
+	<select id="getAllInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseDailyModel">
+		SELECT * FROM
+		`tb_judicial_task_daily2` d
+		order by
+		d.task_date
+		limit
+		#{start},#{limit}
+	</select>
+	<select id="getAllInfoCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM
+		`tb_judicial_task_daily2` d
+	</select>
+	<select id="getNo_mailByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel"
+		parameterType="map">
+		SELECT
+		COUNT(*) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY mi.`case_id`) mi
+		ON
+		mi.`case_id` =
+		ci.`case_id`
+		WHERE ci.`is_delete`=0 AND ci.`is_archived`=0 AND
+		dp.`companyid`=#{key} and
+		mi.`case_id`
+		IS NULL
+		AND ci.`accept_time` IS NOT NULL
+		AND
+		ci.`accept_time` >=
+		'2016-02-01'
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW())
+	</select>
+	<select id="getNo_dataByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel"
+		parameterType="map">
+		SELECT
+		COUNT(*) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		WHERE dp.`companyid`=#{key} and
+		ci.is_delete = 0
+		AND
+		ci.is_archived = 0
+		AND ci.`accept_time` >=
+		'2016-02-01'
+		AND
+		pp.case_code
+		IS NOT NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getNo_photoByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel"
+		parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		`tb_judicial_case_attachment` ca
+		WHERE ca.`attachment_type`
+		= 3
+		GROUP BY
+		ca.`case_id`) ca
+		ON ca.case_id = ci.`case_id`
+		WHERE
+		dp.`companyid`=#{key} and ci.is_delete = 0
+		AND
+		ci.is_archived = 0
+		AND
+		ci.`accept_time` >= '2016-02-01'
+		AND ca.case_id
+		IS NULL
+		GROUP BY
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getOther_exceptionByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel"
+		parameterType="map">
+		SELECT
+		COUNT(*) AS `count` ,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()) AS days
+		FROM
+		`tb_judicial_case_info` ci
+		LEFT JOIN `tb_upc_area` ar
+		ON
+		ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid`
+		= ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON
+		dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		*
+		FROM
+		`tb_judicial_case_exception` ce
+		WHERE ce.is_handle = 0
+		GROUP BY
+		ce.case_id) ce
+		ON ci.case_id = ce.case_id
+		WHERE dp.`companyid`=#{key}
+		and
+		ci.accept_time >=
+		'2016-02-01'
+		AND
+		ce.case_id IS NOT NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getCase_accept" parameterType="map" resultType="int">
+		SELECT
+		COUNT(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		WHERE ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND
+		ci.is_archived = 0
+		AND TO_DAYS(NOW()) -
+		TO_DAYS(ci.`accept_time`) =
+		#{days}
+	</select>
+	<select id="getSample_receive" parameterType="map" resultType="int">
+		SELECT
+		COUNT(rs.`sample_id`)
+		FROM
+		`tb_judicial_receive_sample` rs
+		LEFT
+		JOIN `tb_judicial_sample_receive_info` ri
+		ON rs.`receive_id` =
+		ri.`receive_id`
+		WHERE ri.`is_delete` = 0
+		AND TO_DAYS(NOW()) -
+		TO_DAYS(ri.`receive_time`) = #{days}
+	</select>
+	<select id="getSample_relay" parameterType="map" resultType="int">
+		SELECT
+		COUNT(rs.`sample_id`)
+		FROM
+		`tb_judicial_relay_sample` rs
+		LEFT JOIN
+		`tb_judicial_sample_relay_info` ri
+		ON rs.`relay_id` = ri.`relay_id`
+		WHERE ri.`is_delete` = 0
+		AND TO_DAYS(NOW()) - TO_DAYS(ri.`relay_time`)
+		= #{days}
+	</select>
+	<select id="getCase_confirm" parameterType="map" resultType="int">
+		SELECT
+		COUNT(cc.`case_id`)
+		FROM
+		`tb_judicial_confirm_case` cc
+		LEFT JOIN
+		`tb_judicial_case_relay_info` ri
+		ON ri.`relay_id` = cc.`relay_id`
+		WHERE
+		ri.`is_delete`=0 AND TO_DAYS(NOW())-TO_DAYS(ri.`relay_time`)=#{days}
+	</select>
+	<select id="getSample_verify" parameterType="map" resultType="int">
+		SELECT
+		COUNT(sv.`case_id`)
+		FROM
+		`tb_judicial_sampleinfo_verify` sv
+		WHERE
+		TO_DAYS(NOW()) - TO_DAYS(sv.`verify_sampleinfo_time`) = #{days}
+	</select>
+	<select id="getDate_today_register_yes" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived
+		= 0
+		AND pp.case_code IS NULL
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(dd.`compare_date`) = #{days}
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(ci.`accept_time`) - 1 = #{days}
+	</select>
+	<select id="getPrint_today_data_yes" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived
+		= 0
+		AND pp.case_code IS NULL
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(dd.`compare_date`) -1= #{days}
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(ci.`close_time`) = #{days}
+	</select>
+	<select id="getPrint_today_data_tod" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci 
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived
+		= 0
+		AND pp.case_code IS NULL
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(dd.`compare_date`)= #{days}
+		AND TO_DAYS(NOW())
+		-
+		TO_DAYS(ci.`close_time`) = #{days}
+	</select>
+	<select id="getFee_today_register_yes" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN tb_judicial_casefee cf
+		ON ci.`case_id` = cf.`case_id`
+		WHERE
+		ci.`is_delete`=0 and dp.`companyid`=#{key}
+		AND ci.`is_archived`=0
+		AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)-1=#{days}
+		AND
+		TO_DAYS(NOW())-TO_DAYS(cf.`confirm_date`)=#{days}
+	</select>
+	<select id="getFee_today_register_tod" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		tb_judicial_casefee cf
+		ON ci.`case_id` = cf.`case_id`
+		WHERE
+		ci.`is_delete`=0 and dp.`companyid`=#{key}
+		AND ci.`is_archived`=0
+		AND
+		TO_DAYS(NOW())-TO_DAYS(ci.`accept_time`)=#{days}
+		AND
+		TO_DAYS(NOW())-TO_DAYS(cf.`confirm_date`)=#{days}
+	</select>
+	<select id="getMail_today_data_yes" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		LEFT JOIN (SELECT * FROM
+		tb_judicial_mail_info mi GROUP BY mi.case_id)mi
+		ON
+		mi.case_id=ci.`case_id`
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived = 0
+		AND
+		pp.case_code IS NULL
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(dd.`compare_date`)-1 =
+		#{days}
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(mi.mail_time) = #{days}
+	</select>
+	<select id="getMail_today_data_tod" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.case_id)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT
+		JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN tb_judicial_sub_case_info d
+		ON
+		c.`case_code` = d.`sub_case_code`
+		GROUP BY d.case_code) dd
+		ON
+		dd.case_code = ci.`case_code`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.case_code = pp.case_code
+		LEFT JOIN (SELECT * FROM
+		tb_judicial_mail_info mi GROUP BY mi.case_id)mi
+		ON
+		mi.case_id=ci.`case_id`
+		WHERE
+		ci.is_delete = 0 and dp.`companyid`=#{key}
+		AND ci.is_archived = 0
+		AND
+		pp.case_code IS NULL
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(dd.`compare_date`) =
+		#{days}
+		AND
+		TO_DAYS(NOW()) -
+		TO_DAYS(mi.mail_time) = #{days}
+	</select>
+	<select id="getCase_exception_sum" parameterType="map"
+		resultType="int">
+		SELECT COUNT(ce.`case_id`) FROM
+		`tb_judicial_case_exception` ce WHERE ce.`is_handle`=0
+	</select>
+	<select id="getNo_feeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel"
+		parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id`=cf.`case_id`
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		and cf.type=0
+		AND cf.`confirm_date`
+		IS NULL
+		GROUP BY TIMESTAMPDIFF(DAY, DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW())
+	</select>
+	<select id="getCase_exceptionByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		`tb_judicial_case_exception` ce
+		WHERE ce.`is_handle` = 0
+		GROUP BY
+		ce.`case_id`) cee
+		ON ci.`case_id` = cee.case_id
+		LEFT JOIN
+		tb_judicial_casefee cf
+		ON ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and 
+		ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >=
+		'2016-02-01'
+		and cf.type=0
+		AND (
+		pp.case_code IS NOT NULL
+		OR cee.`case_id`
+		IS NOT NULL
+		OR cf.confirm_date IS NULL
+		OR catt.case_id IS NULL
+		)
+		GROUP BY
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getData_nophoto_nofeeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		and
+		cf.type=0
+		AND
+		pp.case_code IS NULL
+		AND cf.confirm_date IS NULL
+		AND
+		catt.case_id IS
+		NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getData_photo_nufee"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		and
+		cf.type=0
+		AND
+		pp.case_code IS
+		NULL
+		AND cf.confirm_date IS NULL
+		AND
+		catt.case_id IS NOT
+		NULL
+		GROUP BY
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getData_nophoto_feeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		and cf.type=0
+		AND ci.`accept_time` >=
+		'2016-02-01'
+		AND pp.case_code IS NULL
+		AND cf.confirm_date IS NOT NULL
+		AND catt.case_id IS NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getNodata_photo_nofeeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		AND
+		cf.type=0
+		AND pp.case_code IS NOT NULL
+		AND cf.confirm_date IS NULL
+		AND
+		catt.case_id IS NOT NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getNodata_photo_feeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		AND
+		cf.type=0
+		AND pp.case_code IS NOT NULL
+		AND cf.confirm_date IS NOT NULL
+		AND
+		catt.case_id IS NOT NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getNodata_nophoto_feeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		AND
+		cf.type=0
+		AND pp.case_code IS NOT NULL
+		AND cf.confirm_date IS NOT NULL
+		AND
+		catt.case_id IS NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getNodata_nophoto_nofeeByDays"
+		resultType="com.rds.judicial.model.RdsJudicialCaseCountStatisticsModel" parameterType="map">
+		SELECT
+		COUNT(ci.`case_id`) AS `count`,
+		TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		) AS days
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users us
+		ON us.`userid` = ar.`userid`
+		LEFT JOIN tb_upc_department dp
+		ON dp.`deptcode`=us.`deptcode`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN tb_judicial_casefee cf
+		ON
+		ci.`case_id` = cf.case_id
+		LEFT JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment catt
+		WHERE catt.attachment_type = 3
+		GROUP BY
+		catt.case_id) catt
+		ON ci.`case_id` = catt.case_id
+		WHERE dp.`companyid`=#{key} and ci.is_delete = 0
+		AND ci.is_archived = 0
+		AND ci.`accept_time` >= '2016-02-01'
+		AND
+		cf.type=0
+		AND pp.case_code IS NOT NULL
+		AND cf.confirm_date IS NULL
+		AND
+		catt.case_id IS NULL
+		GROUP BY TIMESTAMPDIFF(
+		DAY,
+		DATE_FORMAT(ci.`accept_time`, '%Y-%m-%d'),
+		NOW()
+		)
+	</select>
+	<select id="getCaseAllDate" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAllDateModel">
+		SELECT
+		ci.`case_id`,
+		ci.`accept_time`,
+		dd.compare_date,
+		mi.mail_time,
+		att.attachment_date,
+		cf.confirm_date,
+		ce.handle_time
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN
+		tb_judicial_sub_case_info d
+		ON c.`case_code` = d.`sub_case_code`
+		GROUP
+		BY d.case_code) dd
+		ON dd.case_code = ci.case_code
+		LEFT JOIN
+		(SELECT
+		mi.case_id,
+		MIN(mi.mail_time) AS mail_time
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY mi.case_id) mi
+		ON mi.case_id = ci.`case_id`
+		LEFT JOIN
+		tb_judicial_casefee cf
+		ON cf.type = 0
+		AND ci.`case_id` = cf.case_id
+		LEFT
+		JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment att
+		WHERE
+		att.attachment_type = 3
+		GROUP BY att.case_id) att
+		ON att.case_id =
+		ci.`case_id`
+		LEFT JOIN
+		(SELECT
+		MAX(ce.handle_time) AS handle_time,
+		ce.case_id
+		FROM
+		`tb_judicial_case_exception` ce
+		WHERE ce.is_handle = 1
+		GROUP BY ce.case_id) ce
+		ON ce.case_id = ci.`case_id`
+		WHERE mi.mail_time 
+		IS NOT NULL and ci.`is_delete`=0 AND ci.`is_archived`=0 
+		AND DATE_FORMAT(ci.`accept_time`, '%Y-%m') = #{case_date}
+	</select>
+	<select id="getCaseExceptionCount" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseExceptionCountModel">
+		SELECT
+		COUNT(ce.`case_id`) AS `count`,
+		ed.`type_desc` AS
+		exception_desc
+		FROM
+		tb_judicial_case_exception ce
+		LEFT JOIN
+		`tb_judicial_exception_type` ed
+		ON ce.`exception_type` = ed.`type_id`
+		AND ed.`is_delete` = 0
+		LEFT JOIN tb_judicial_case_info ci
+		ON
+		ci.`case_id` = ce.`case_id`
+		WHERE DATE_FORMAT(ci.`accept_time`,
+		'%Y-%m') = #{case_date} and ci.`is_delete`=0 AND ci.`is_archived`=0 
+		GROUP BY ce.`exception_type`
+		ORDER BY
+		COUNT(ce.`case_id`) DESC
+	</select>
+	<select id="getCaseAcceptThisMonth" parameterType="map"
+		resultType="int">
+		SELECT
+		COUNT(ci.`case_id`) FROM tb_judicial_case_info ci
+		WHERE
+		DATE_FORMAT(ci.accept_time,'%Y-%m')=#{case_date} and ci.`is_delete`=0 AND ci.`is_archived`=0 
+	</select>
+	<select id="getCaseAllDate1" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAllDateModel">
+		SELECT
+		ci.`case_id`,
+		ci.`accept_time`,
+		dd.compare_date,
+		mi.mail_time,
+		att.attachment_date,
+		cf.confirm_date,
+		ce.handle_time
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		UNION
+		(SELECT DISTINCT
+		(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N')
+		) pp
+		ON ci.`case_code` = pp.case_code
+		LEFT JOIN
+		(SELECT
+		d.case_code,
+		MAX(compare_date) AS compare_date
+		FROM
+		tb_judicial_compare_result c
+		JOIN
+		tb_judicial_sub_case_info d
+		ON c.`case_code` = d.`sub_case_code`
+		GROUP
+		BY d.case_code) dd
+		ON dd.case_code = ci.case_code
+		LEFT JOIN
+		(SELECT
+		mi.case_id,
+		MIN(mi.mail_time) AS mail_time
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY mi.case_id) mi
+		ON mi.case_id = ci.`case_id`
+		LEFT JOIN
+		tb_judicial_casefee cf
+		ON cf.type = 0
+		AND ci.`case_id` = cf.case_id
+		LEFT
+		JOIN
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_attachment att
+		WHERE
+		att.attachment_type = 3
+		GROUP BY att.case_id) att
+		ON att.case_id =
+		ci.`case_id`
+		LEFT JOIN
+		(SELECT
+		MAX(ce.handle_time) AS handle_time,
+		ce.case_id
+		FROM
+		`tb_judicial_case_exception` ce
+		WHERE ce.is_handle = 1
+		GROUP BY ce.case_id) ce
+		ON ce.case_id = ci.`case_id`
+		WHERE mi.mail_time
+		IS NOT NULL and ci.`is_delete`=0 AND ci.`is_archived`=0 
+		AND DATE_FORMAT(ci.`accept_time`, '%Y-%m') = #{case_date}
+		AND ci.`accept_time`IS NOT NULL AND
+		dd.compare_date IS NOT NULL AND
+		cf.confirm_date IS NOT NULL
+	</select>
+	<select id="getCompany" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT
+		cp.`companyid` AS `key`,
+		cp.`companyname` AS `value`
+		FROM
+		tb_upc_company cp
+		where 1=1
+		<if test="userid != '6847ae28b8f34c27aa8ed97558fa5559'">
+			and cp.`companyid`=#{company}
+		</if>
+	</select>
+</mapper>

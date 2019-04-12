@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsFinanceOAMapper">
+
+	<select id="queryAllPage" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceOAModel">
+		SELECT * FROM (
+		SELECT
+		a.case_id,
+		a.djbh,
+		a.ztsybmc,
+		a.ztejmc,
+		a.`operatedate`,
+		a.`operatetime`,
+		a.`bxsm`,
+		a.`mx1bxje`,
+		a.`sqrq`,
+		a.`sqrxm`,
+		a.`tdrxm`,
+		a.`kmmc`,
+		a.sqrworkcode,
+		a.tdrworkcode,
+		a.fycdrxm,
+		a.fycdrworkcode,
+		a.isremark,
+		a.cwcnyj,
+		a.user_dept_level1,
+		a.user_dept_level2,
+		a.user_dept_level3,
+		a.user_dept_level4,
+		a.user_dept_level5
+		FROM
+		`tb_finance_oa1` a
+		UNION
+		ALL
+		SELECT
+		b.case_id,
+		b.lcbh as djbh,
+		b.`sqgsmc` AS ztsybmc,
+		b.`sqgsmc` AS ztejmc,
+		b.`operatedate`,
+		b.`operatetime`,
+		b.`nr` AS bxsm,
+		b.`jkje` AS mx1bxje,
+		b.`sqrq`,
+		b.`sqrxm`,
+		'' AS tdrxm,
+		'备用金' AS kmmc,
+		b.sqrworkcode,
+		'' as tdrworkcode,
+		'' as fycdrxm,
+		'' as fycdrworkcode,
+		b.isremark,
+		b.cwcnyj,
+		b.user_dept_level1,
+		b.user_dept_level2,
+		b.user_dept_level3,
+		b.user_dept_level4,
+		b.user_dept_level5
+		FROM
+		`tb_finance_oa2` b ) t
+		<where>
+			<if test="djbh != null and djbh != ''">
+				and t.djbh like '%${djbh}%'
+			</if>
+			<if test="kmmc != null and kmmc != ''">
+				and t.kmmc like '%${kmmc}%'
+			</if>
+			<if test="ztsybmc != null and ztsybmc != ''">
+				and t.user_dept_level1  like '%${ztsybmc}%' 
+			</if>
+			<if test="user_dept_level != null and user_dept_level != ''">
+				and ( t.user_dept_level1 like '%${user_dept_level}%' or
+				 t.user_dept_level2 like '%${user_dept_level}%' or 
+				 t.user_dept_level3 like '%${user_dept_level}%' or 
+				 t.user_dept_level4 like '%${user_dept_level}%' or
+				 t.user_dept_level5 like '%${user_dept_level}%' )
+			</if>
+			<if test="sqrxm != null and sqrxm != ''">
+				and t.sqrxm like '%${sqrxm}%'
+			</if>
+			<if test="tdrxm != null and tdrxm != ''">
+				and t.tdrxm like '%${tdrxm}%'
+			</if>
+			<if test="sqrq_start != null and sqrq_start != ''">
+				and t.sqrq >= #{sqrq_start}
+			</if>
+			<if test="sqrq_end != null and sqrq_end != ''">
+				and #{sqrq_end} >= t.sqrq
+			</if>
+			<if test="operatedate_start != null and operatedate_start != ''">
+				and t.operatedate >= #{operatedate_start}
+			</if>
+			<if test="operatedate_end != null and operatedate_end != ''">
+				and #{operatedate_end} >= t.operatedate
+			</if>
+			<if test="amoebakmmc != null and amoebakmmc != ''">
+				and t.kmmc not in
+				<foreach item="item" index="index" collection="amoebakmmc"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="amoebakmmc1 != null and amoebakmmc1 != ''">
+				and t.kmmc in
+				<foreach item="item" index="index" collection="amoebakmmc1"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryUserDeptToModel" resultType="com.rds.statistics.model.RdsStatisticsTypeModel2">
+		SELECT deptname as
+		'key',deptid as 'value' FROM
+		`tb_upc_department` t WHERE t.parentid =
+		'0' AND t.delstatus = '0'
+		ORDER BY t.sort
+	</select>
+
+	<select id="queryUserDeptToModel2" resultType="com.rds.statistics.model.RdsStatisticsTypeModel2">
+		SELECT
+		tt.deptname as 'key',tt.deptid as 'value'
+		FROM
+		(
+		SELECT
+		t.deptid,
+		t.deptname,
+		t.parentdeptcode,
+		t.parentid,
+		t.islaboratory,
+		(
+		CASE
+		WHEN t.parentid = '0'
+		THEN
+		'无'
+		ELSE
+		(
+		SELECT
+		deptname
+		FROM
+		tb_upc_department aa
+		WHERE
+		t.parentid =
+		aa.deptid
+		)
+		END
+		) parentname,
+		t.deptcode,
+		b.companyid,
+		b.companyname,
+		(
+		SELECT
+		CASE
+		WHEN count(*) > 0 THEN
+		'false'
+		ELSE
+		'true'
+		END
+		FROM
+		tb_upc_department a
+		WHERE
+		a.parentid = t.deptid
+		AND delstatus = 0
+		) leaf
+		FROM
+		tb_upc_department t
+		LEFT JOIN tb_upc_company b ON t.companyid =
+		b.companyid
+		WHERE
+		t.parentid =#{deptId}
+		AND t.delstatus = 0
+		AND
+		b. STATUS =
+		1
+		) tt
+		WHERE
+		1 = 1
+		ORDER BY
+		tt.deptname DESC
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM (
+		SELECT
+		a.case_id,
+		a.djbh,
+		a.ztsybmc,
+		a.`operatedate`,
+		a.`operatetime`,
+		a.`bxsm`,
+		a.`mx1bxje`,
+		a.`sqrq`,
+		a.`sqrxm`,
+		a.`tdrxm`,
+		a.`kmmc`,
+		a.tdrworkcode,
+		a.isremark,
+		a.cwcnyj,
+		a.user_dept_level1,
+		a.user_dept_level2,
+		a.user_dept_level3,
+		a.user_dept_level4,
+		a.user_dept_level5
+		FROM
+		`tb_finance_oa1` a
+		UNION
+		ALL
+		SELECT
+		b.case_id,
+		b.lcbh as djbh,
+		b.`sqgsmc` AS
+		ztsybmc,
+		b.`operatedate`,
+		b.`operatetime`,
+		b.`nr` AS bxsm,
+		b.`jkje` AS
+		mx1bxje,
+		b.`sqrq`,
+		b.`sqrxm`,
+		'' AS tdrxm,
+		'备用金' AS kmmc,
+		'' as tdrworkcode,
+		b.isremark,
+		b.cwcnyj,
+		b.user_dept_level1,
+		b.user_dept_level2,
+		b.user_dept_level3,
+		b.user_dept_level4,
+		b.user_dept_level5
+		FROM
+		`tb_finance_oa2` b ) t
+		<where>
+			<if test="djbh != null and djbh != ''">
+				and t.djbh like '%${djbh}%'
+			</if>
+			<if test="kmmc != null and kmmc != ''">
+				and t.kmmc like '%${kmmc}%'
+			</if>
+			<if test="ztsybmc != null and ztsybmc != ''">
+				and t.user_dept_level1 like '%${ztsybmc}%' 
+			</if>
+			<if test="user_dept_level != null and user_dept_level != ''">
+				and ( t.user_dept_level1 like '%${user_dept_level}%' or
+				 t.user_dept_level2 like '%${user_dept_level}%' or 
+				 t.user_dept_level3 like '%${user_dept_level}%' or 
+				 t.user_dept_level4 like '%${user_dept_level}%' or
+				 t.user_dept_level5 like '%${user_dept_level}%' )
+			</if>
+			<if test="sqrxm != null and sqrxm != ''">
+				and t.sqrxm like '%${sqrxm}%'
+			</if>
+			<if test="sqrq_start != null and sqrq_start != ''">
+				and t.sqrq >= #{sqrq_start}
+			</if>
+			<if test="sqrq_end != null and sqrq_end != ''">
+				and #{sqrq_end} >= t.sqrq
+			</if>
+			<if test="operatedate_start != null and operatedate_start != ''">
+				and t.operatedate >= #{operatedate_start}
+			</if>
+			<if test="operatedate_end != null and operatedate_end != ''">
+				and #{operatedate_end} >= t.operatedate
+			</if>
+			<if test="amoebakmmc != null and amoebakmmc != ''">
+				and t.kmmc not in
+				<foreach item="item" index="index" collection="amoebakmmc"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="amoebakmmc1 != null and amoebakmmc1 != ''">
+				and t.kmmc in
+				<foreach item="item" index="index" collection="amoebakmmc1"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="queryBuMen" parameterType="String" resultType="String">
+		select tt.deptname from tb_upc_department tt where deptid= #{deptid}
+	</select>
+
+	<update id="updateOAdept1" parameterType="map">
+		update tb_finance_oa1
+		set ztsybmc = #{ztsybmc},kmmc = #{kmmc} where case_id=#{case_id}
+	</update>
+
+	<update id="updateOAdept2" parameterType="map">
+		update tb_finance_oa2
+		set sqgsmc = #{ztsybmc} where case_id=#{case_id}
+	</update>
+
+	<select id="queryExist1" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceOAModel">
+		SELECT
+		a.case_id,
+		a.djbh,
+		a.ztsybmc,
+		a.`operatedate`,
+		a.`operatetime`,
+		a.`bxsm`,
+		a.`mx1bxje`,
+		a.`sqrq`,
+		a.`sqrxm`,
+		a.`tdrxm`,
+		a.`kmmc` ,
+		a.sqrworkcode,
+		a.tdrworkcode,
+		a.cwcnyj,
+		a.isremark
+		FROM
+		`tb_finance_oa1` a
+		where a.case_id = #{case_id}
+	</select>
+
+	<select id="queryExist2" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceOAModel">
+		SELECT
+		b.case_id,
+		b.requestid,
+		b.`sqgsmc` AS ztsybmc,
+		b.`operatedate`,
+		b.`operatetime`,
+		b.`nr` AS bxsm,
+		b.`jkje` AS mx1bxje,
+		b.`sqrq`,
+		b.`sqrxm`,
+		b.`sqrxm` AS tdrxm,
+		'备用金' AS kmmc ,
+		b.sqrworkcode,
+		b.sqrworkcode as tdrworkcode,
+		b.cwcnyj,
+		b.isremark
+		FROM
+		`tb_finance_oa2` b
+		where b.case_id = #{case_id}
+	</select>
+	<insert id="insertOALog" parameterType="map">
+		insert into
+		tb_finance_oa_log(case_id,id,requestid,operatePer,operateTime,operateLog)
+		values(#{case_id},#{id},#{requestid},#{operatePer},now(),#{operateLog})
+	</insert>
+
+	<insert id="insertOAtype" parameterType="map">
+		insert into
+		tb_finance_oa_type(id,type,operatetime,operateper)
+		values(#{id},#{type},now(),#{operateper})
+	</insert>
+
+	<update id="updateOAtype" parameterType="map">
+		update
+		tb_finance_oa_type
+		set type=#{type},
+		operatetime = now(),
+		operateper=#{operateper}
+		where
+		id=#{id}
+	</update>
+
+	<update id="deleteOAtype" parameterType="map">
+		update
+		tb_finance_oa_type set status = 2，operateper=#{operateper} where
+		id=#{id}
+	</update>
+
+	<select id="queryOAtypePage" parameterType="map"
+		resultType="com.rds.statistics.model.RdsFinanceOATypeModel">
+		select t.id,t.type,t.operatetime,t.status,u.username as operatepername
+		from tb_finance_oa_type t left join tb_upc_users u on t.operateper =
+		u.userid
+		where 1=1
+		<if test="type != null and type != ''">
+			and t.type like '%${type}%'
+		</if>
+		<if test="operatepername != null and operatepername != ''">
+			and u.username '%${operatepername}%'
+		</if>
+		<if test="status != null and status != ''">
+			and t.status = #{status}
+		</if>
+		<if test="operatetime_start != null and operatetime_start != ''">
+			and t.operatetime >= #{operatetime_start}
+		</if>
+		<if test="operatetime_end != null and operatetime != ''">
+			and #{operatetime_end} >= t.operatetime
+		</if>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="queryOAtypeCount" parameterType="map" resultType="int">
+		select count(1)
+		from tb_finance_oa_type t left join tb_upc_users u on
+		t.operateper = u.userid
+		where 1=1
+		<if test="type != null and type != ''">
+			and t.type like '%${type}%'
+		</if>
+		<if test="operatepername != null and operatepername != ''">
+			and u.username '%${operatepername}%'
+		</if>
+		<if test="status != null and status != ''">
+			and t.status = #{status}
+		</if>
+		<if test="operatetime_start != null and operatetime_start != ''">
+			and t.operatetime >= #{operatetime_start}
+		</if>
+		<if test="operatetime_end != null and operatetime != ''">
+			and #{operatetime_end} >= t.operatetime
+		</if>
+	</select>
+
+		<update id="updateOAInfo1" parameterType="map">
+		update tb_finance_oa1 set
+			ztsybmc=#{ztsybmc}
+			,kmmc=#{kmmc}
+			,sqrxm=#{sqrxm}
+			,tdrxm=#{tdrxm}
+			,mx1bxje=#{mx1bxje}
+			,operatedate=#{operatedate}
+			,sqrq=#{sqrq}
+			,bxsm=#{bxsm}
+			,tdrworkcode=#{tdrworkcode}
+			,isremark=#{isremark}
+			,cwcnyj=#{cwcnyj}
+			,user_dept_level1=#{user_dept_level1}
+			,user_dept_level2=#{user_dept_level2}
+			,user_dept_level3=#{user_dept_level3}
+			,user_dept_level4=#{user_dept_level4}
+			,user_dept_level5=#{user_dept_level5}
+		where
+		case_id=#{case_id}
+	</update>
+
+	<update id="updateOAInfo2" parameterType="map">
+		update tb_finance_oa2 set
+			sqgsmc=#{ztsybmc}
+			,sqrxm=#{sqrxm}
+			,jkje=#{mx1bxje}
+			,operatedate=#{operatedate}
+			,sqrq=#{sqrq}
+			,nr=#{bxsm}
+			,isremark=#{isremark}
+			,cwcnyj=#{cwcnyj}
+			,user_dept_level1=#{user_dept_level1}
+			,user_dept_level2=#{user_dept_level2}
+			,user_dept_level3=#{user_dept_level3}
+			,user_dept_level4=#{user_dept_level4}
+			,user_dept_level5=#{user_dept_level5}
+		where
+		case_id=#{case_id}
+	</update>
+
+</mapper>

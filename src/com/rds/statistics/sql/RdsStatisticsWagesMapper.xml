@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsStatisticsWagesMapper">
+	<select id="queryAllPage" parameterType="map" resultType="com.rds.statistics.model.RdsFinanceWagesModel">
+		select w.*,u.username as create_pername from tb_finance_wages w left join tb_upc_users u 
+		on w.create_per = u.userid
+		where 1=1  and w.is_delete = 1
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and w.user_dept_level1 like '%${user_dept_level1}%'
+		</if>
+		<if test="user_dept_level2 !=null and user_dept_level2 !=''">
+			and w.user_dept_level2 like '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 !=null and user_dept_level3 !=''">
+			and w.user_dept_level3 like '%${user_dept_level3}%'
+		</if>
+		<if test="wages_month_start !=null and wages_month_start !=''">
+			and w.wages_month >= #{wages_month_start}
+		</if>
+		<if test="wages_month_end !=null and wages_month_end !=''">
+			and  #{wages_month_end} >= w.wages_month
+		</if>
+		<if test="wages_name !=null and wages_name !=''">
+			and w.wages_name = #{wages_name}
+		</if>
+		<if test="username !=null and username !=''">
+			and u.username = #{username}
+		</if>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		select count(1) from tb_finance_wages w left join tb_upc_users u 
+		on w.create_per = u.userid
+		where 1=1 and w.is_delete = 1
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and w.user_dept_level1 like '%${user_dept_level1}%'
+		</if>
+		<if test="user_dept_level2 !=null and user_dept_level2 !=''">
+			and w.user_dept_level2 like '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 !=null and user_dept_level3 !=''">
+			and w.user_dept_level3 like '%${user_dept_level3}%'
+		</if>
+		<if test="wages_month_start !=null and wages_month_start !=''">
+			and w.wages_month >= #{wages_month_start}
+		</if>
+		<if test="wages_month_end !=null and wages_month_end !=''">
+			and  #{wages_month_end} >= w.wages_month
+		</if>
+		<if test="wages_name !=null and wages_name !=''">
+			and w.wages_name = #{wages_name}
+		</if>
+		<if test="username !=null and username !=''">
+			and u.username = #{username}
+		</if>
+	</select>
+	
+	<insert id="insertWages" parameterType="map">
+		insert into tb_finance_wages(id,user_dept_level1,user_dept_level2,user_dept_level3,wages_month,wages,wages_name,create_per,create_date,attachment_id)
+		values
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.id}, #{item.user_dept_level1}, #{item.user_dept_level2}, #{item.user_dept_level3}, #{item.wages_month},
+			#{item.wages},#{item.wages_name},#{item.create_per},now(),#{item.attachment_id})
+		</foreach>
+	</insert>
+	
+	<update id="deleteWages" parameterType="map">
+		update tb_finance_wages set is_delete = 2 where attachment_id =#{attachment_id}
+	</update>
+	
+	<insert id="insertWagesAttachment" parameterType="map">
+		insert into tb_finance_wages_attachment(attachment_id,attachment_path,attachment_date,wages_month,create_per,remark) values(#{attachment_id},#{attachment_path},now(),#{wages_month},#{create_per},#{remark})
+	</insert>
+	
+	<update id="updateWagesAttachment" parameterType="map">
+		update tb_finance_wages_attachment set is_delete = 2 where attachment_id=#{attachment_id}
+	</update>
+	
+	<select id="queryWagesAttachment"  parameterType="map" resultType="com.rds.statistics.model.RdsFinanceWagesAttachmentModel">
+		select t.*,u.username as create_pername from tb_finance_wages_attachment t left join tb_upc_users u on t.create_per=u.userid
+		where t.is_delete = 1 
+		<if test="attachment_id !=null and attachment_id !=''">
+			and t.attachment_id = #{attachment_id}
+		</if>
+		<if test="wages_month !=null and wages_month !=''">
+			and t.wages_month = #{wages_month}
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.finance.mapper.RdsFinanceBaceraMapper" >
+	<insert id="insert" parameterType="map">
+		insert into tb_finance_info_follow(id,num,receivables,payment,paid,case_type,input_person,create_date)
+		values (#{id},#{num},#{receivables},#{payment},#{paid},#{case_type},#{input_person},now())
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_finance_info_follow
+		set receivables=#{receivables},
+		payment=#{payment},
+		paid=#{paid},
+		paragraphtime=#{paragraphtime},
+		remarks=#{remarks},
+		account_type=#{account_type},
+		remittanceName=#{remittanceName},
+		remittanceDate=#{remittanceDate},
+		discountPrice=#{discountPrice},
+		input_person=#{input_person},
+		create_date=now()
+		where id = #{id}
+	</update>
+	
+	<update id="confirmCase" parameterType="map">
+		update tb_finance_info_follow
+		set confirm_flag=2,
+		confirm_date=now(),
+		confirm_per=#{confirm_per}
+		where id = #{id}
+	</update>
+	
+	<select id="queryAllPage" parameterType="map" resultType="com.rds.finance.model.RdsFinanceBaceraModel">
+		SELECT 
+		 t.*,u.username as input_personname
+		FROM
+		  tb_finance_info_follow t 
+		  left join tb_upc_users u on t.input_person = u.userid
+		where is_delete=1
+			<if test="case_type != null and case_type != ''">
+				and t.case_type like '%${case_type}%'
+			</if>
+			<if test="num != null and num != ''">
+				and t.num like '%${num}%'
+			</if>
+			<if test="confirm_flag != null and confirm_flag != ''">
+				and t.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="userid != null and userid != ''">
+				and t.input_person = #{userid}
+			</if>
+			<if test="limit != null and limit != ''">
+				limit #{start},#{limit}   
+		 	</if> 
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+		count(1)
+		FROM
+		  tb_finance_info_follow t 
+		  left join tb_upc_users u on t.input_person = u.userid
+		where is_delete=1
+			<if test="case_type != null and case_type != ''">
+				and t.case_type like '%${case_type}%'
+			</if>
+			<if test="num != null and num != ''">
+				and t.num like '%${num}%'
+			</if>
+			<if test="confirm_flag != null and confirm_flag != ''">
+				and t.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="userid != null and userid != ''">
+				and t.input_person = #{userid}
+			</if>
+	</select>
+	
+	<update id="delete" parameterType="map">
+		delete from tb_finance_info_follow where id = #{id} 
+	</update>
+</mapper>

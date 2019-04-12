@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialReturnFeeMapper">
+	<insert id="insertReturnFee" parameterType="com.rds.judicial.model.RdsJudicialReturnFeeModel">
+		INSERT INTO
+		`tb_judicial_returnfee` (`id`, `userid`, `sum`,
+		`return_time`,
+		`bankaccount`, `remark`) VALUES
+		(#{id},#{userid},#{sum},#{return_time},#{bankaccount},#{remark});
+	</insert>
+</mapper>

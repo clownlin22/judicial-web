@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseStatusMapper">
+	<insert id="insert" parameterType="com.rds.judicial.model.RdsJudicialCaseExceprModel">
+		INSERT INTO
+		`tb_judicial_casestatus` (`case_id`, `statusmessage`, `date`)
+		VALUES
+		(#{case_id}, #{statusmessage}, #{date});
+	</insert>
+	<update id="update" parameterType="map">
+		UPDATE
+		`tb_judicial_casestatus` SET `statusmessage` = #{statusmessage}
+		WHERE
+		`case_id` = #{case_id};
+	</update>
+	<select id="getCaseid" parameterType="String" resultType="Integer">
+		SELECT
+		COUNT(1) FROM `tb_judicial_casestatus` s WHERE s.`case_id`=#{case_id}
+	</select>
+	<select id="queryAll" parameterType="map" resultType="map">
+		SELECT
+		cs.`case_id`,
+		ci.`case_code`,
+		cs.`status`,
+		cs.`statusmessage`,
+		cs.`date`,
+		u.`username`,
+		ai.`areaname`
+		FROM
+		`tb_judicial_casestatus` cs
+		LEFT JOIN
+		`tb_judicial_case_info` ci
+		ON ci.`case_id` = cs.`case_id`
+		LEFT JOIN
+		`tb_upc_area` ar
+		ON ar.`area_id` = ci.`receiver_id`
+		LEFT JOIN
+		`tb_upc_area_info` ai
+		ON ai.`areacode` = ar.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON ar.`userid`=u.`userid`
+		where 1=1
+		<if test="search!='' and search != null">
+			and ci.`case_code` like '${search}'
+		</if>
+		<if test="username!=''and username != null">
+			and u.`username` like '${username}'
+		</if>
+		LIMIT #{start},#{limit}
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		`tb_judicial_casestatus` cs
+		LEFT JOIN
+		`tb_judicial_case_info` ci
+		ON ci.`case_id` = cs.`case_id`
+		LEFT JOIN
+		`tb_upc_area` ar
+		ON ar.`area_id` = ci.`receiver_id`
+		LEFT JOIN
+		`tb_upc_area_info` ai
+		ON ai.`areacode` = ar.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON ar.`userid`=u.`userid`
+		where 1=1
+		<if test="search!='' and search != null">
+			and ci.`case_code` like '${search}'
+		</if>
+		<if test="username!=''and username != null">
+			and u.`username` like '${username}'
+		</if>
+	</select>
+	<update id="setNormal" parameterType="map">
+		UPDATE
+		`tb_judicial_casestatus` SET `status` = '0' WHERE `case_id` =
+		#{case_id};
+	</update>
+</mapper>

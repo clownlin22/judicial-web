@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.rds.mail.mapper.RdsMailCaseMapper">
+
+	<select id="getCaseInfos" parameterType="map"
+		resultType="com.rds.mail.model.RdsMailCaseInfo">
+		SELECT
+		cs.*,
+		ca.username AS receiver_name,
+		ca.areaname,
+		mi.mail_codes,
+		IF(mi.case_id IS
+		NULL,0,1) AS mail_state,
+		IF(mi.count IS
+		NULL,0,mi.count) AS mail_count,
+		#{case_type} as case_type
+		FROM
+		(SELECT
+		ci.`case_code`,
+		ci.receiver_id,
+		ci.client,
+		ci.case_id,
+		DATE_FORMAT(
+		cf.update_date,
+		'%Y-%m-%d %H:%i:%s'
+		) as
+		case_time,
+		cf.finance_remark AS fee_remark,
+		cf.status as fee_status,
+		cf.type as
+		fee_type,
+		IF(
+		ci.sample_str != ''
+		AND
+		ci.sample_str IS NOT NULL,
+		ci.sample_str,
+		''
+		) AS sample_str,
+		DATE_FORMAT(
+		cf.confirm_date,
+		'%Y-%m-%d %H:%i:%s'
+		) AS fee_date
+		FROM
+		<choose>
+			<when test="case_type=='alcohol'">(select *,'' as sample_str from tb_alcohol_case_info where state &lt;&gt; 7)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				case_id,case_no AS
+				case_code,company_name as client,receiver_id,'' as sample_str,remark,receive_time AS 'accept_time'
+				FROM
+				tb_trace_case_info where is_delete=0)
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,CONCAT(SUBSTRING(bi.accept_date,1,4),bi.case_number) AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.accept_date AS 'accept_time'
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				getchildclient
+				(ci.case_id) AS CLIENT,
+				ci.receiver_id,
+				si.sample_str,
+				ci.remark,
+				ci.gather_time AS 'accept_time'
+				FROM
+				tb_children_case_info ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` =
+				'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY
+				ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				where ci.is_delete=0)
+			</when>
+		</choose>
+		ci left join 
+		tb_judicial_casefee cf
+		on ci.`case_id` = cf.`case_id`
+		where 1=1
+		AND cf.case_type = #{case_type}
+		<if test=" starttime !=null and starttime != ''">
+			and SUBSTRING(ci.accept_time,1,10) >= #{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+		</if>
+		<if test=" client!=null and client!= ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test=" case_code!=null and case_code!= ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		) cs
+		LEFT JOIN
+		tb_charge_standard ca
+		ON cs.receiver_id =
+		ca.id
+		LEFT JOIN
+		(
+		SELECT
+		case_id,COUNT(*) AS COUNT,GROUP_CONCAT(di.value,"_",mi.`mail_code`) AS
+		mail_codes
+		FROM
+		tb_mail_case_link
+		cl,tb_mail_info mi,(SELECT key1 AS 'key'
+		,VALUE FROM tb_dic_values WHERE keycode='000000002') di
+		WHERE case_type
+		= #{case_type} AND
+		cl.`mail_id`=mi.`mail_id` AND di.key=mi.`mail_type`
+		<if test=" mail_code!=null and mail_code != ''">
+			AND mi.`mail_code` LIKE '%${mail_code}%'
+		</if>
+		GROUP BY case_id
+		) mi
+		ON mi.case_id = cs.case_id
+		where 1=1
+		<if test=" mail_code!=null and mail_code != ''">
+			and mi.case_id is not null
+		</if>
+		<if test=" receiver!=null and receiver != ''">
+			and ca.username LIKE '%${receiver}%'
+		</if>
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countCaseInfos" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		(SELECT
+		ci.`case_code`,
+		ci.receiver_id,
+		ci.client,
+		ci.case_id,
+		cf.finance_remark AS fee_remark,
+		cf.status,
+		cf.type as fee_type,
+		IF(
+		ci.sample_str != ''
+		AND ci.sample_str IS NOT NULL,
+		ci.sample_str,
+		''
+		) AS
+		sample_str,
+		DATE_FORMAT(
+		cf.confirm_date,
+		'%Y-%m-%d %H:%i:%s'
+		) AS
+		fee_date
+		FROM
+		<choose>
+			<when test="case_type=='alcohol'">(select *,'' as sample_str from tb_alcohol_case_info where state &lt;&gt; 7)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				case_id,case_no AS
+				case_code,company_name as client,receiver_id,'' as sample_str,remark,receive_time AS 'accept_time'
+				FROM
+				tb_trace_case_info where is_delete=1)
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,CONCAT(SUBSTRING(bi.accept_date,1,4),bi.case_number) AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.accept_date AS 'accept_time'
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				getchildclient
+				(ci.case_id) AS CLIENT,
+				ci.receiver_id,
+				si.sample_str,
+				ci.remark,
+				ci.gather_time AS 'accept_time'
+				FROM
+				tb_children_case_info ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` =
+				'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY
+				ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				where ci.is_delete=0)
+			</when>
+		</choose>
+		ci left join 
+		tb_judicial_casefee cf
+		on ci.`case_id` = cf.`case_id`
+		where 1=1
+		AND cf.case_type = #{case_type}
+		<if test=" starttime !=null and starttime != ''">
+			and SUBSTRING(ci.accept_time,1,10) >= #{starttime}
+		</if>
+		<if test=" endtime != null and endtime != ''">
+			and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+		</if>
+		<if test=" client!=null and client!= ''">
+			and ci.client LIKE '%${client}%'
+		</if>
+		<if test=" case_code!=null and case_code!= ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		) cs
+		LEFT JOIN tb_charge_standard ca ON cs.receiver_id = ca.id
+		LEFT JOIN
+		(
+		SELECT
+		case_id,COUNT(*) AS
+		COUNT,GROUP_CONCAT(di.value,"_",mi.`mail_code`) AS
+		mail_codes
+		FROM
+		tb_mail_case_link
+		cl,tb_mail_info mi,(SELECT key1 AS 'key'
+		,VALUE FROM
+		tb_dic_values WHERE keycode='000000002') di
+		WHERE case_type
+		=
+		#{case_type} AND
+		cl.`mail_id`=mi.`mail_id` AND di.key=mi.`mail_type`
+		<if test=" mail_code!=null and mail_code != ''">
+			AND mi.`mail_code` LIKE '%${mail_code}%'
+		</if>
+		GROUP BY case_id
+		) mi
+		ON mi.case_id = cs.case_id
+		where 1=1
+		<if test=" mail_code!=null and mail_code != ''">
+			and mi.case_id is not null
+		</if>
+		<if test=" receiver!=null and receiver != ''">
+			and ca.username LIKE '%${receiver}%'
+		</if>
+	</select>
+
+	<select id="getMailCase" parameterType="map"
+		resultType="com.rds.mail.model.RdsMailCaseInfo">
+		SELECT
+		cs.*,
+		ca.username AS receiver_name,
+		ca.areaname,
+		mi.mail_codes,
+		IF(mi.case_id IS
+		NULL,0,1) AS mail_state,
+		IF(mi.count IS
+		NULL,0,mi.count) AS mail_count,
+		#{case_type} as case_type,
+		(SELECT VALUE
+		FROM tb_dic_values WHERE
+		keycode='mail_case_type' and
+		key1=#{case_type}) as case_type_str
+		FROM
+		(SELECT
+		ci.`case_code`,
+		ci.receiver_id,
+		ci.client,
+		ci.case_id,
+		DATE_FORMAT(
+		cf.update_date,
+		'%Y-%m-%d
+		%H:%i:%s'
+		) as case_time,
+		cf.finance_remark AS
+		fee_remark,
+		cf.status as
+		fee_status,
+		cf.type as fee_type,
+		IF(
+		ci.sample_str != ''
+		AND ci.sample_str
+		IS NOT NULL,
+		ci.sample_str,
+		''
+		) AS
+		sample_str,
+		DATE_FORMAT(
+		cf.confirm_date,
+		'%Y-%m-%d %H:%i:%s'
+		) AS
+		fee_date
+		FROM
+		<choose>
+			<when test="case_type=='alcohol'">(select *,'' as sample_str from tb_alcohol_case_info)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				case_id,case_no AS
+				case_code,company_name as client,receiver_id,'' as sample_str,remark
+				FROM
+				tb_trace_case_info where is_delete=0)
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,CONCAT(SUBSTRING(bi.accept_date,1,4),bi.case_number) AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				getchildclient
+				(ci.case_id) AS CLIENT,
+				ci.receiver_id,
+				si.sample_str,
+				ci.remark
+				FROM
+				tb_children_case_info ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` =
+				'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY
+				ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				where ci.is_delete=0)
+			</when>
+		</choose>
+		ci,
+		tb_judicial_casefee cf
+		WHERE ci.`case_id` = cf.`case_id`
+		AND
+		cf.case_type = #{case_type}
+		and ci.case_code =#{case_code}
+		) cs
+		LEFT JOIN
+		(SELECT
+		aa.area_id,
+		u.username,
+		ai.`areaname`
+		FROM
+		tb_upc_area aa
+		LEFT JOIN	tb_upc_users u
+		ON aa.userid=u.userid
+		LEFT JOIN	tb_upc_area_info ai
+		ON ai.`areacode` = aa.`areacode`) ca
+		ON cs.receiver_id = ca.area_id
+		LEFT
+		JOIN
+		(
+		SELECT
+		case_id,COUNT(*) AS
+		COUNT,GROUP_CONCAT(di.value,"_",mi.`mail_code`) AS
+		mail_codes
+		FROM
+		tb_mail_case_link
+		cl,tb_mail_info mi,(SELECT key1 AS 'key'
+		,VALUE FROM
+		tb_dic_values WHERE keycode='000000002') di
+		WHERE case_type
+		=
+		#{case_type} AND
+		cl.`mail_id`=mi.`mail_id` AND di.key=mi.`mail_type`
+		GROUP BY case_id
+		) mi
+		ON mi.case_id = cs.case_id
+	</select>
+
+	<insert id="insertMailInfo" parameterType="map">
+		insert into
+		tb_mail_info(mail_id,mail_code,mail_per,mail_type,mail_time,addressee)
+		values(#{mail_id},#{mail_code},#{mail_per},#{mail_type},now(),#{addressee})
+	</insert>
+
+	<insert id="insertCaseMailLink" parameterType="map">
+		insert into
+		tb_mail_case_link(mail_id,case_id,case_type)
+		values(#{mail_id},#{case_id},#{case_type})
+	</insert>
+
+	<select id="exsitMailCode" parameterType="map" resultType="int">
+		select count(*) from tb_mail_info where mail_code=#{mail_code}
+	</select>
+
+	<select id="getMailInfo" parameterType="map"
+		resultType="com.rds.mail.model.RdsMailInfo">
+		select * from tb_mail_info where mail_code=#{mail_code}
+	</select>
+
+	<select id="getMailCaseInfo" parameterType="map"
+		resultType="com.rds.mail.model.RdsMailCaseInfo">
+		SELECT
+		cs.*,
+		ca.username AS receiver_name,
+		ca.areaname,
+		mi.mail_codes,
+		IF(mi.case_id IS
+		NULL,0,1) AS mail_state,
+		IF(mi.count IS NULL,0,mi.count) AS mail_count,
+		(SELECT VALUE FROM tb_dic_values WHERE
+		keycode='mail_case_type' AND key1=cs.case_type) AS case_type_str
+		FROM (SELECT
+		ci.`case_code`,
+		ci.receiver_id,
+		ci.client,
+		ci.case_id,
+		ci.case_type,
+		DATE_FORMAT(cf.update_date, '%Y-%m-%d %H:%i:%s') AS case_time,
+		cf.finance_remark AS fee_remark,
+		cf.status AS fee_status,
+		cf.type AS fee_type,
+		IF(
+		ci.sample_str != ''
+		AND ci.sample_str IS NOT NULL,
+		ci.sample_str,
+		''
+		) AS sample_str,
+		DATE_FORMAT(
+		cf.confirm_date,
+		'%Y-%m-%d %H:%i:%s'
+		) AS fee_date
+		FROM
+		(
+		(SELECT
+		case_id,
+		case_code,
+		receiver_id,
+		CLIENT,
+		'' AS sample_str,
+		'alcohol' AS case_type
+		FROM
+		tb_alcohol_case_info)
+		UNION
+		(SELECT
+		case_id,
+		 case_no AS case_code,
+		receiver_id,
+		company_name AS CLIENT,
+		'' AS sample_str,
+		'trace' AS case_type
+		FROM
+		tb_trace_case_info
+		WHERE is_delete = 1)
+		UNION
+		(SELECT
+		bi.case_id,
+		CONCAT(
+		SUBSTRING(bi.accept_date, 1, 4),
+		bi.case_number
+		) AS case_code,
+		bi.recrive_id AS receiver_id,
+		bi.entrust_per AS CLIENT,
+		ai.identify_per_name AS sample_str,
+		'appraisal' AS case_type
+		FROM
+		tb_appraisal_base_info bi
+		LEFT JOIN tb_appraisal_identify_info ai
+		ON ai.`case_id` = bi.`case_id`)
+		) ci,
+		tb_judicial_casefee cf
+		WHERE ci.`case_id` = cf.`case_id`
+		AND cf.case_type = ci.case_type)cs
+
+		LEFT JOIN
+		tb_charge_standard ca
+		ON cs.receiver_id = ca.id
+		inner
+		JOIN
+		(
+		SELECT
+		case_id,COUNT(*) AS COUNT,GROUP_CONCAT(di.value,"_",mi.`mail_code`) AS mail_codes
+		FROM
+		tb_mail_case_link
+		cl,tb_mail_info mi,(SELECT key1 AS 'key'
+		,VALUE FROM tb_dic_values WHERE
+		keycode='000000002') di
+		WHERE mi.mail_code = #{mail_code} AND
+		cl.`mail_id`=mi.`mail_id` AND di.key=mi.`mail_type`
+		GROUP BY case_id
+		) mi
+		ON mi.case_id = cs.case_id
+	</select>
+
+	<update id="updateMailInfo" parameterType="map">
+		update tb_mail_info set
+		mail_per=#{mail_per},mail_type=#{mail_type},mail_time=now(),addressee=#{addressee}
+		where mail_id=#{mail_id}
+	</update>
+
+	<delete id="deleteMailLinkByMap" parameterType="map">
+		delete from tb_mail_case_link where mail_id=#{mail_id}
+	</delete>
+
+	<delete id="deleteMailLinkByModel" parameterType="com.rds.mail.model.RdsMailInfo">
+		delete from tb_mail_case_link where mail_id=#{mail_id}
+	</delete>
+
+	<delete id="deleteMailInfo" parameterType="com.rds.mail.model.RdsMailInfo">
+		delete from tb_mail_info where mail_id=#{mail_id}
+	</delete>
+
+	<select id="checkMails" parameterType="map"
+		resultType="com.rds.mail.model.RdsMailInfo">
+		SELECT
+		mi.*,di.value AS mail_typeStr,u.username as mail_pername
+		FROM
+		tb_mail_info mi,
+		tb_mail_case_link cl,
+		(SELECT
+		key1 AS 'key',
+		VALUE
+		FROM
+		tb_dic_values
+		WHERE keycode = '000000002') di,
+		tb_upc_users u
+		WHERE cl.`mail_id` = mi.`mail_id`
+		AND di.key = mi.`mail_type`
+		AND u.`userid` = mi.`mail_per`
+		and cl.case_id=#{case_id}
+	</select>
+	
+	<insert id="insertTraceLog" parameterType="map">
+        insert into tb_trace_log_info (id, case_id,
+        operator, create_time, operating_introduce,
+        remark) values (#{id},#{case_id},#{operator},
+        sysdate(),#{operating_introduce},
+        #{remark})
+    </insert>
+     <update id="updateStatus" parameterType="map">
+        update tb_trace_case_info set status=#{status}
+        where case_id = #{case_id}
+    </update>
+</mapper>

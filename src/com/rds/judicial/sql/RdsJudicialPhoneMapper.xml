@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialPhoneMapper">
+	<select id="getManager" parameterType="String" resultType="map">
+		SELECT
+		u.`userid` as `managerid`,
+		u.`username`
+		FROM
+		`tb_upc_users` u
+		LEFT
+		JOIN `tb_judicial_agent` a
+		ON u.`userid` =
+		a.`userid`
+		WHERE
+		a.`delstatus`
+		= 0 AND a.`flag`=2 AND u.`userid` IS NOT
+		NULL AND u.`username` IS NOT
+		NULL
+		AND a.`peruserid` =
+		#{userid}
+		GROUP BY a.`userid`
+	</select>
+	<select id="getArea" parameterType="String" resultType="map">
+		SELECT
+		i.`areaname`,
+		i.`code` AS `case_areacode`,
+		a.`area_id` AS `areaid`
+		FROM
+		`tb_upc_area_info` i
+		LEFT JOIN `tb_upc_area` a
+		ON a.`areacode` =
+		i.`areacode`
+		WHERE a.`is_delete`=0 AND a.`userid` = #{managerid}
+	</select>
+	<select id="getAllManager" resultType="map">
+		SELECT
+		u.`userid` AS
+		`managerid`,
+		u.`username`
+		FROM
+		`tb_upc_area` a
+		LEFT JOIN `tb_upc_users` u
+		ON u.`userid` = a.`userid`
+		WHERE a.`is_delete`=0 AND u.`userid` IS NOT
+		NULL AND u.`username` IS NOT NULL
+		GROUP BY a.`userid`
+	</select>
+
+	<select id="queryByCaseinper" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialPhoneCaseListModel">
+		SELECT
+		caseinfo.case_id,
+		caseinfo.case_code,
+		IF(caseinfo.client IS NOT
+		NULL,
+		caseinfo.client,sampleinfo.`client`) AS `client`,
+		caseinfo.accept_time
+		AS
+		'date',
+		caseinfo.is_delete,
+		mail.`mail_code`,
+		feepercase.`real_sum` AS
+		'sum',
+		ce.`status`,
+		ce.`statusmessage`
+		FROM
+		`tb_judicial_case_info` caseinfo
+		LEFT
+		JOIN
+		`tb_judicial_casestatus` ce
+		ON
+		caseinfo.case_id = ce.case_id
+		LEFT
+		JOIN
+		`tb_judicial_casefee` feepercase
+		ON caseinfo.`case_id` =
+		feepercase.`case_id`
+		LEFT JOIN
+		`tb_judicial_mail_info` mail
+		ON
+		mail.`case_id` = caseinfo.`case_id`
+		LEFT
+		JOIN `tb_upc_area` upcarea
+		ON
+		upcarea.`area_id` = caseinfo.`receiver_id`
+		LEFT JOIN `tb_upc_users`
+		users
+		<if test="usertype != 3">
+			ON users.`userid` = caseinfo.`case_in_per`
+		</if>
+		<if test="usertype == 3">
+			ON users.`userid` = upcarea.`userid`
+		</if>
+		INNER JOIN
+		(SELECT
+		case1.`case_id`,
+		IF(
+		sample1.`sample_call` IS NOT NULL,
+		sample1.`sample_username`,
+		sample2.`sample_username`
+		) AS 'client'
+		FROM
+		`tb_judicial_case_info` case1
+		LEFT JOIN `tb_judicial_sample_info`
+		sample1
+		ON case1.`case_id` = sample1.`case_id`
+		AND sample1.`sample_call`
+		= 'father'
+		LEFT JOIN `tb_judicial_sample_info` sample2
+		ON
+		case1.`case_id` = sample2.`case_id`
+		AND sample2.`sample_call` =
+		'mother'
+		<if test="client !=null and client!=''">
+			WHERE (sample1.`sample_username` like '%${client}%' OR
+			sample2.`sample_username`
+			like '%${client}%')
+		</if>
+		) sampleinfo
+		ON sampleinfo.`case_id` = caseinfo.`case_id`
+		WHERE
+		caseinfo.`is_archived` = 0
+		<if test=" case_code!=null and case_code != ''">
+			and caseinfo.case_code LIKE '%${case_code}%'
+		</if>
+		<if test="usertype == 2">
+			AND (users.`usertype` >2 AND users.`deptcode` =
+			#{deptcode}
+			OR users.`userid` = #{userid})
+		</if>
+		<if test="usertype >= 3">
+			AND users.`userid` = #{userid}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			AND caseinfo.`accept_time`>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=caseinfo.`accept_time`
+		</if>
+		<if test="type == 0">
+			AND caseinfo.`is_delete`= 1
+		</if>
+		<!-- <if test="type == 2"> AND caseinfo.`gather_id` IS NOT NULL </if> <if 
+			test="type == 1"> and caseinfo.gather_id is null </if> -->
+		<!-- 未寄送 -->
+		<if test="type == 3">
+			and mail.`mail_code` is null
+		</if>
+		<!-- 已寄送 -->
+		<if test="type == 4">
+			and mail.`mail_code` is not null
+		</if>
+		ORDER BY caseinfo.`accept_time` DESC,ce.`status` DESC
+		limit
+		#{start},#{end}
+	</select>
+	<select id="queryByCaseinperCount" parameterType="map"
+		resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		`tb_judicial_case_info` caseinfo
+		LEFT
+		JOIN
+		`tb_judicial_casestatus` ce
+		ON
+		caseinfo.case_id = ce.case_id
+		LEFT
+		JOIN
+		`tb_judicial_casefee` feepercase
+		ON caseinfo.`case_id` =
+		feepercase.`case_id`
+		LEFT JOIN
+		`tb_judicial_mail_info` mail
+		ON
+		mail.`case_id` = caseinfo.`case_id`
+		LEFT
+		JOIN `tb_upc_area` upcarea
+		ON
+		upcarea.`area_id` = caseinfo.`receiver_id`
+		LEFT JOIN `tb_upc_users`
+		users
+		<if test="usertype != 3">
+			ON users.`userid` = caseinfo.`case_in_per`
+		</if>
+		<if test="usertype == 3">
+			ON users.`userid` = upcarea.`userid`
+		</if>
+		INNER JOIN
+		(SELECT
+		case1.`case_id`,
+		IF(
+		sample1.`sample_call` IS NOT NULL,
+		sample1.`sample_username`,
+		sample2.`sample_username`
+		) AS 'client'
+		FROM
+		`tb_judicial_case_info` case1
+		LEFT JOIN `tb_judicial_sample_info`
+		sample1
+		ON case1.`case_id` = sample1.`case_id`
+		AND sample1.`sample_call`
+		= 'father'
+		LEFT JOIN `tb_judicial_sample_info` sample2
+		ON
+		case1.`case_id` = sample2.`case_id`
+		AND sample2.`sample_call` =
+		'mother'
+		<if test="client !=null and client!=''">
+			WHERE (sample1.`sample_username` like '%${client}%' OR
+			sample2.`sample_username`
+			like '%${client}%')
+		</if>
+		) sampleinfo
+		ON sampleinfo.`case_id` = caseinfo.`case_id`
+		WHERE
+		caseinfo.`is_archived` = 0
+		<if test=" case_code!=null and case_code != ''">
+			and caseinfo.case_code LIKE '%${case_code}%'
+		</if>
+		<if test="usertype == 2">
+			AND (users.`usertype` >2 AND users.`deptcode` =
+			#{deptcode}
+			OR users.`userid` = #{userid})
+		</if>
+		<if test="usertype >= 3">
+			AND users.`userid` = #{userid}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			AND caseinfo.`accept_time`>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=caseinfo.`accept_time`
+		</if>
+		<if test="type == 0">
+			AND caseinfo.`is_delete`= 1
+		</if>
+		<!-- <if test="type == 2"> AND caseinfo.`gather_id` IS NOT NULL </if> <if 
+			test="type == 1"> and caseinfo.gather_id is null </if> -->
+		<!-- 未寄送 -->
+		<if test="type == 3">
+			and mail.`mail_code` is null
+		</if>
+		<!-- 已寄送 -->
+		<if test="type == 4">
+			and mail.`mail_code` is not null
+		</if>
+	</select>
+
+	<insert id="firstInsertCase" parameterType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		insert into
+		tb_judicial_case_info(
+		case_id,case_code,case_in_per,receiver_id,accept_time
+
+		)
+		values(#{case_id},#{case_code},#{case_in_per},#{receiver_id},#{accept_time}
+
+		)
+	</insert>
+	<select id="getCaseID" parameterType="String" resultType="String">
+		select
+		case_id from tb_judicial_case_info where case_code = #{case_code}
+	</select>
+	
+	<select id="getProcessInstanceId" parameterType="String" resultType="String">
+		SELECT 
+    process_instance_id 
+     FROM
+    tb_judicial_case_info a
+  INNER JOIN 
+      `tb_judicial_sample_info`  c
+      ON a.`case_id`=c.`case_id`
+    WHERE id_number = #{id_number}
+	</select>
+	
+	<select id="getMail" parameterType="String" resultType="com.rds.judicial.model.RdsJudicialMailInfoModel">
+		SELECT 
+		mail_code,
+		mail_type
+     FROM
+    tb_judicial_mail_info a
+  INNER JOIN 
+      `tb_judicial_sample_info`  c
+      ON a.`case_id`=c.`case_id`
+    WHERE id_number = #{id_number}
+	</select>
+	
+	
+	<select id="queryUnPay" parameterType="map" resultType="String">
+		SELECT
+		case_code FROM tb_judicial_case_info ci LEFT JOIN
+		`tb_judicial_casefee` cf ON ci.`case_id`=cf.`case_id` WHERE
+		ci.case_receiver = #{username}
+		AND cf.`status`!=0 AND cf.`status`!=2 IS
+		NULL LIMIT #{start},#{end}
+	</select>
+	<select id="getIsNullCase" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseFeeModel">
+		SELECT
+		cf.*
+		FROM
+		`tb_judicial_casefee` cf
+		LEFT JOIN
+		`tb_judicial_case_info` ci
+		ON ci.`case_id` = cf.`case_id`
+		WHERE
+		ci.`case_code` = #{isnullcase_code}
+	</select>
+	<select id="getStatus" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialCaseStatusModel">
+		SELECT
+		c.`print_count`,
+		sv.`verify_sampleinfo_state`,
+		mi.`mail_code`
+		FROM
+		`tb_judicial_case_info` c
+		LEFT JOIN
+		`tb_judicial_sampleinfo_verify` sv
+		ON c.`case_id` = sv.`case_id`
+		LEFT
+		JOIN `tb_judicial_mail_info` mi
+		ON mi.`case_id` = c.`case_id`
+		WHERE
+		c.`case_id`=#{case_id}
+	</select>
+	<select id="getDailyDetail" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialDailyDetailModel">
+		SELECT
+		c.`case_id`,
+		ci.`case_code`,
+		u.`userid`,
+		u.`username`,
+		c.`stand_sum` AS `standFee`,
+		c.`real_sum`,
+		c.`return_sum`,
+		ci.`accept_time` AS `date`,
+		da.`areaname`
+		FROM
+		`tb_judicial_casefee` c
+		LEFT JOIN
+		`tb_judicial_financedaily` d
+		ON d.`id` = c.`dailyid`
+		LEFT JOIN
+		`tb_judicial_case_info` ci
+		ON ci.`case_id` = c.`case_id`
+		LEFT JOIN
+		`tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN
+		`tb_upc_area_info` da
+		ON da.`areacode` = ar.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON ci.`case_in_per` = u.`userid`
+		WHERE d.`id`= #{id}
+		AND d.`balancetype`= 0
+	</select>
+	<select id="getMonthlyDetail" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialDailyDetailModel">
+		SELECT
+		c.`case_id`,
+		ci.`case_code`,
+		u.`userid`,
+		u.`username`,
+		c.`stand_sum` AS `standFee`,
+		c.`real_sum`,
+		c.`return_sum`,
+		ci.`accept_time` AS `date`,
+		da.`areaname`
+		FROM
+		`tb_judicial_casefee` c
+		LEFT JOIN
+		`tb_judicial_financedaily` d
+		ON d.`id` = c.`dailyid`
+		LEFT JOIN
+		`tb_judicial_case_info` ci
+		ON ci.`case_id` = c.`case_id`
+		LEFT JOIN
+		`tb_upc_area` ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN
+		`tb_upc_area_info` da
+		ON da.`areacode` = ar.`areacode`
+		LEFT JOIN
+		`tb_upc_users` u
+		ON ci.`case_in_per` = u.`userid`
+		WHERE d.`id`= #{id}
+		AND d.`balancetype`= 1
+	</select>
+	<select id="exsitCaseCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_judicial_case_info where
+		case_code=#{case_code}
+	</select>
+	<select id="getUnConfirm" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialConfirmReturnModel">
+		SELECT
+		i.`case_code`,
+		f.`return_sum`,
+		f.`real_sum`,
+		f.`stand_sum` AS `standFee`,
+		f.`discount` AS `discountrate`,
+		f.`status`,
+		f.`remark`
+		FROM
+		`tb_judicial_casefee` f
+		LEFT JOIN
+		`tb_judicial_case_info` i
+		ON i.`case_id` = f.`case_id`
+		LEFT JOIN
+		`tb_upc_area` ar
+		ON ar.`area_id` = i.`receiver_id`
+		WHERE f.`status` = 3
+		AND ar.`userid` = #{userid}
+		AND f.`type`=0
+	</select>
+
+	<select id="getCaseStatue" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialCaseStatusModel">
+		SELECT
+		ci.*,
+		MIN(bv.`verify_baseinfo_time`) AS verify_baseinfo_time,
+		MIN(sv.`verify_sampleinfo_time`) AS verify_sampleinfo_time,
+		MIN(srd.`trans_date`) AS trans_date,
+		MIN(mi.`mail_time`) AS mail_time,
+		IF(
+		ci.ciclient IS NULL
+		OR ci.ciclient = '',
+		sampleinfo.`client`,
+		ci.ciclient
+		) AS `client`
+		FROM
+		(SELECT
+		MIN(ci.`accept_time`) AS
+		accept_time,
+		MIN(ci.`sample_in_time`) AS sample_in_time,
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.`client` AS ciclient,
+		ci.`phone`
+		FROM
+		`tb_judicial_case_info` ci
+		WHERE ci.`case_code` = #{case_code}) ci
+		LEFT
+		JOIN `tb_judicial_baseinfo_verify` bv
+		ON ci.`case_id` = bv.`case_id`
+		LEFT JOIN `tb_judicial_sampleinfo_verify` sv
+		ON ci.`case_id` =
+		sv.`case_id`
+		LEFT JOIN `tb_judicial_sample_info` si
+		ON si.`case_id` =
+		ci.`case_id`
+		LEFT JOIN `tb_judicial_sample_result_data` srd
+		ON
+		srd.`sample_code` = si.`sample_code`
+		LEFT JOIN `tb_judicial_mail_info`
+		mi
+		ON mi.`case_id` = ci.`case_id`
+		INNER JOIN
+		(SELECT
+		case1.`case_id`,
+		IF(
+		sample1.`sample_call` IS NOT NULL,
+		sample1.`sample_username`,
+		sample2.`sample_username`
+		) AS 'client',
+		if(sample1.`sample_call` IS NOT
+		NULL,
+		sample1.`id_number`,
+		sample2.`id_number`
+		) as 'id_number'
+		FROM
+		`tb_judicial_case_info` case1
+		LEFT JOIN `tb_judicial_sample_info`
+		sample1
+		ON case1.`case_id` = sample1.`case_id`
+		AND sample1.`sample_call`
+		= 'father'
+		LEFT JOIN `tb_judicial_sample_info` sample2
+		ON
+		case1.`case_id` = sample2.`case_id`
+		AND sample2.`sample_call` =
+		'mother'
+		WHERE case1.`case_code` = #{case_code}) sampleinfo
+		ON
+		sampleinfo.case_id = ci.case_id
+		where 1=1
+		<if test="phone != null and phone != ''">
+			and ci.phone = #{phone}
+		</if>
+		<if test="id_number!=null and id_number!=''">
+			and sampleinfo.id_number =
+			#{id_number}
+		</if>
+	</select>
+	
+	<select id="getCaseStatueByIdnumber" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseStatusModel">
+			SELECT 
+		  ci.`case_id`,
+		  ci.`case_code`,
+		  ci.`phone`,
+		  ci.`accept_time`,
+		   DATE_FORMAT(
+			    ci.`sample_in_time`,
+			    '%Y-%m-%d %H:%i:%S'
+			  )  as sample_in_time,
+		  ci.`sample_in_time`,
+		  ci.`client`,
+		  bv.verify_baseinfo_time,
+		  sv.verify_sampleinfo_time,
+		  si.compare_date AS trans_date,
+		  DATE_FORMAT(
+		 	 mi.mail_time ,
+			    '%Y-%m-%d %H:%i:%S'
+			  )  as mail_time,
+		  si.final_result_flag
+		FROM
+		<if test="id_number != null and id_number != ''">
+				(SELECT 
+			      ss.`case_id` 
+			    FROM
+			      `tb_judicial_sample_info` ss 
+			    WHERE ss.id_number = #{id_number}
+			    LIMIT 1) ss 
+			   LEFT JOIN
+			  `tb_judicial_case_info` ci 
+			   ON ss.`case_id` = ci.`case_id` 
+		</if>
+		<if test="case_id != null and case_id != ''">
+				(SELECT * FROM tb_judicial_case_info t WHERE t.case_id = #{case_id}) ci  
+		</if>
+		  LEFT JOIN 
+		    (SELECT 
+		      verify_baseinfo_time,
+		      case_id 
+		    FROM
+		      tb_judicial_baseinfo_verify 
+		    WHERE verify_baseinfo_state = 1 
+		    GROUP BY case_id) bv 
+		    ON bv.case_id = ci.`case_id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      verify_sampleinfo_time,
+		      case_id 
+		    FROM
+		      tb_judicial_sampleinfo_verify 
+		    WHERE verify_sampleinfo_state = 1 
+		    GROUP BY case_id) sv 
+		    ON sv.case_id = ci.`case_id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      MIN(mail_time) AS mail_time,
+		      case_id 
+		    FROM
+		      tb_judicial_mail_info 
+		    GROUP BY case_id) mi 
+		    ON mi.case_id = ci.case_id 
+		  LEFT JOIN 
+		    (SELECT 
+		      MAX(cr.compare_date) AS compare_date,
+		      si.case_code ,
+		      cr.final_result_flag
+		    FROM
+		      tb_judicial_sub_case_info si,
+		      tb_judicial_compare_result cr 
+		    WHERE si.`sub_case_code` = cr.`case_code` 
+		    GROUP BY si.`case_code`) si 
+		    ON si.case_code = ci.`case_code` 
+
+	</select>
+	
+</mapper>

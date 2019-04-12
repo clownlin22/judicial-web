@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcUserPermitMapper" >
+	<select id="queryAll" resultType="userpermit">
+		select * from tb_upc_user_permit where userid = #{userid}
+	</select>
+	
+	<insert id="insert" parameterType="map" useGeneratedKeys="false">
+		begin
+			delete from tb_upc_user_permit where userid = #{userid};
+			insert into tb_upc_user_permit(userid,permitcodes) values(#{userid},#{permitcodes});
+		end;
+	</insert>
+</mapper>

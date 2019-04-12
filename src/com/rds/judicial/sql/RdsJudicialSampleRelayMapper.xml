@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialSampleRelayMapper">
+	<select id="countSampleReceiveInfos" parameterType="map"
+		resultType="int">
+		select count(*) from tb_judicial_sample_receive_info c,tb_upc_users u
+		where c.receive_per=u.userid and c.receive_per=#{receive_per}
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.receive_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.receive_time,'%Y-%m-%d')
+		</if>
+	</select>
+
+	<select id="getSampleReceiveInfos" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialSampleReceiveModel">
+		SELECT ss.*,sa.relay_code,
+  		sa.relay_id,(
+		CASE
+		WHEN sa.receive_id='' OR sa.receive_id IS NULL
+		THEN 0
+		ELSE
+		1 END) as use_state FROM (select
+		c.receive_id,c.receive_per,c.receive_remark,c.is_delete,
+		DATE_FORMAT(c.receive_time,'%Y-%m-%d %H:%i:%s') as receive_time,u.username as receive_pername from
+		tb_judicial_sample_receive_info
+		c,tb_upc_users u where
+		c.receive_per=u.userid and c.receive_per=#{receive_per}
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.receive_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.receive_time,'%Y-%m-%d')
+		</if>
+		) ss
+		LEFT JOIN (SELECT
+		DISTINCT(rs.`receive_id`),ri.`relay_code`,ri.`relay_id`
+		FROM
+		tb_judicial_relay_sample ss,
+		tb_judicial_sample_relay_info ri,
+		tb_judicial_receive_sample rs
+		WHERE ri.`relay_id` = ss.`relay_id`
+		AND ri.`is_delete` = 0
+		AND rs.`sample_id` = ss.`sample_id`)sa
+		ON ss.receive_id =sa.receive_id
+		order by ss.receive_time desc
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="getReceiveSampleInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		select sample_id,sample_code from
+		tb_judicial_receive_sample where
+		receive_id=#{receive_id}
+	</select>
+
+	<select id="exsitReceiveSampleCode" parameterType="map"
+		resultType="int">
+		SELECT count(*) FROM (SELECT
+		sa.`sample_code`,sa.`sample_id` FROM
+		tb_judicial_receive_sample
+		sa,tb_judicial_sample_receive_info ri WHERE
+		ri.receive_id=sa.receive_id
+		AND ri.is_delete=0) ss
+		LEFT JOIN (SELECT *
+		FROM tb_judicial_relay_sample WHERE confirm_state=2) sa
+		ON
+		ss.sample_id=sa.sample_id
+		WHERE sa.sample_id IS NULL and
+		ss.sample_code=#{sample_code}
+	</select>
+
+	<insert id="addReceiveSampleInfo"
+		parameterType="com.rds.judicial.model.RdsJudicialSampleReceiveModel">
+		insert into
+		tb_judicial_sample_receive_info(receive_id,receive_per,receive_time,receive_remark)
+		values(#{receive_id},#{receive_per},now(),#{receive_remark})
+	</insert>
+
+	<insert id="addReceiveSample" parameterType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		insert into
+		tb_judicial_receive_sample(sample_id,sample_code,receive_id)
+		values(#{sample_id},#{sample_code},#{relay_id})
+	</insert>
+
+	<update id="deleteReceiveSampleInfo" parameterType="map">
+		update
+		tb_judicial_sample_receive_info set is_delete=1 where
+		receive_id=#{receive_id}
+	</update>
+
+	<delete id="deleteReceiveSample"
+		parameterType="com.rds.judicial.model.RdsJudicialSampleReceiveModel">
+		delete from tb_judicial_receive_sample where
+		receive_id=#{receive_id}
+	</delete>
+
+	<update id="updateReceiveSampleInfo"
+		parameterType="com.rds.judicial.model.RdsJudicialSampleReceiveModel">
+		update tb_judicial_sample_receive_info set
+		receive_remark=#{receive_remark}
+		where receive_id=#{receive_id}
+	</update>
+	
+	<update id="updateCaseReportmodel" parameterType="map">
+		update tb_judicial_case_info t set t.report_model=#{report_model} where
+		t.case_code=#{case_code}
+	</update>
+	
+	<!-- 交接部分 -->
+	<select id="countSampleRelayInfos" parameterType="map"
+		resultType="int">
+		select count(*)
+		from
+		(select c.*,u.username as relay_pername from
+		tb_judicial_sample_relay_info
+		c,tb_upc_users u
+		where
+		c.relay_per=u.userid 
+		<if test=" relay_per != null and relay_per != ''">
+			and c.relay_per=#{relay_per}
+		</if>
+		<if test="relay_code!=null and relay_code != ''">
+			and (lower(c.relay_code) LIKE '%${relay_code}%' or
+			upper(c.relay_code) LIKE '%${relay_code}%')
+		</if>
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.relay_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.relay_time,'%Y-%m-%d')
+		</if>
+		<if test="relay_pername !=null and relay_pername != ''">
+			and u.username LIKE '%${relay_pername}%'
+		</if>
+		<if test="partner_name !=null and partner_name != ''">
+			and u.parnter_name = #{partner_name}
+		</if>
+		) cc
+		left join tb_judicial_sample_confirm_info ci on
+		cc.relay_id=ci.relay_id
+		where 1=1
+		<if test="confirm_state==0">
+			and (ci.confirm_id='' or ci.confirm_id is null)
+		</if>
+		<if test="confirm_state==1">
+			and (ci.confirm_id!='' and ci.confirm_id is not null)
+		</if>
+	</select>
+
+	<select id="getSampleRelayInfos" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		select cc.*,DATE_FORMAT(ci.confirm_time,'%Y-%m-%d %H:%i:%s') as
+		confirm_time,ci.confirm_pername,ci.confirm_remark,
+		(
+		CASE
+		WHEN ci.relay_id='' OR ci.relay_id IS NULL
+		THEN 0
+		ELSE
+		1 END) as confirm_state
+		from
+		(select
+		c.relay_id,c.relay_code,c.relay_remark,c.is_delete,
+		DATE_FORMAT(c.relay_time,'%Y-%m-%d %H:%i:%s') as relay_time,c.relay_per,u.username as relay_pername
+		from
+		tb_judicial_sample_relay_info
+		c,tb_upc_users u
+		where
+		c.relay_per=u.userid 
+		<if test=" relay_per != null and relay_per != ''">
+			and c.relay_per=#{relay_per}
+		</if>
+		<if test="relay_code!=null and relay_code != ''">
+			and (lower(c.relay_code) LIKE '%${relay_code}%' or
+			upper(c.relay_code) LIKE '%${relay_code}%')
+		</if>
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.relay_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.relay_time,'%Y-%m-%d')
+		</if>
+		<if test="relay_pername !=null and relay_pername != ''">
+			and u.username LIKE '%${relay_pername}%'
+		</if>
+		<if test="partner_name !=null and partner_name != ''">
+			and u.parnter_name = #{partner_name}
+		</if>
+		) cc
+		left join (select c.*,u.username as confirm_pername
+		from
+		tb_judicial_sample_confirm_info c,tb_upc_users u
+		where c.confirm_per=u.userid) ci on
+		cc.relay_id=ci.relay_id
+		where 1=1
+		<if test="confirm_state==0">
+			and (ci.confirm_id='' or ci.confirm_id is null)
+		</if>
+		<if test="confirm_state==1">
+			and (ci.confirm_id!='' and ci.confirm_id is not null)
+		</if>
+		order by cc.relay_time desc
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="getSelectSampleInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		SELECT
+		ss.sample_id,
+		ss.sample_code
+		FROM
+		(SELECT
+		sa.*
+		FROM
+		tb_judicial_receive_sample sa,
+		tb_judicial_sample_receive_info ri
+		WHERE
+		ri.receive_id = sa.receive_id
+		AND ri.is_delete = 0 and ri.receive_per=#{receive_per}) ss
+		LEFT JOIN
+		(SELECT
+		rs.*
+		FROM
+		tb_judicial_relay_sample rs,
+		tb_judicial_sample_relay_info ri
+		WHERE ri.`relay_id` = rs.`relay_id`
+		AND ri.`is_delete` = 0
+		<if test="relay_id!='' and relay_id != null">
+			and rs.relay_id !=#{relay_id}
+		</if>
+		) sa
+		ON ss.sample_id = sa.sample_id
+		WHERE sa.sample_id IS NULL
+	</select>
+
+	<select id="getRelaySampleInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		SELECT
+		ss.sample_id,ss.sample_code,sa.confirm_state FROM
+		tb_judicial_receive_sample ss,tb_judicial_relay_sample sa WHERE
+		sa.`sample_id`=ss.`sample_id`
+		and sa.relay_id=#{relay_id}
+		ORDER BY ss.`sample_code` ASC
+	</select>
+
+	<insert id="addRelaySampleInfo" parameterType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		insert into
+		tb_judicial_sample_relay_info(relay_id,relay_code,relay_per,relay_time,relay_remark)
+		values(#{relay_id},#{relay_code},#{relay_per},now(),#{relay_remark})
+	</insert>
+
+	<insert id="addRelaySample" parameterType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		insert into
+		tb_judicial_relay_sample(sample_id,relay_id)
+		values(#{sample_id},#{relay_id})
+	</insert>
+
+	<update id="deleteRelaySampleInfo" parameterType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		update
+		tb_judicial_sample_relay_info set is_delete=1 where
+		relay_id=#{relay_id}
+	</update>
+
+	<update id="updateRelaySampleInfo" parameterType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		update
+		tb_judicial_sample_relay_info set relay_remark=#{relay_remark}
+		where
+		relay_id=#{relay_id}
+	</update>
+
+	<update id="deleteRelaySample" parameterType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		delete from
+		tb_judicial_relay_sample where relay_id=#{relay_id}
+	</update>
+
+	<insert id="confirmRelaySampleInfo"
+		parameterType="com.rds.judicial.model.RdsJudicialSampleConfirmModel">
+		insert into
+		tb_judicial_sample_confirm_info(confirm_id,confirm_time,confirm_per,relay_id,confirm_remark)
+		values(#{confirm_id},now(),#{confirm_per},#{relay_id},#{confirm_remark})
+	</insert>
+
+	<select id="getRelaySample" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialSampleRelayModel">
+		select
+		c.relay_id,c.relay_code,c.relay_remark,c.is_delete,DATE_FORMAT(c.relay_time,'%Y-%m-%d  %h:%i:%s')
+		as relay_time,c.relay_per,u.username as relay_pername
+		from
+		tb_judicial_sample_relay_info
+		c,tb_upc_users u
+		where
+		c.relay_per=u.userid and c.relay_id=#{relay_id}
+	</select>
+
+	<select id="getSampleInfo" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialSampleReciveModel">
+		SELECT
+		ss.sample_id as id,ss.sample_code as text FROM
+		tb_judicial_receive_sample ss,tb_judicial_relay_sample sa WHERE
+		sa.`sample_id`=ss.`sample_id`
+		and sa.relay_id=#{relay_id}
+	</select>
+
+	<update id="updateSampleInfoToFalse" parameterType="map">
+		update
+		tb_judicial_relay_sample set confirm_state=2 where
+		relay_id=#{relay_id}
+	</update>
+
+	<update id="updateSampleInfo" parameterType="com.rds.judicial.model.RdsJudicialRelaySampleInfo">
+		update
+		tb_judicial_relay_sample set confirm_state=1 where
+		relay_id=#{relay_id} and sample_id=#{sample_id}
+	</update>
+	
+	<select id="querySampleByCode" parameterType="map" resultType="string" >
+		 SELECT DISTINCT t.`sample_code` FROM tb_judicial_sample_info t 
+		 LEFT JOIN tb_judicial_sample_info t1 ON t.`case_id`=t1.`case_id` 
+		 LEFT JOIN tb_judicial_case_info ci ON  t.`case_id`=ci.`case_id`
+		 WHERE 5 > ci.`verify_state` AND t1.`sample_code` IN  
+		 	<foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	
+	<select id="querySampleIdByRece" parameterType="map" resultType="string" >
+		 SELECT t.sample_id FROM `tb_judicial_receive_sample` t WHERE t.`receive_id`=#{receive_id}
+	</select>
+	
+	<select id="querySampleCaseCode" parameterType="map" resultType="string" >
+		 SELECT DISTINCT 
+			  t.`case_code` 
+			FROM
+			  tb_judicial_case_info t 
+			  LEFT JOIN tb_judicial_sample_info t1 
+			    ON t.`case_id` = t1.`case_id` 
+			   LEFT JOIN tb_judicial_case_info ci ON
+   			 t.`case_id`=ci.`case_id`
+		 WHERE 5 > ci.`verify_state` AND  t1.`sample_code` IN  
+		 	<foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	<select id="querySampleCaseCode2" parameterType="map" resultType="string" >
+		 SELECT DISTINCT 
+			  t.`case_code` 
+			FROM
+			  tb_judicial_case_info t 
+			  LEFT JOIN tb_judicial_sample_info t1 
+			    ON t.`case_id` = t1.`case_id` 
+			   LEFT JOIN tb_judicial_case_info ci ON
+   			 t.`case_id`=ci.`case_id`
+		 WHERE 4= ci.`verify_state` AND  t1.`sample_code` IN  
+		 	<foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	<select id="queryCaseVerifyState" parameterType="map" resultType="string" >
+		 SELECT t.case_code
+			FROM
+			  tb_judicial_case_info t  
+		 WHERE  t.case_code IN  
+		 	<foreach item="item" index="index" collection="case_codes" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+        	 and 3 > t.verify_state
+	</select>
+	
+	<select id="querySampleCodeByid" parameterType="map" resultType="string" >
+		 SELECT sa.sample_code FROM tb_judicial_receive_sample sa 
+		 WHERE sa.`sample_id` IN 
+		 	<foreach item="item" index="index" collection="sample_ids" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+		<select id="querySampleCodeByCaseid" parameterType="map" resultType="string" >
+		 SELECT sa.sample_code FROM tb_judicial_sample_info sa 
+		 WHERE sa.`case_id` IN 
+		 	<foreach item="item" index="index" collection="case_ids" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	
+	<select id="queryCaseCodes" parameterType="map" resultType="string" >
+		 SELECT DISTINCT 
+			  t.`case_code` 
+			FROM
+			  tb_judicial_case_info t 
+			  LEFT JOIN tb_judicial_sample_info t1 
+			    ON t.`case_id` = t1.`case_id` 
+			   LEFT JOIN tb_judicial_case_info ci ON
+   			 t.`case_id`=ci.`case_id`
+		 WHERE 5 > ci.`verify_state` AND  t1.case_id IN  
+		 	<foreach item="item" index="index" collection="case_ids" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	<select id="queryFalseSampleCodeByid" parameterType="map" resultType="string" >
+	SELECT s.sample_code FROM tb_judicial_relay_sample t LEFT JOIN tb_judicial_receive_sample s ON t.`sample_id`=s.`sample_id` 
+		WHERE t.`relay_id` = #{relay_id} and t.sample_id not in 
+			<foreach item="item" index="index" collection="sample_ids" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	
+	<update id="updateCaseVerifyBycode" parameterType="map">
+		update tb_judicial_case_info t set t.verify_state=#{verify_state} where t.case_code=#{case_code}
+	</update>
+	
+	<select id="querySampleCodeConfirm" parameterType="map" resultType="map" >
+	SELECT 
+		  ss.sample_code,sa.`confirm_state`
+		FROM
+		  tb_judicial_receive_sample ss,
+		  tb_judicial_relay_sample sa 
+		WHERE sa.`sample_id` = ss.`sample_id` 
+		AND ss.`sample_code` IN 
+			<foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+	
+	<select id="queryCaseCodeVerify" parameterType="String" resultType="int" >
+		 SELECT count(1) from tb_judicial_case_info ci where ci.case_code = #{case_code} and ci.verify_state > 5
+	</select>
+	
+	<select id="queryCaseVerifyBySample" parameterType="map" resultType="map" >
+		SELECT ci.`verify_state`,ci.`case_code` FROM tb_judicial_case_info ci LEFT JOIN tb_judicial_sample_info si
+			ON ci.`case_id`=si.`case_id` WHERE ci.`verify_state` &lt; 5 and  si.`sample_code` IN
+			<foreach item="item" index="index" collection="sample_code" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+        	GROUP BY ci.`case_code`
+	</select>
+	
+	<select id="queryCaseCodeBySampleCode" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialSampleCaseCodeModel">
+		SELECT si.`sample_code`,ci.`case_code`,ci.`accept_time`,ci.`verify_state`,ci.process_instance_id,m.`text` AS `report_modelname`,
+		DATE_FORMAT(ci.`sample_in_time`,'%Y-%m-%d %H:%i:%s' ) AS sample_in_time
+		FROM `tb_judicial_sample_info` si 
+		LEFT JOIN tb_judicial_case_info ci 
+		ON si.`case_id`=ci.`case_id`
+		 LEFT JOIN 
+	      (SELECT 
+	        CODE,
+	        TEXT,
+	        TYPE 
+	      FROM
+	        tb_dic_print_model 
+	      WHERE TYPE = 'dna' 
+	      GROUP BY CODE) m 
+	      ON ci.`report_model` = m.`code`
+		WHERE 1=1 AND si.`sample_code` &lt;&gt; ''
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.`accept_time`>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.`accept_time`
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and si.sample_code like '%${sample_code}%' 
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and ci.`case_code` like '%${case_code}%' 
+		</if>
+		<if test=" sample_starttime !=null and  sample_starttime != '' ">
+			and DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')>=#{sample_starttime}
+		</if>
+		<if test=" sample_endtime !=null and sample_endtime != ''">
+			and #{sample_endtime}>=DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')
+		</if>
+		<if test=" partner_name !=null and partner_name != ''">
+			and ci.`parnter_name` =#{partner_name}
+		</if>
+		LIMIT
+		#{start},#{limit}
+	</select>
+	
+	<select id="countCaseCodeBySampleCode" parameterType="map"
+		resultType="int">
+		SELECT count(1)
+		FROM `tb_judicial_sample_info` si 
+		LEFT JOIN tb_judicial_case_info ci 
+		ON si.`case_id`=ci.`case_id`
+		WHERE 1=1 AND si.`sample_code` &lt;&gt; ''
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.`accept_time`>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.`accept_time`
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and si.sample_code like '%${sample_code}%' 
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and ci.`case_code` like '%${case_code}%' 
+		</if>
+		<if test=" sample_starttime !=null and  sample_starttime != '' ">
+			and DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')>=#{sample_starttime}
+		</if>
+		<if test=" sample_endtime !=null and sample_endtime != ''">
+			and #{sample_endtime}>=DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')
+		</if>
+		<if test=" partner_name !=null and partner_name != ''">
+			and ci.`parnter_name` =#{partner_name}
+		</if>
+	</select>
+	
+	<select id="exportCaseCodeBySampleCode" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialSampleCaseCodeModel">
+		SELECT ci.`case_code`,GROUP_CONCAT(si.`sample_code`)  AS 'sample_code' FROM `tb_judicial_case_info` ci LEFT JOIN tb_judicial_sample_info si ON ci.`case_id`=si.`case_id`
+		WHERE 1=1 and si.`sample_code` &lt;&gt; ''
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.`accept_time`>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.`accept_time`
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and si.sample_code like '%${sample_code}%' 
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and ci.`case_code` like '%${case_code}%' 
+		</if>
+		<if test=" sample_starttime !=null and  sample_starttime != '' ">
+			and DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')>=#{sample_starttime}
+		</if>
+		<if test=" sample_endtime !=null and sample_endtime != ''">
+			and #{sample_endtime}>=DATE_FORMAT(ci.sample_in_time,'%Y-%m-%d')
+		</if>
+		GROUP BY si.`case_id`
+	</select>
+	
+		<select id="exportSampleCodeByCaseId" parameterType="map"
+		resultType="string">
+		SELECT DISTINCT case_id FROM `tb_judicial_sample_info` si
+		WHERE 1=1 and si.`sample_code` IN
+		     <foreach item="item" index="index" collection="sample_codes" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+		
+	</select>
+	
+	<select id="getReceiveSamplecode" parameterType="map"
+		resultType="string">
+		select sample_code from
+		tb_judicial_receive_sample where
+		receive_id=#{receive_id}
+	</select>
+		<select id="getCaseCodeBycaseId" parameterType="map"
+		resultType="string">
+		select case_code from
+		tb_judicial_case_info where
+		case_id=#{case_id}
+	</select>
+	
+	<select id="getSampleCodesBycaseId" parameterType="map"
+		resultType="string">
+		select sample_code from
+		tb_judicial_sample_info where
+		case_id=#{case_id}
+	</select>
+		<update id="updateReceiveSamplecode"
+		parameterType="map">
+		update tb_judicial_receive_sample set
+		sample_code=#{sample_code}
+		where sample_code=#{sample_code_old}
+	</update>
+	
+	
+	<select id="queryCaseCodeByCaseids" parameterType="map" resultType="string" >
+		 SELECT sa.case_code FROM tb_judicial_case_info sa 
+		 WHERE sa.`case_id` IN 
+		 	<foreach item="item" index="index" collection="case_ids" open="("
+	            separator="," close=")">
+	            #{item}  
+        	 </foreach>
+	</select>
+</mapper>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraHospitalAreaNameMapper">
+
+    
+    <insert id="insert" parameterType="map">
+        insert into tb_invasive_hosptial_areaname (id,hospital,
+        areacode, areaname, remark)
+        values(#{id},#{hospital},#{areacode},#{areaname},
+        #{remark})
+    </insert>
+
+    <delete id="delete" parameterType="map">
+        delete from tb_invasive_hosptial_areaname where id = #{id}
+    </delete>
+    
+    <select id="queryAllPage" parameterType="map"
+            resultType="com.rds.bacera.model.RdsBaceraInvasaiveHosptialAreaNameModel">
+           SELECT 
+			 a.`id`,
+				 a.`areaname`,
+				 a.`areacode`,
+				 a.`hospital`,
+				 a.`remark`,
+				a.`areacode` AS 'KEY',
+				a.`hospital` AS 'value'
+				 FROM tb_invasive_hosptial_areaname a
+				WHERE 1 = 1 
+        <if test=" areaname !=null and areaname != '' ">
+            and areaname like '%${areaname}%'
+        </if>
+        <if test=" areacode !=null and areacode != '' ">
+            and areacode like CONCAT('%',#{areacode},'%')  
+        </if>
+        <if test=" hospital !=null and hospital != '' ">
+            and hospital like '%${hospital}%'
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+    <select id="queryHospital" parameterType="map"
+            resultType="String">
+           SELECT 
+               a.`hospital`
+				 FROM tb_invasive_hosptial_areaname a
+                         where #{areaname} LIKE CONCAT('%',a.`areaname`,'%')
+                           limit 1
+
+    </select>
+   
+    <select id="queryExsit" parameterType="map"
+            resultType="int">
+      
+		SELECT COUNT(1) FROM tb_invasive_hosptial_areaname 
+            where id=#{id} 
+    </select>
+        <select id="queryOne" parameterType="map"
+            resultType="int">
+      
+		SELECT  COUNT(1) FROM tb_invasive_hosptial_areaname 
+            where areacode=#{areacode} and hospital=#{hospital}
+    </select>
+    
+     <select id="queryAllCount" parameterType="map"
+            resultType="int">
+		 SELECT COUNT(1) 
+		FROM tb_invasive_hosptial_areaname 
+		WHERE 1 = 1 
+        <if test=" areaname !=null and areaname != '' ">
+            and areaname like '%${areaname}%'
+        </if>
+        <if test=" hospital !=null and hospital != '' ">
+            and hospital like '%${hospital}%'
+        </if>
+    </select>
+
+    <update id="update" parameterType="map">
+    	update tb_invasive_hosptial_areaname  set 
+    	areaname = #{areaname},
+    	areacode = #{areacode},
+    	hospital= #{hospital}
+    	where id=#{id}
+    </update>
+
+</mapper>

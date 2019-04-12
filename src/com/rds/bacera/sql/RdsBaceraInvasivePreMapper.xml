@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraInvasivePreMapper" >
+	<resultMap id="forensic" type="com.rds.bacera.model.RdsBaceraInvasivePreModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='code' property="code" />
+		<result column='sampledate' property="sampledate" />
+		<result column='inspectionunit' property="inspectionunit" />
+		<result column='hospital' property="hospital" />
+		<result column='agentid' property="agentid" />
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		<result column="inputperson" property="inputperson"/>
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		<result column='process_instance_id' property="processInstanceId" />
+		<result column='oa_num' property="oa_num" />
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	<!-- 插入无创产前信息-->
+	<insert id="insert" parameterType="map">
+	insert into tb_invasive_prenatal
+	(id,num,process_instance_id,areacode,confirm_code
+			<if test="date != '' and date != null">
+				,date
+			</if>
+		,name,code
+			<if test="sampledate != '' and sampledate != null">
+				,sampledate
+			</if>,inspectionunit,hospital,ownperson,remark,areaname
+			<if test="inputperson != '' and inputperson != null">
+				,inputperson
+			</if>
+	)values(#{id},#{num},#{processInstanceId},#{areacode},#{confirm_code}
+			<if test="date != '' and date != null">
+				,#{date}
+			</if>
+			,#{name},#{code}
+			<if test="sampledate != '' and sampledate != null">
+				,#{sampledate}
+			</if>,#{inspectionunit},#{hospital},#{case_userid},#{remark},#{areaname}
+			<if test="inputperson != '' and inputperson != null">
+				,#{inputperson}
+			</if>
+			)
+	</insert>
+	<!-- 提交审核 -->
+	<update id="updateVerify" parameterType="map">
+		update tb_invasive_prenatal 
+		set 
+			verify_state= 1
+			where id = #{id}
+	</update>
+	<!-- 处理审核 -->
+	<update id="verify" parameterType="map" >
+		update tb_invasive_prenatal 
+		set 
+			verify_state= 3,verify_remark=#{verifyRemark}
+			where id = #{id}
+	</update>
+	<update id="noVerify" parameterType="map" >
+		update tb_invasive_prenatal 
+		set 
+			verify_state= 2,verify_remark=#{verifyRemark}
+			where id = #{id}
+	</update>
+	<!-- 更新无创产前信息 -->
+	<update id="update" parameterType="map">
+		update tb_invasive_prenatal 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>	
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>
+			<if test="code != null">
+				,code=#{code}
+			</if>
+		    <if test="cancelif ==2">
+				,verify_state=1
+			</if>
+			<if test="sampledate != '' and sampledate != null">
+				,sampledate=#{sampledate}
+			</if>	
+			<if test="inspectionunit != null">
+				,inspectionunit=#{inspectionunit}
+			</if>
+			<if test="hospital != null">
+				,hospital=#{hospital}
+			</if>
+			<if test="areacode != null">
+				,areacode=#{areacode}
+			</if>
+			<if test="confirm_code != null and confirm_code !='' ">
+				,confirm_code=#{confirm_code}
+			</if>
+			<if test="areaname != null">
+				,areaname=#{areaname}
+			</if>
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>
+			<if test="remark != '' and remark != null">
+				,remark=#{remark}
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_invasive_prenatal where id = #{id}
+	</delete>
+	<!-- 查询无创产前信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="forensic">		 
+			SELECT 
+		  a.`id`,
+		  a.`num`,
+		  a.`name`,
+		  a.`date`,
+		  a.`code`,
+		  a.`hospital`,
+		  a.`inspectionunit`,
+		  a.`sampledate`,
+		  a.`ownperson`,
+		  a.`areaname`,
+		  a.`areacode`,
+		  a.`confirm_code`,
+		  u2.`username` AS ownpersonname,
+		  a.`remark`,
+		  a.`process_instance_id`,
+		  a.`verify_state`,
+		  c.`stand_sum`as receivables,
+		  c.`real_sum` as paid,
+		  c.`return_sum` as payment,
+		  c.`paragraphtime`,
+		  c.discountPrice,
+		  c.`account` as account_type,
+		  c.remittanceDate,
+		  c.remittanceName,
+		  c.finance_remark as remarks,
+		  c.type,
+		  i.`expressnum`,
+		  i.`expresstype`,
+		  MIN(g.`emaildate`)AS emaildate,
+		  i.`recive`,
+		  a.`cancelif`,
+		  i.expresstime,
+		  i.expressremark,
+		  r.confirm_state,
+		  g.`emaildate`,
+		  x.attachment_path,
+                 x.attachment_date,x.upload_userid,x.down_flag,
+                 x.download_time,x.down_userid
+                ,x.uuid,
+                 u.`username` AS 'upload_username',
+                 u1.`username` AS 'download_username',
+		  RES.ID_ AS task_id,
+		  RES.TASK_DEF_KEY_ AS task_def_key,
+		  RES.NAME_ AS task_name,
+		  RES.SUSPENSION_STATE_ AS suspension_state,
+		  IF(
+		    a.process_instance_id,
+		    (SELECT 
+		      ID_ 
+		    FROM
+		      ACT_HI_TASKINST 
+		    WHERE PROC_INST_ID_ = a.process_instance_id 
+		    ORDER BY START_TIME_ DESC 
+		    LIMIT 1, 1),
+		    ''
+		  ) AS last_task_id 
+		FROM
+		  tb_invasive_prenatal a 
+		  LEFT JOIN tb_invasive_pre_email g
+                       ON a.`id`=g.`id`
+               inner JOIN `tb_judicial_casefee` c
+				    ON a.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+		  LEFT JOIN tb_express_info i 
+		    ON a.`id` = i.`id` 
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+		    LEFT JOIN tb_Invasive_pre_attachment X
+		    ON x.case_id=a.id
+		     LEFT JOIN tb_upc_users u ON x.`upload_userid` = u.`userid`
+                   LEFT JOIN tb_upc_users u1 ON x.`down_userid` = u1.`userid`
+                    LEFT JOIN tb_upc_users u2 ON a.`ownperson` = u2.`userid`
+		WHERE 1 = 1 
+		<if test="num != '' and num != null">
+						and a.num like concat('%', #{num}, '%') 
+					</if>	
+					<if test="name != '' and name != null">
+						and a.name like concat('%', #{name}, '%') 
+					</if>	
+					<if test="areaname != '' and areaname != null">
+						and a.areaname like concat('%', #{areaname}, '%') 
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expresstype` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expresstype` IS NULL
+					</if>	
+					<if test="invasive_starttime != '' and invasive_starttime != null">
+						and a.date >= #{invasive_starttime}
+					</if>	
+					<if test="invasive_endtime != '' and invasive_endtime != null">
+						and #{invasive_endtime} >= a.date
+					</if>	
+					<if test="cancelif != '' and cancelif != null">
+						and a.cancelif = #{cancelif}
+					</if>	
+					<if test="ownperson != '' and ownperson != null">
+						and u2.`username` like concat('%', #{ownperson}, '%') 
+					</if>	
+					<if test="code != '' and code != null">
+						AND a.`code` like concat('%', #{code}, '%') 
+					</if>
+					<if test="hospital != '' and hospital != null">
+						AND a.`hospital` like concat('%', #{hospital}, '%') 
+					</if>
+					<if test="inspectionunit != '' and inspectionunit != null">
+						AND a.`inspectionunit` like concat('%', #{inspectionunit}, '%') 
+					</if>
+					<if test="invasive_sample_starttime != '' and invasive_sample_starttime != null">
+						and a.sampledate >= #{invasive_sample_starttime}
+					</if>	
+					<if test="invasive_sample_endtime != '' and invasive_sample_endtime != null">
+						and #{invasive_sample_endtime} >= a.sampledate
+					</if>	
+					<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+						AND c.`paragraphtime` >= #{paragraphtime_starttime}
+					</if>	
+					<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+						and #{paragraphtime_endtime} >= c.`paragraphtime`
+					</if>
+					<if test="expressnum != '' and expressnum != null">
+						AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+					</if>
+					<if test="express_endtime != '' and express_endtime != null">
+						AND #{express_endtime} >= i.`expresstime`
+					</if>
+					<if test="express_starttime != '' and express_starttime != null">
+						AND i.`expresstime` >= #{express_starttime}
+					</if>
+		            <if test="verify_state!= '' and verify_state != null">
+						AND a.`verify_state` = #{verify_state}
+					</if>	
+					 <if test="inputperson != '' and inputperson != null">
+						AND a.`inputperson` = #{inputperson}
+					</if>	
+					GROUP BY a.`id`		
+		order by a.date desc	
+		<if test="start != null and limit != null ">
+        	LIMIT #{start},#{limit}
+        </if>
+			</select>
+			
+	<!-- 无创财务导出查询 -->	
+	<select id="queryAllPageS" parameterType="map" resultMap="forensic">		 
+			SELECT 
+		  a.`id`,
+		  a.`num`,
+		  a.`name`,
+		  a.`date`,
+		  a.`code`,
+		  a.`hospital`,
+		  a.`inspectionunit`,
+		  a.`sampledate`,
+		  a.`ownperson`,
+		  a.`areaname`,
+		  a.`areacode`,
+		  a.`confirm_code`,
+		  u2.`username` AS ownpersonname,
+		  a.`remark`,
+		  a.`process_instance_id`,
+		  a.`verify_state`,
+		  c.`stand_sum`as receivables,
+		  c.`real_sum` as paid,
+		  c.`return_sum` as payment,
+		  c.`paragraphtime`,
+		  c.discountPrice,
+		  c.`account` as account_type,
+		  c.remittanceDate,
+		  c.remittanceName,
+		  c.finance_remark as remarks,
+		  c.type,
+		  i.`expressnum`,
+		  i.`expresstype`,
+		  i.`recive`,
+		  a.`cancelif`,
+		  i.expresstime,
+		  i.expressremark,
+		  r.confirm_state,
+		  x.attachment_path,
+                 x.attachment_date,x.upload_userid,x.down_flag,
+                 x.download_time,x.down_userid
+                ,x.uuid,
+                 u.`username` AS 'upload_username',
+                 u1.`username` AS 'download_username',
+		  RES.ID_ AS task_id,
+		  RES.TASK_DEF_KEY_ AS task_def_key,
+		  RES.NAME_ AS task_name,
+		  RES.SUSPENSION_STATE_ AS suspension_state,
+		  IF(
+		    a.process_instance_id,
+		    (SELECT 
+		      ID_ 
+		    FROM
+		      ACT_HI_TASKINST 
+		    WHERE PROC_INST_ID_ = a.process_instance_id 
+		    ORDER BY START_TIME_ DESC 
+		    LIMIT 1, 1),
+		    ''
+		  ) AS last_task_id 
+		FROM
+		  tb_invasive_prenatal a 
+               LEFT JOIN `tb_judicial_casefee` c
+				    ON a.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+		  LEFT JOIN tb_express_info i 
+		    ON a.`id` = i.`id` 
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+		    LEFT JOIN tb_Invasive_pre_attachment X
+		    ON x.case_id=a.id
+		     LEFT JOIN tb_upc_users u ON x.`upload_userid` = u.`userid`
+                   LEFT JOIN tb_upc_users u1 ON x.`down_userid` = u1.`userid`
+                    LEFT JOIN tb_upc_users u2 ON a.`ownperson` = u2.`userid`
+		WHERE 1 = 1 
+		<if test="num != '' and num != null">
+						and a.num like concat('%', #{num}, '%') 
+					</if>	
+					<if test="name != '' and name != null">
+						and a.name like concat('%', #{name}, '%') 
+					</if>	
+					<if test="areaname != '' and areaname != null">
+						and a.areaname like concat('%', #{areaname}, '%') 
+					</if>	
+					<if test="reportif == 1 ">
+						AND i.`expresstype` IS NOT NULL
+					</if>	
+					<if test="reportif == 2 ">
+						AND i.`expresstype` IS NULL
+					</if>	
+					<if test="invasive_starttime != '' and invasive_starttime != null">
+						and a.date >= #{invasive_starttime}
+					</if>	
+					<if test="invasive_endtime != '' and invasive_endtime != null">
+						and #{invasive_endtime} >= a.date
+					</if>	
+					<if test="cancelif != '' and cancelif != null">
+						and a.cancelif = #{cancelif}
+					</if>	
+					<if test="ownperson != '' and ownperson != null">
+						and u2.`username` like concat('%', #{ownperson}, '%') 
+					</if>	
+					<if test="code != '' and code != null">
+						AND a.`code` like concat('%', #{code}, '%') 
+					</if>
+					<if test="hospital != '' and hospital != null">
+						AND a.`hospital` like concat('%', #{hospital}, '%') 
+					</if>
+					<if test="inspectionunit != '' and inspectionunit != null">
+						AND a.`inspectionunit` like concat('%', #{inspectionunit}, '%') 
+					</if>
+					<if test="invasive_sample_starttime != '' and invasive_sample_starttime != null">
+						and a.sampledate >= #{invasive_sample_starttime}
+					</if>	
+					<if test="invasive_sample_endtime != '' and invasive_sample_endtime != null">
+						and #{invasive_sample_endtime} >= a.sampledate
+					</if>	
+					<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+						AND c.`paragraphtime` >= #{paragraphtime_starttime}
+					</if>	
+					<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+						and #{paragraphtime_endtime} >= c.`paragraphtime`
+					</if>
+					<if test="expressnum != '' and expressnum != null">
+						AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+					</if>
+					<if test="express_endtime != '' and express_endtime != null">
+						AND #{express_endtime} >= i.`expresstime`
+					</if>
+					<if test="express_starttime != '' and express_starttime != null">
+						AND i.`expresstime` >= #{express_starttime}
+					</if>
+		            <if test="verify_state!= '' and verify_state != null">
+						AND a.`verify_state` = #{verify_state}
+					</if>	
+					 <if test="inputperson != '' and inputperson != null">
+						AND a.`inputperson` = #{inputperson}
+					</if>	
+        		order by a.date desc	
+		<if test="start != null and limit != null ">
+        	LIMIT #{start},#{limit}
+        </if>
+			</select>	
+	<!-- 查询无创总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) 
+			FROM
+			tb_invasive_prenatal a 
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+		  LEFT JOIN tb_upc_users u2 ON a.`ownperson` = u2.`userid`
+		WHERE 1 = 1 
+		<if test="num != '' and num != null">
+			and a.num like concat('%', #{num}, '%') 
+		</if>	
+		<if test="name != '' and name != null">
+			and a.name like concat('%', #{name}, '%') 
+		</if>	
+		<if test="areaname != '' and areaname != null">
+			and a.areaname like concat('%', #{areaname}, '%') 
+		</if>
+		<if test="invasive_starttime != '' and invasive_starttime != null">
+			and a.date >= #{invasive_starttime}
+		</if>	
+		<if test="invasive_endtime != '' and invasive_endtime != null">
+			and #{invasive_endtime} >= a.date
+		</if>	
+		<if test="cancelif != '' and cancelif != null">
+			and a.cancelif = #{cancelif}
+		</if>	
+		<if test="ownperson != '' and ownperson != null">
+			and u2.`username` like concat('%', #{ownperson}, '%') 
+		</if>
+		<if test="code != '' and code != null">
+			AND a.`code` like concat('%', #{code}, '%') 
+		</if>
+		<if test="hospital != '' and hospital != null">
+			AND a.`hospital` like concat('%', #{hospital}, '%') 
+		</if>
+		<if test="inspectionunit != '' and inspectionunit != null">
+			AND a.`inspectionunit` like concat('%', #{inspectionunit}, '%') 
+		</if>
+		<if test="invasive_sample_starttime != '' and invasive_sample_starttime != null">
+			and a.sampledate >= #{invasive_sample_starttime}
+		</if>	
+		<if test="invasive_sample_endtime != '' and invasive_sample_endtime != null">
+			and #{invasive_sample_endtime} >= a.sampledate
+		</if>	
+        <if test="verify_state!= '' and verify_state != null">
+			AND a.`verify_state` = #{verify_state}
+		</if>		
+		<if test="inputperson != '' and inputperson != null">
+			AND a.`inputperson` = #{inputperson}
+		</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_invasive_prenatal where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+<update id="updateVerifyState" parameterType="map">
+    	update tb_invasive_prenatal  set 
+    	verify_state = 5
+    	where id=#{id}
+    </update>
+     <update id="downVerifyState" parameterType="map">
+    	update tb_invasive_prenatal t set 
+    	verify_state =3
+    	where id=#{id}
+    </update>
+    <update id="mailAttachment" parameterType="map">
+    	update tb_invasive_prenatal t set 
+    	verify_state = 6
+    	where id=#{id}
+    </update>
+    <update id="onMailOver" parameterType="map">
+    	update tb_invasive_prenatal  set 
+    	verify_state = 7
+    	where id=#{id}
+    </update>
+    
+     <update id="onFile" parameterType="map">
+    	update tb_invasive_prenatal  set 
+    	verify_state = 8
+    	where id=#{id}
+    </update>
+	<select id="exsitCaseCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_invasive_prenatal where
+		num=#{num}
+	</select>
+	<select id="exsitOne" parameterType="map" resultMap="forensic">
+				SELECT 
+		  a.`id`,
+		  a.`num`,
+		  a.`name`,
+		  a.`date`,
+		  a.`code`,
+		  a.`hospital`,
+		  a.`inspectionunit`,
+		  a.`sampledate`,
+		  a.`ownperson`,
+		  a.`areaname`,
+		  a.`areacode`,
+		  a.`confirm_code`,
+		  u2.`username` AS ownpersonname,
+		  a.`remark`,
+		  a.`process_instance_id`,
+		  a.`verify_state`,
+		  fi.stand_sum as `receivables`,
+		  fi.real_sum as `payment`,
+		  fi.return_sum as `paid`,
+		  fi.`paragraphtime`,
+		  fi.discountPrice,
+		  fi.account as `account_type`,
+		  fi.finance_remark as remarks,
+		  fi.remittanceDate,
+		  fi.remittanceName,
+		  i.`expressnum`,
+		  i.`expresstype`,
+		  i.`expresstime`,
+		  i.`recive`,
+		  a.`cancelif`,
+		  i.expressremark,
+		  x.attachment_path,
+                 x.attachment_date,x.upload_userid,x.down_flag,
+                 x.download_time,x.down_userid
+                ,x.uuid,
+                 u.`username` AS 'upload_username',
+                 u1.`username` AS 'download_username',
+		  RES.ID_ AS task_id,
+		  RES.TASK_DEF_KEY_ AS task_def_key,
+		  RES.NAME_ AS task_name,
+		  RES.SUSPENSION_STATE_ AS suspension_state,
+		  IF(
+		    a.process_instance_id,
+		    (SELECT 
+		      ID_ 
+		    FROM
+		      ACT_HI_TASKINST 
+		    WHERE PROC_INST_ID_ = a.process_instance_id 
+		    ORDER BY START_TIME_ DESC 
+		    LIMIT 1, 1),
+		    ''
+		  ) AS last_task_id 
+		FROM
+		  tb_invasive_prenatal a 
+		  LEFT JOIN tb_judicial_casefee fi 
+		    ON a.`id` = fi.`id` 
+		  LEFT JOIN tb_express_info i 
+		    ON a.`id` = i.`id` 
+		  LEFT JOIN ACT_RU_TASK RES 
+		    ON a.process_instance_id = RES.PROC_INST_ID_ 
+		    LEFT JOIN tb_Invasive_pre_attachment X
+		    ON x.case_id=a.id
+		     LEFT JOIN tb_upc_users u ON x.`upload_userid` = u.`userid`
+                   LEFT JOIN tb_upc_users u1 ON x.`down_userid` = u1.`userid`
+                    LEFT JOIN tb_upc_users u2 ON a.`ownperson` = u2.`userid`
+		WHERE 1 = 1 
+		<if test="num !='' and num != null">
+		and num=#{num}
+		</if>
+	</select>
+	<select id="queryInvasivePreFee" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`userid`,u.`username`,b.`fees`,b.`remark` FROM tb_finance_invasivepre b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 LIMIT #{start},#{end}
+	</select>
+	
+	<select id="queryInvasivePreFeeCount" parameterType="map" resultType="Integer">
+		select count(b.userid) FROM tb_finance_invasivepre b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null 
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 <if test="id != '' and id != null">
+		 	and b.`id`=#{id} 
+		 </if>
+	</select>
+	<!-- 修改邮件标识 -->
+	<update id="updateEmailFlag" parameterType="map">
+    	update tb_invasive_prenatal t set 
+    	t.emailflag = 1
+    	where t.id=#{id}
+    </update>
+	<insert id="saveInvasivePreFee" parameterType="map" > 
+		insert into tb_finance_invasivepre
+		(id,userid,fees,inputperson,remark) 
+		values
+		 (#{id},#{userid},#{fees},#{inputperson},#{remark})
+	</insert>
+	
+	<insert id="updateInvasivePreFee" parameterType="map" >
+		update tb_finance_invasivepre set
+		userid = #{userid},
+		fees = #{fees},
+		inputperson = #{inputperson},
+		remark = #{remark}
+		where 
+		id=#{id}
+	</insert>
+	
+	<insert id="deleteInvasivePreFee" parameterType="map"  >
+		update tb_finance_invasivepre t set
+		t.delete = '1'
+		where t.id=#{id}
+	</insert>
+	
+	<select id="queryInvasivePreFeeByRec" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`fees` FROM tb_finance_invasivepre b
+		 LEFT JOIN  tb_upc_area a  ON b.`userid`=a.`userid` 
+		WHERE 1=1 and b.delete = 0 and a.`is_delete`=0
+		<if test="ownperson != '' and ownperson != null">
+		 	and a.`area_id` = #{ownperson} 
+		 </if>
+		 <if test="agentid != '' and agentid != null">
+		 	and a.`userid` = #{agentid} 
+		 </if>
+		 LIMIT 1
+	</select>
+	
+	<insert id="insertHeadPhoto" parameterType="com.rds.bacera.model.RdsBaceraInvasivePhotoModel">
+		INSERT INTO `tb_invasive_photo` 
+		(`photo_id`,`case_id`, `photo_path`,`upload_time`,upload_user,photo_type)
+		VALUES
+		(#{photo_id},#{case_id},#{photo_path},now(),#{upload_user},#{photo_type})
+	</insert>
+	
+	<select id="getAttachMent" parameterType="map"
+		resultType="com.rds.bacera.model.RdsBaceraInvasivePhotoModel">
+		select a.*,v.username as upload_username from tb_invasive_photo a
+		      left join tb_upc_users v on a.upload_user=v.userid   
+		 where 1=1  
+		<if test=" id !=null and  id != '' ">
+			AND a.case_id = #{id}
+		</if>
+		<if test=" photo_path !=null and  photo_path != '' ">
+			AND a.photo_path = #{photo_path}
+		</if>
+		<if test=" case_id !=null and  case_id != '' ">
+			AND a.case_id = #{case_id}
+		</if>
+	</select>
+	<delete id="deletePhoto" parameterType="map">
+		delete from tb_invasive_photo where case_id = #{case_id}
+	</delete>
+	<select id="getPhoto" parameterType="map" resultType="Integer">
+		select count(1)from tb_invasive_photo where case_id = #{case_id}
+	</select>
+</mapper>

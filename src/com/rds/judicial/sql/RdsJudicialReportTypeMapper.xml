@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialReportTypeMapper" >
+	<insert id="insert" parameterType="map">
+		insert into tb_judicial_report_type(typeid,typename,inputform,displaygrid,identify,parentid,sort)
+		values (#{typeid},#{typename},#{inputform},#{displaygrid},#{identify},#{parentid},#{sort})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_judicial_report_type
+			set typename = #{typename},
+				inputform = #{inputform},
+				displaygrid = #{displaygrid},
+				identify = #{identify},
+				parentid = #{parentid},
+				sort = #{sort}
+				where typeid = #{typeid}
+	</update>
+	
+	<delete id="delete" parameterType="map">
+		delete from tb_judicial_report_type where typeid in(${id})
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultType="reporttype">
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultType="reporttype">
+		select t.typeid id,t.*,
+		       (select case
+		                 when count(*) > 0 then
+		                  'false'
+		                 else
+		                  'true'
+		               end
+		          from tb_judicial_report_type a
+		         where a.parentid = t.typeid) leaf
+		         <if test="usercode != null">  ,
+	        (SELECT CASE
+	                 WHEN COUNT(*) >= 1 THEN
+	                  'true'
+	                 ELSE
+	                  'false'
+	               END
+	          FROM tb_upc_user_report r
+	          WHERE r.typeid = t.typeid AND r.usercode=#{usercode}) checked	
+	          </if>
+		  from tb_judicial_report_type t
+		 where t.parentid = #{parentid} order by t.sort asc
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+	</select>
+</mapper>

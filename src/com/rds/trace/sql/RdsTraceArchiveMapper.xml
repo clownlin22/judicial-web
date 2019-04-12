@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceArchiveMapper">
+
+	<insert id="addArchiveInfo" parameterType="map">
+		insert into
+		tb_trace_case_archive(archive_id,archive_code,case_id,archive_address,archive_date,archive_per,archive_path)
+		values(#{archive_id},#{archive_code},#{case_id},#{archive_address},#{archive_date},#{archive_per},#{archive_path})
+	</insert>
+
+	<select id="getArchiveInfo" resultType="com.rds.trace.model.RdsTraceArchiveModelExt">
+		select
+		ar.archive_id,ar.archive_code,ar.case_id,ar.archive_address,
+        ar.archive_date,ar.archive_per,ar.archive_path,u.username
+		as archive_pername,c.case_no from tb_trace_case_archive ar
+        left join tb_upc_users u on ar.archive_per = u.userid
+        left join tb_trace_case_info c on ar.case_id = c.case_id
+		where 1
+		<if test=" case_no!=null and case_no != ''">
+			and c.case_no = #{case_no}
+		</if>
+        <if test="start_time!=null and start_time!=''">
+            and ar.archive_date>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=ar.archive_date
+        </if>
+		order by ar.archive_date
+		limit
+		#{start},#{limit}
+	</select>
+
+	<select id="countArchiveInfo" resultType="int" parameterType="map">
+		select count(*)
+		from tb_upc_users u,tb_trace_case_archive ar where
+		u.userid=ar.archive_per
+		<if test=" case_no!=null and case_no != ''">
+			and ar.case_no LIKE '%${case_no}%'
+		</if>
+        <if test="start_time!=null and start_time!=''">
+            and ar.archive_date>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=ar.archive_date
+        </if>
+	</select>
+
+	<select id="getReadInfo" resultType="com.rds.trace.model.RdsTraceArchiveReadModel">
+		select * from tb_trace_archive_read where archive_id=#{archive_id}
+	</select>
+
+
+	<insert id="addReadInfo" parameterType="map">
+		insert into tb_trace_archive_read(id,archive_id,read_per,read_date)
+		values(#{id},#{archive_id},#{read_per},#{read_date})
+	</insert>
+</mapper>

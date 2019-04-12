@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcUserMapper">
+
+	<resultMap type="com.rds.upc.model.RdsUpcUserModel" id="user">
+		<result column='userid' property="'userid'" />
+		<result column='usercode' property="usercode" />
+		<result column='username' property="username" />
+		<result column='deptcode' property="deptcode" />
+		<result column='deptname' property="deptname" />
+		<result column='parentDeptname' property="parentDeptname" />
+		<result column='usertype' property="usertype" />
+		<result column='typename' property="typename" />
+		<result column='companyid' property="companyid" />
+		<result column='companyname' property="companyname" />
+		<result column='telphone' property="telphone" />
+		<result column='webchart' property="webchart" />
+		<result column='email' property="email" />
+		<result column='address' property="address" />
+		<result column='sex' property="sex" />
+		<result column='receiver_area' property="receiver_area" />
+		<result column='areacode' property="areacode" />
+		<result column='parnter_name' property="parnter_name" />
+		<result column='rolename' property="rolename" />
+		<result column='certificateno' property="certificateno" />
+		<result column='deptid' property="deptid" />
+		<result column='initials' property="initials" />
+		<result column='relation_id' property="relation_id" />
+	</resultMap>
+	
+	<resultMap type="com.rds.upc.model.RdsUpcRoleModel" id="roleType">
+		<result column="roletype" property="roletype" />
+		<result column="rolename" property="rolename" />
+	</resultMap>
+	
+	<resultMap type="com.rds.upc.model.RdsUpcDictModel" id="upcdict"></resultMap>
+	
+	<resultMap type="com.rds.upc.model.RdsUpcTokenModel" id="tokenModel">
+		<result column="token" property="token" />
+		<result column="usercode" property="usercode" />
+		<result column="flag" property="flag" />
+	</resultMap>
+	
+	<insert id="insertToken" parameterType="map">
+		insert into tb_upc_token
+		(id,token,usercode,createtime)
+		values(#{id},#{token},#{usercode},sysdate())
+	</insert>
+
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_users
+		(usercode,username,password,usertype,roletype,telphone,areacode,parnter_name,receiver_area,webchart,
+		email,address,sex,userid,createtime,certificateno,initials,relation_id,companyid)
+		values(#{usercode},#{username},#{password},#{usertype},#{roletype},
+		#{telphone},#{areacode},#{parnter_name},#{receiver_area},#{webchart},#{email},#{address},#{sex},
+		#{userid},sysdate(),#{certificateno},#{initials},#{relation_id},#{companyid})
+	</insert>
+
+	<insert id="saveUserReport" parameterType="map">
+		insert into
+		tb_upc_user_report(id,usercode,typeid) values
+		(#{id},#{usercode},#{typeid})
+	</insert>
+	
+	<select id="queryToken" parameterType="map"
+		resultType="com.rds.upc.model.RdsUpcTokenModel">
+		SELECT m.usercode,m.token,(CASE WHEN
+		DATEDIFF(NOW(),m.createtime) > 30 THEN
+		'false'
+		ELSE
+		'true'
+		END) flag
+		FROM tb_upc_token m
+		WHERE token = #{token};
+	</select>
+	
+	<update id="update" parameterType="map">
+		update tb_upc_users
+		set usercode=#{usercode},
+		username = #{username},
+		deptcode = #{deptcode},
+		deptid = #{deptid},
+		usertype = #{usertype},
+		telphone = #{telphone},
+		areacode=#{areacode},
+		parnter_name = #{parnter_name},
+		webchart = #{webchart},
+		email = #{email},
+		address = #{address},
+		sex = #{sex},
+		certificateno = #{certificateno},
+		initials = #{initials},
+		receiver_area=#{receiver_area},
+		companyid=#{companyid}
+		where userid = #{userid}
+	</update>
+	
+	<update id="updateDept" parameterType="map">
+		update tb_upc_users
+		set
+		deptcode = #{deptcode},
+		deptid = #{deptid}
+		where usercode = #{usercode}
+	</update>
+	
+	<update id="updatePass" parameterType="map">
+		update tb_upc_users
+		set password=#{password}
+		where userid in (${userid})
+	</update>
+	
+	<update id="updateRole" parameterType="map">
+		update tb_upc_users
+		set roletype=#{roletype}
+		where usercode in (${usercode})
+	</update>
+
+	<delete id="delete" parameterType="map">
+		UPDATE tb_upc_users SET
+		delstatus='1' where usercode in (${usercode})
+	</delete>
+
+	<select id="queryAll" parameterType="map" resultType="user">
+		SELECT u.`userid`,u.`username`,d.`companyid`,u.telphone FROM tb_upc_users
+		u,`tb_upc_department` d WHERE u.`deptcode` = d.`deptcode` AND
+		u.`delstatus` IS NULL AND d.`delstatus`=0
+		<if test="companyid != 'null' and companyid != '' and companyid != null">
+			AND d.`companyid` = #{companyid}
+		</if>
+		<if test="query != 'null' and query != '' and query != null">
+			AND u.`initials` LIKE '%${query}%'
+		</if>
+		<if test="userid != 'null' and userid != '' and userid != null">
+			AND u.`userid` = #{userid}
+		</if>
+	</select>
+
+	<!-- 分页查询人员列表 -->
+	<select id="queryAllPage" parameterType="map" resultType="user">
+		SELECT 
+		  u.userid,
+		  u.usercode,
+		  u.username,
+		  u.usertype,
+		  u.sex,
+		  u.email,
+		  u.address,
+		  u.usertype as typename,
+		  u.telphone,
+		  u.qq,
+		  u.webchart,
+		  u.deptcode,
+		  u.companyid,
+		  c.companyname,
+		  r.rolename,
+		  u.certificateno,
+		  u.relation_id ,
+		  u.areacode,
+		  u.parnter_name,
+		  u.receiver_area,
+		  t.deptcode,
+		  t.deptname
+		FROM
+		  tb_upc_users u 
+		   LEFT JOIN 
+     `tb_upc_department` t
+		ON u.deptcode = t.deptcode 
+		  LEFT JOIN tb_upc_company c 
+		    ON u.companyid = c.companyid 
+		  LEFT JOIN tb_upc_role r 
+		    ON u.roletype = r.roletype 
+		WHERE 1 = 1 
+		  AND u.delstatus IS NULL 
+		<if test="companyid != 'null' and companyid != '' and companyid != null">
+			and u.companyid = #{companyid}
+		</if>
+		<if test="username != 'null' and username != '' and username != null">
+			and (u.username like concat('%', #{username}, '%') or u.usercode like
+			concat('%', #{username}, '%'))
+		</if>
+		<if test="usercode != 'null' and usercode != '' and usercode != null ">
+			and u.usercode = #{usercode}
+		</if>
+		<if test="roletype != 'null' and roletype != '' and roletype != null ">
+			and r.roletype = #{roletype}
+		</if>
+		<if test="usertype != 'null' and usertype != '' and usertype != null ">
+			and u.usertype = #{usertype}
+		</if>
+		<if test="deptcode != 'null' and deptcode != '' and deptcode != null ">
+			and u.deptcode = #{deptcode}
+		</if>
+		<if test="receiver_area != 'null' and receiver_area != '' and receiver_area != null ">
+			and u.receiver_area like concat('%', #{receiver_area}, '%')
+		</if>
+		<if test="parnter_name != 'null' and parnter_name != '' and parnter_name != null">
+			and u.parnter_name like concat('%', #{parnter_name}, '%')
+		</if>
+		<if test="dept_name != 'null' and dept_name != '' and dept_name != null">
+			and t.deptname LIKE  concat('%', #{dept_name}, '%')
+		</if>
+		LIMIT #{start},#{end}
+	</select>
+	<!-- 统计人数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(*) FROM tb_upc_users u
+		LEFT JOIN tb_upc_department t ON u.deptcode=t.deptcode
+		LEFT JOIN tb_upc_company c ON u.companyid=c.companyid
+		LEFT JOIN tb_upc_dict d ON u.usertype=d.typecode
+		LEFT JOIN tb_upc_role r ON u.roletype=r.roletype
+		WHERE 1=1 AND u.delstatus IS NULL
+		<if test="companyid != 'null' and companyid != '' and companyid != null">
+			and u.companyid = #{companyid}
+		</if>
+		<if test="username != null and username != ''">
+			and u.username like concat('%', #{username}, '%')
+		</if>
+		<if test="usercode != null and usercode != '' and usercode != 'null' ">
+			and u.usercode = #{usercode}
+		</if>
+		<if test="userid != null and userid != '' and userid != 'null' ">
+			and u.userid = #{userid}
+		</if>
+		<if test="roletype != 'null' and roletype != '' and roletype != null ">
+			and r.roletype = #{roletype}
+		</if>
+		<if test="usertype != 'null' and usertype != '' and usertype != null ">
+			and u.usertype = #{usertype}
+		</if>
+		<if test="deptcode != 'null' and deptcode != '' and deptcode != null ">
+			and u.deptcode = #{deptcode}
+		</if>
+		<if test="receiver_area != 'null' and receiver_area != '' and receiver_area != null ">
+			and u.receiver_area like concat('%', #{receiver_area}, '%')
+		</if>
+		<if test="parnter_name != 'null' and parnter_name != '' and parnter_name != null">
+			and u.parnter_name like concat('%', #{parnter_name}, '%')
+		</if>
+		<if test="dept_name != 'null' and dept_name != '' and dept_name != null">
+			and t.deptname LIKE  concat('%', #{dept_name}, '%')
+		</if>
+		<!-- select count(*) from tb_upc_users t, tb_upc_company c, tb_upc_department 
+			dept, (select * from tb_upc_dict where type = 'usertype') ut where dept.departmentcode(+) 
+			= t.deptcode and t.usertype = ut.key and c.companyid = dept.companyid <if 
+			test="companyid != null"> and dept.companyid = #{companyid} </if> <if test="username 
+			!= null"> and username like '%'||#{username}||'%' </if> -->
+	</select>
+
+	<select id="queryUserType" resultType="upcdict">
+		select * from tb_upc_dict
+	</select>
+
+	<select id="queryForLogin" parameterType="map"
+		resultType="com.rds.upc.model.RdsUpcUserModel">
+		SELECT
+		u.*,
+		d.companyid,
+		e.deptcode AS laboratory_no,
+		(
+		CASE
+		WHEN (u.usertype = '1' || u.usertype = '0' )
+		THEN CONCAT("dept.companyid=","'", d.companyid,"'")
+		ELSE (
+		CASE
+		WHEN u.usertype = '2'
+		THEN CONCAT("users.deptcode=","'", u.deptcode,"'")
+		ELSE (CASE WHEN u.usertype='3' THEN CONCAT("ci.case_in_per=","'",u.userid,"'")
+		ELSE CONCAT("ci.case_in_per=","'",u.userid,"'") END)
+		END
+		)
+		END
+		) sql_str 
+		<!-- ,
+		(
+		CASE
+		WHEN (u.usertype = '1' || u.usertype = '0' )
+		THEN CONCAT("dept.companyid=","'", d.companyid,"'")
+		ELSE (
+		CASE
+		WHEN u.usertype = '2'
+		THEN CONCAT("dept.deptcode=","'", u.deptcode,"'")
+		ELSE CONCAT("ci.case_in_per=","'",u.userid,"'") END)
+		END
+		) sql_str2  -->
+		FROM
+		tb_upc_users u
+		LEFT JOIN tb_upc_department d
+		ON u.deptcode = d.deptcode
+		LEFT JOIN (SELECT deptcode FROM tb_upc_department WHERE islaboratory='Y')
+		e
+		ON u.deptcode = e.deptcode
+		WHERE usercode = #{usercode}
+		AND u.delstatus IS NULL
+	</select>
+	<select id="queryRoleType" resultMap="roleType">
+		SELECT * FROM tb_upc_role r
+	</select>
+	
+	<select id="queryModel" parameterType="map" resultType="com.rds.upc.model.RdsUpcUserModel">
+		SELECT t.*,d.`companyid`,d.`deptid` FROM tb_upc_users t LEFT JOIN tb_upc_department d ON t.`deptcode`=d.`deptcode` WHERE 1=1 AND t.delstatus IS NULL
+		<if test="usercode != null and usercode != '' and usercode != 'null' ">
+			and t.usercode=#{usercode}
+		</if>	
+		<if test="userid != null and userid != '' and userid != 'null' ">
+			and t.userid=#{userid}
+		</if>	
+	</select>
+	
+	<select id="queryDeptList" parameterType="map" resultType="map">
+		SELECT GROUP_CONCAT(a.deptid) as deptListId FROM (
+			SELECT * FROM tb_upc_users t WHERE t.`relation_id`=#{relation_id}) a 
+			GROUP BY a.relation_id
+	</select>
+</mapper>

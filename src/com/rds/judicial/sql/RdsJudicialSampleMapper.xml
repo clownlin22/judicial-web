@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialSampleMapper" >
+    <insert id="insert" parameterType="map">
+        insert into tb_judicial_sample_result(experiment_no,
+        sample_code,resultstr,ext_flag,enable_flag,md5,laboratory_no) values(#{experiment_no},
+        #{sample_code},#{resultstr},#{ext_flag},#{enable_flag},#{md5},#{laboratory_no})
+    </insert>
+
+    <insert id="addRecordStr" parameterType="map">
+        insert into tb_judicial_history_compare(sample_code, resultstr)
+        values(#{sample_code},#{resultstr})
+    </insert>
+
+    <update id="update" parameterType="map">
+        update tb_judicial_sample_result set enable_flag=#{enable_flag}
+        where experiment_no=#{experiment_no}
+        and sample_code=#{sample_code}
+    </update>
+
+    <select id="queryAllCount" parameterType="map" resultType="int">
+        select count(*) from (select a.experiment_no,a.sample_code,b.experimenter,
+        b.reagent_name,b.experiment_date from
+        tb_judicial_sample_result a left join tb_judicial_experiment b on
+        a.experiment_no=b.experiment_no where 1
+        and a.laboratory_no = #{laboratory_no}
+        <if test=" experiment_no!=null and experiment_no != ''">
+            and a.experiment_no like '%${experiment_no}%'
+        </if>
+        <if test=" sample_code!=null and sample_code != ''">
+            and a.sample_code like '${sample_code}%'
+        </if>
+        <if test=" experimenter!=null and experimenter != ''">
+            and b.experimenter like '%${experimenter}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and b.experiment_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} >= b.experiment_date
+        </if>
+        <if test="grid!=null and grid!=''">
+            group by experiment_no,sample_code
+        </if>
+        ) z
+        order by z.experiment_no
+    </select>
+
+    <select id="queryAll" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultModel">
+        select a.*,b.experimenter,b.experiment_date,b.reagent_name,c.sample_call,c.sample_username,
+        d.case_code from
+        tb_judicial_sample_result a left join tb_judicial_experiment b on
+        a.experiment_no=b.experiment_no left join tb_judicial_sample_info c on
+        a.sample_code = c.sample_code left join tb_judicial_case_info d on
+        c.case_id = d.case_id where 1
+        and a.laboratory_no = #{laboratory_no}
+        <if test=" experiment_no!=null and experiment_no != ''">
+            and a.experiment_no like '%${experiment_no}%'
+        </if>
+        <if test=" sample_code!=null and sample_code != ''">
+            and a.sample_code like '${sample_code}%'
+        </if>
+        <if test=" experimenter!=null and experimenter != ''">
+            and b.experimenter like '%${experimenter}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and b.experiment_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} >= b.experiment_date
+        </if>
+        <if test="grid!=null and grid!=''">
+            group by experiment_no,sample_code
+        </if>
+        order by experiment_no
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountBySampleCode" parameterType="string" resultType="int">
+        select count(*) from tb_judicial_sample_result where sample_code = #{sample_code}
+    </select>
+
+    <select id="querySampleCall" parameterType="map"
+            resultType="string">
+        select sample_call from tb_judicial_sample_info
+        where sample_code=#{sample_code} limit 0,1
+    </select>
+
+    <select id="queryOneRecord" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultModel">
+        select * from tb_judicial_sample_result
+        where experiment_no = #{experiment_no} and
+        sample_code = #{sample_code}
+        <if test="laboratory_no!=null and laboratory_no!=''">
+            and  laboratory_no = #{laboratory_no}
+        </if>
+    </select>
+
+    <select id="queryOtherRecord" parameterType="string"
+            resultType="string">
+        select sample_code from tb_judicial_history_compare a  where
+        a.resultstr = #{resultstr} and
+        a.sample_code!= #{sample_code}
+    </select>
+
+    <select id="querySampleCodeByCaseCode" parameterType="string"
+            resultType="string">
+        select b.sample_code from tb_judicial_case_info a left join tb_judicial_sample_info b
+        on a.case_id = b.case_id
+        where case_code = #{case_code};
+    </select>
+
+    <select id="queryBySampleCode" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultModel">
+        select * from tb_judicial_sample_result a
+        left join tb_judicial_sample_info b on a.sample_code = b.sample_code
+        left join tb_judicial_experiment c on a.experiment_no = c.experiment_no
+        where
+        a.sample_code = #{sample_code}
+        and b.case_id = #{case_id}
+        <if test="ext_flag !=null and ext_flag !=''">
+            and a.ext_flag = #{ext_flag}
+        </if>
+        <if test="enable_flag !=null and enable_flag !=''">
+            and a.enable_flag = #{enable_flag}
+        </if>
+    </select>
+
+    <select id="queryExperiment" parameterType="map" resultType="string">
+        select distinct experiment_no from tb_judicial_sample_result where
+        enable_flag = 'Y'
+        and sample_code = #{sample_code}
+        and ext_flag = #{ext_flag}
+    </select>
+
+    <select id="queryCaseCodeBySampleCode" parameterType="string" resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+        select case_code,verify_state from tb_judicial_case_info a where
+        case_id in (select case_id from tb_judicial_sample_info where
+        sample_code =#{sample_code})
+        and (select count(*) from tb_judicial_sub_case_info where
+        case_code = a.case_code
+        and (result is null or result='')!=0)
+    </select>
+
+    <select id="queryMissingData" resultType="com.rds.judicial.model.RdsJudicialMissingDataModel">
+        SELECT z.sample_code,z.case_code,z.sample_in_time,z.sample_in_experiment
+        FROM(SELECT a.case_code,a.sample_in_time,b.`sample_code`,
+        COUNT(b.sample_code) AS sample_record_count, sample_count(b.sample_code) AS sample_in_experiment
+        FROM (SELECT case_code,case_id,sample_in_time FROM tb_judicial_case_info
+        where is_delete = 0
+        and laboratory_no = #{laboratory_no}
+        <if test=" starttime!=null and  starttime != '' ">
+            and sample_in_time>=#{starttime}
+        </if>
+        <if test=" endtime!=null and endtime != ''">
+            and #{endtime}>=sample_in_time
+        </if>
+        <if test=" case_code!=null and case_code != ''">
+            and case_code like '${case_code}%'
+        </if> ) a
+        LEFT JOIN (SELECT case_id,sample_code FROM tb_judicial_sample_info
+        where 1
+        <if test=" sample_code!=null and sample_code != ''">
+            and sample_code like '${sample_code}%'
+        </if>)b ON a.`case_id`=b.`case_id`
+        GROUP BY b.`sample_code`) z
+        WHERE sample_in_experiment > sample_record_count
+        union
+        SELECT e.sample_code,f.case_code,f.sample_in_time,sample_count(e.sample_code)
+        AS sample_in_experiment FROM (SELECT case_code,case_id,sample_in_time
+        FROM tb_judicial_case_info WHERE is_delete=0
+        and laboratory_no = #{laboratory_no}
+        AND sample_in_time IS NOT NULL
+        <if test=" starttime!=null and  starttime != '' ">
+            and sample_in_time>=#{starttime}
+        </if>
+        <if test=" endtime!=null and endtime != ''">
+            and #{endtime}>=sample_in_time
+        </if>
+        <if test=" case_code!=null and case_code != ''">
+            and case_code like '${case_code}%'
+        </if>) f
+        LEFT JOIN  tb_judicial_sample_info e ON e.case_id = f.case_id
+        WHERE e.sample_code NOT IN
+        (SELECT sample_code FROM tb_judicial_sample_result)
+        <if test=" sample_code!=null and sample_code != ''">
+            and e.sample_code like '${sample_code}%'
+        </if>
+        order by sample_in_time desc
+        limit #{start},#{limit};
+    </select>
+
+    <select id="queryCountMissingData" resultType="int">
+        select count(*) from (SELECT z.sample_code,z.case_code,z.sample_in_time,z.sample_in_experiment
+        FROM(SELECT a.case_code,a.sample_in_time,b.`sample_code`,
+        COUNT(b.sample_code) AS sample_record_count, sample_count(b.sample_code) AS sample_in_experiment
+        FROM (SELECT case_code,case_id,sample_in_time FROM tb_judicial_case_info
+        where is_delete = 0
+        and laboratory_no = #{laboratory_no}
+        <if test=" starttime!=null and  starttime != '' ">
+            and sample_in_time>=#{starttime}
+        </if>
+        <if test=" endtime!=null and endtime != ''">
+            and #{endtime}>=sample_in_time
+        </if>
+        <if test=" case_code!=null and case_code != ''">
+            and case_code like '${case_code}%'
+        </if> ) a
+        LEFT JOIN (SELECT case_id,sample_code FROM tb_judicial_sample_info
+        where 1
+        <if test=" sample_code!=null and sample_code != ''">
+            and sample_code like '${sample_code}%'
+        </if>)b ON a.`case_id`=b.`case_id`
+        GROUP BY b.`sample_code`) z
+        WHERE sample_in_experiment > sample_record_count
+        union
+        SELECT e.sample_code,f.case_code,f.sample_in_time,sample_count(e.sample_code)
+        AS sample_in_experiment FROM (SELECT case_code,case_id,sample_in_time
+        FROM tb_judicial_case_info WHERE is_delete=0
+        AND sample_in_time IS NOT NULL
+        and laboratory_no = #{laboratory_no}
+        <if test=" starttime!=null and  starttime != '' ">
+            and sample_in_time>=#{starttime}
+        </if>
+        <if test=" endtime!=null and endtime != ''">
+            and #{endtime}>=sample_in_time
+        </if>
+        <if test=" case_code!=null and case_code != ''">
+            and case_code like '${case_code}%'
+        </if>) f
+        LEFT JOIN  tb_judicial_sample_info e ON e.case_id = f.case_id
+        WHERE e.sample_code NOT IN
+        (SELECT sample_code FROM tb_judicial_sample_result)
+        <if test=" sample_code!=null and sample_code != ''">
+            and e.sample_code like '${sample_code}%'
+        </if>
+        ) h
+    </select>
+
+    <select id="queryMD5" parameterType="string" resultType="int" >
+        select count(*) from tb_judicial_sample_result where md5 = #{md5};
+    </select>
+
+    <select id="queryCurrentCountUnmatchedNode" parameterType="string" resultType="map">
+        select unmatched_count from tb_judicial_compare_result where compare_date =
+        (select max(compare_date) from tb_judicial_compare_result where
+        case_code = #{sub_case_code} group by case_code)
+        and case_code = #{sub_case_code}
+    </select>
+
+    <select id="queryNeedExt" parameterType="string" resultType="map">
+        select need_ext from tb_judicial_compare_result where compare_date =
+        (select max(compare_date) from tb_judicial_compare_result where
+        case_code = #{sub_case_code} group by case_code)
+        and case_code = #{sub_case_code}
+    </select>
+
+    <insert id="addRecordData" parameterType="map">
+        insert into tb_judicial_sample_result_data(experiment_no, sample_code,
+        trans_date,name, value,laboratory_no)
+        values(#{experiment_no},#{sample_code},now(),#{name},#{value},#{laboratory_no})
+    </insert>
+
+    <insert id="addRecordDataAll" parameterType="map">
+        insert into tb_judicial_sample_result_data(experiment_no, sample_code,
+        trans_date,name, value,laboratory_no)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">    
+         (#{item.experiment_no},#{item.sample_code},now(),#{item.name},#{item.value},#{item.laboratory_no})  
+        </foreach>
+    </insert>
+
+    <select id="queryRecordData" parameterType="map" resultType="map">
+        select name,value from tb_judicial_sample_result_data
+        where experiment_no = #{experiment_no}
+        and sample_code = #{sample_code}
+        <if test="laboratory_no!=null and laboratory_no!=''">
+            and  laboratory_no = #{laboratory_no}
+        </if>
+    </select>
+
+    <select id="queryByExperimentNo" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultModel">
+        select a.*,b.experimenter,b.experiment_date,b.reagent_name,c.sample_call,c.sample_username,
+        d.case_code from
+        tb_judicial_sample_result a left join tb_judicial_experiment b on
+        a.experiment_no=b.experiment_no left join tb_judicial_sample_info c on
+        a.sample_code = c.sample_code left join tb_judicial_case_info d on
+        c.case_id = d.case_id where 1
+        and a.laboratory_no = #{laboratory_no}
+        and a.experiment_no = #{experiment_no}
+    </select>
+
+    <select id="queryByCaseCode" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultModel">
+        SELECT * FROM (SELECT case_code,case_id FROM tb_judicial_case_info
+        WHERE case_code = #{case_code}) a
+        LEFT JOIN tb_judicial_sample_info b ON a.case_id = b.`case_id`
+        LEFT JOIN tb_judicial_sample_result c ON b.`sample_code` = c.sample_code
+        LEFT JOIN tb_dic_values1 d ON b.`sample_call` = d.`key1`
+        WHERE enable_flag = 'Y' and ext_flag = #{ext_flag}
+        <if test="queryBySub!='' and queryBySub!=null">
+            and b.sample_code in
+            <foreach collection="sample_codes" item="item"  open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY b.sample_code
+        ORDER BY d.sort,b.sample_code
+    </select>
+
+    <select id="queryHistory" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultDataHis">
+        SELECT sample_code,NAME,VALUE,value2 FROM tb_judicial_sample_result_data_history
+        <if test="name!=null and name!=''">
+        WHERE (NAME like '${name}%' AND VALUE = #{value}) or
+            (NAME like '${name}%' AND VALUE2 = #{value})
+        </if>
+        limit #{start},#{limit}
+    </select>
+
+    <select id="queryHistoryCount" parameterType="map" resultType="int">
+        <!--SELECT SUM(a) FROM (SELECT COUNT(*) a FROM tb_judicial_sample_result_data_history-->
+        <!--<if test="name!=null and name!=''">-->
+            <!--WHERE NAME like '%${name}%'  AND VALUE like '%${value}%'-->
+        <!--</if>-->
+        <!--UNION-->
+        <!--SELECT COUNT(*) a FROM  tb_judicial_sample_result_data-->
+        <!--<if test="name!=null and name!=''">-->
+            <!--WHERE NAME like '%${name}%' AND VALUE LIKE '%${value}%'-->
+        <!--</if>)z-->
+        select count(*) from (SELECT sample_code,NAME,VALUE FROM tb_judicial_sample_result_data_history
+        <if test="name!=null and name!=''">
+            WHERE (NAME like '${name}%' AND VALUE = #{value}) or
+            (NAME like '${name}%' AND VALUE2 = #{value})
+        </if>
+        ) z
+    </select>
+    
+    
+    <select id="queryPiForUnmatchNode" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialSampleResultDataHis">
+        SELECT  a.*,b. sample_call  FROM tb_judicial_sample_result_data a
+         LEFT JOIN  tb_judicial_sample_info  b ON a. sample_code =b. sample_code 
+        WHERE  a. name = #{name} AND  a.sample_code in (SELECT t.sample_code FROM `tb_judicial_sample_info` t 
+        	INNER JOIN `tb_judicial_case_info` ci ON t.`case_id`=ci.`case_id` AND ci.`case_code`=#{sample_code}) 
+        GROUP BY a.`sample_code`
+    </select>
+</mapper>

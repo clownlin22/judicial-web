@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.appraisal.mapper.RdsAppraisalPrinterMapper">
+	<resultMap id="entrustModel" type="com.rds.appraisal.model.RdsAppraisalEntrustModel">
+	</resultMap>
+	<resultMap id="keyValueModel" type="com.rds.appraisal.model.RdsAppraisalKeyValueModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		
+	</insert>
+
+	<update id="update" parameterType="map">
+	</update>
+
+	<delete id="delete" parameterType="map">
+	</delete>
+
+	<select id="queryAllPage" parameterType="map" resultMap="entrustModel">
+	</select>
+
+	<select id="queryAll" parameterType="map" resultMap="keyValueModel">
+		SELECT u.`username` AS 'key',u.`certificateno` AS 'value' FROM
+		`tb_upc_users` u,`tb_appraisal_judge` j WHERE u.`userid` = j.`userid`
+		<if test="case_id!=null and case_id != ''">
+			AND j.case_id=#{case_id}
+		</if>
+		ORDER BY j.`flag` DESC
+	</select>
+	
+	<select id="queryModel" parameterType="map" resultMap="keyValueModel">
+		
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+	</select>
+</mapper>

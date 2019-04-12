@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<root>
+	<type>
+		<name>司法类</name>
+		<key>亲子鉴定-宿迁子渊</key>
+		<value>亲子鉴定-宿迁子渊</value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>亲子鉴定-东南</key>
+		<value>亲子鉴定-东南 </value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>骨龄</key>
+		<value>骨龄鉴定信息表</value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>食品安全</key>
+		<value>食品安全检测 </value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>酒精测试</key>
+		<value>酒精测试</value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>痕迹鉴定</key>
+		<value>痕迹鉴定</value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>法医临床</key>
+		<value>子渊法医临床 </value>
+	</type>
+
+	<type>
+		<name>司法类</name>
+		<key>法医病理</key>
+		<value>子渊法医病理</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>亲子鉴定-苏博医学 </key>
+		<value>亲子鉴定-苏博医学 </value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>肿瘤易感基因</key>
+		<value>肿瘤易感基因检测</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>肿瘤个体</key>
+		<value>肿瘤个体化登记</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>无创产前</key>
+		<value>无创产前检测</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>成人安全用药</key>
+		<value>成人安全用药</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>儿童安全用药</key>
+		<value>儿童安全用药</value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>基因身份证 </key>
+		<value>基因身份证 </value>
+	</type>
+
+	<type>
+		<name>医学类</name>
+		<key>叶酸代谢能力检测 </key>
+		<value>叶酸代谢能力检测</value>
+	</type>
+
+
+	<type>
+		<name>司法合作单位</name>
+		<key>河南唯实 </key>
+		<value>河南唯实 </value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>广西公众司法  </key>
+		<value>广西公众司法 </value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>安徽同德</key>
+		<value>安徽同德</value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>亲子鉴定-安徽龙图</key>
+		<value>亲子鉴定-安徽龙图</value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>亲子鉴定-求实</key>
+		<value>亲子鉴定-求实</value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>亲子鉴定-十堰</key>
+		<value>亲子鉴定-十堰</value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>亲子鉴定-福建正泰</key>
+		<value>亲子鉴定-福建正泰</value>
+	</type>
+
+	<type>
+		<name>司法合作单位</name>
+		<key>亲子鉴定-杭州千麦</key>
+		<value>亲子鉴定-杭州千麦</value>
+	</type>
+</root>

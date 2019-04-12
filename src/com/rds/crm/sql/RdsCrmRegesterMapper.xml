@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.crm.mapper.RdsCrmRegesterMapper">
+	<select id="getOrderList" parameterType="map"
+		resultType="com.rds.crm.model.RdsCrmOrderModel">
+		SELECT
+		*,
+		d.`dic_name` AS detectionClassName,
+		o.`orgName` AS
+		detectionOrgName,
+		SUM(a.`realFee`) AS paidFee,
+		GROUP_CONCAT(s.`sampleName`) AS sampleInfo
+		FROM
+		`tb_crm_order_info` oi
+		LEFT JOIN `tb_crm_sample` s
+		ON s.`orderId` = oi.`orderId`
+		LEFT JOIN
+		`tb_crm_dic` d
+		ON
+		oi.`detectionClass` =
+		d.`dic_id`
+		LEFT JOIN
+		`tb_crm_org` o
+		ON
+		oi.`detectionOrg` = o.`orgId`
+		LEFT
+		JOIN
+		`tb_crm_fee` a
+		ON
+		oi.`orderId` =
+		a.`orderId`
+		where oi.`orderInPer` =
+		#{user}
+		<if test="phone!='' and phone !=null">
+			and oi.phone like '%${phone}%'
+		</if>
+		<if test="client!='' and client != null">
+			and oi.client like '%${client}%'
+		</if>
+		and oi.orderInDate >= #{starttime} and #{endtime} >= oi.orderInDate
+		GROUP BY oi.`orderId`
+		LIMIT
+		#{start},#{limit}
+	</select>
+	<select id="getOrderCount" parameterType="map" resultType="Integer">
+		select count(1)
+		FROM
+		`tb_crm_order_info` oi
+		LEFT JOIN `tb_crm_dic` d
+		ON
+		oi.`detectionClass` = d.`dic_id`
+		LEFT JOIN `tb_crm_org` o
+		ON
+		oi.`detectionOrg` = o.`orgId`
+		WHERE oi.`orderInPer` = #{userid}
+		<if test="phone!='' and phone !=null">
+			and oi.phone like '%${phone}%'
+		</if>
+		<if test="client!='' and client != null">
+			and oi.client like '%${client}%'
+		</if>
+		and oi.orderInDate >= #{starttime} and #{endtime} >= oi.orderInDate
+	</select>
+	<select id="getOrderCountByPhone" parameterType="String"
+		resultType="Integer">
+		select count(1) from tb_crm_order_info oi where oi.phone =
+		#{phone}
+	</select>
+	<select id="getDetectionClass" resultType="map">
+		SELECT d.`dic_id` AS
+		`id`,d.`dic_name` AS `name` FROM `tb_crm_dic` d WHERE d.`dic_class`
+		=
+		'detectionclass'
+	</select>
+	<select id="getDetectionOrg" resultType="map" parameterType="String">
+		SELECT o.`orgId` AS `id`,o.`orgName` AS `name` FROM
+		`tb_crm_detection2org` d LEFT JOIN `tb_crm_org` o ON d.`org_id` =
+		o.`orgId` WHERE d.`detection_id` = #{id}
+	</select>
+	<insert id="insertOrder" parameterType="com.rds.crm.model.RdsCrmOrderModel">
+		INSERT INTO
+		`tb_crm_order_info` (
+		`orderId`,
+		`orderInPer`,
+		`phone`,
+		`client`,
+		`orderType`,
+		`consultCount`,
+		`address`,
+		`remark`,
+		`status`,
+		`isArchive`,
+		`orderInDate`,
+		`standFee`,
+		`isExtendOrder`,
+		`isPostpaid`,
+		`detectionClass`,
+		`detectionOrg`) VALUES
+		(#{orderId},
+		#{orderInPer},
+		#{phone},
+		#{client},
+		#{orderType},
+		#{consultCount},
+		#{address},
+		#{remark},
+		#{status},
+		#{isArchive},
+		#{orderInDate},
+		#{standFee},
+		#{isExtendOrder},
+		#{isPostpaid},
+		#{detectionClass},
+		#{detectionOrg})
+
+	</insert>
+	<update id="updateOrder" parameterType="map">
+		UPDATE
+		`tb_crm_order_info`
+		SET
+		`phone` = #{phone},
+		`client` = #{client},
+		`orderType` = #{orderType},
+		`consultCount` = #{consultCount},
+		`address`
+		= #{address},
+		`remark` = #{remark},
+		`orderInDate` = #{orderInDate},
+		`standFee` = #{standFee},
+		`isExtendOrder` = #{isExtendOrder},
+		`isPostpaid` = #{isPostpaid},
+		`detectionClass` = #{detectionClass},
+		`detectionOrg` = #{detectionOrg}
+		WHERE `orderId` = #{orderId}
+	</update>
+	<select id="getSampleCombo" resultType="map">
+		SELECT d.`dic_id` AS `id`
+		,d.`dic_name` AS `name` FROM `tb_crm_dic` d WHERE
+		d.`dic_class`='sample'
+	</select>
+	<insert id="insertSample" parameterType="list">
+		INSERT INTO
+		`tb_crm_sample` (`sampleId`, `sampleName`,`orderId`)
+		VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.sampleId}, #{item.sampleName},#{item.orderId})
+		</foreach>
+	</insert>
+	<select id="getSampleName" parameterType="String"
+		resultType="com.rds.crm.model.RdsCrmSampleModel">
+		SELECT * FROM `tb_crm_sample` s WHERE
+		s.`orderId`=#{orderId}
+	</select>
+	<delete id="deleteSampleByOrderId" parameterType="String">
+		DELETE FROM
+		`tb_crm_sample` WHERE orderId=#{orderId}
+	</delete>
+	<insert id="insertFee" parameterType="com.rds.crm.model.RdsCrmFeeModel">
+		INSERT INTO
+		`tb_crm_fee`
+		(`feeId`, `orderId`, `realFee`,
+		`feeTime`) VALUES (#{feeId},
+		#{orderId},#{realFee},#{feeTime})
+	</insert>
+	<select id="getCallBack" parameterType="map"
+		resultType="com.rds.crm.model.RdsCrmCallBackModel">
+		SELECT
+		cb.`cbId`,
+		cb.`cbContent`,
+		cb.`cbTime`,
+		u.`username` AS
+		cbInPer
+		FROM
+		`tb_crm_callback` cb
+		LEFT JOIN `tb_upc_users` u
+		ON u.`userid`
+		= cb.`cbInPer`
+		WHERE cb.orderId = #{orderId};
+	</select>
+	<select id="getCallBackCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM `tb_crm_callback` cb where cb.orderId =
+		#{orderId}
+	</select>
+	<insert id="saveCallBack" parameterType="map">
+		INSERT INTO
+		`tb_crm_callback` (`cbId`, `cbInPer`, `cbContent`, `cbTime`,
+		`orderId`) VALUES
+		(#{cbId},#{cbInPer},#{cbContent},#{cbTime},#{orderId})
+	</insert>
+	<select id="getOrderFeeList" parameterType="map"
+		resultType="com.rds.crm.model.RdsCrmFeeModel">
+		SELECT * FROM `tb_crm_fee` f WHERE f.`orderId`= #{orderId}
+		limit #{start},#{limit}
+	</select>
+	<select id="getOrderFeeListCount" parameterType="map"
+		resultType="int">
+		select count(1) FROM `tb_crm_fee` f WHERE f.`orderId`=
+		#{orderId}
+	</select>
+	<select id="getOrderListQuery" parameterType="map"
+		resultType="com.rds.crm.model.RdsCrmOrderModel">
+		SELECT
+		*,
+		d.`dic_name` AS detectionClassName,
+		o.`orgName` AS
+		detectionOrgName,
+		SUM(a.`realFee`) AS paidFee,
+		GROUP_CONCAT(s.`sampleName`) AS sampleInfo
+		FROM
+		`tb_crm_order_info` oi
+		LEFT JOIN `tb_crm_sample` s
+		ON s.`orderId` = oi.`orderId`
+		LEFT JOIN `tb_crm_dic` d
+		ON
+		oi.`detectionClass` =
+		d.`dic_id`
+		LEFT JOIN
+		`tb_crm_org` o
+		ON
+		oi.`detectionOrg` = o.`orgId`
+		LEFT
+		JOIN
+		`tb_crm_fee` a
+		ON
+		oi.`orderId` = a.`orderId`
+		LEFT JOIN
+		`tb_crm_detection2department`
+		dd
+		ON
+		oi.`detectionClass` =
+		dd.`detection_class`
+		WHERE
+		dd.`deptcode`=#{user}
+		<if test="phone!='' and phone !=null">
+			and oi.phone like '%${phone}%'
+		</if>
+		<if test="client!='' and client != null">
+			and oi.client like '%${client}%'
+		</if>
+		and oi.orderInDate >= #{starttime} and #{endtime} >= oi.orderInDate
+		GROUP BY oi.`orderId`
+		LIMIT
+		#{start},#{limit}
+	</select>
+	<select id="getOrderQueryCount" parameterType="map" resultType="int">
+		select count(1)
+		FROM
+		`tb_crm_order_info` oi
+		LEFT JOIN `tb_crm_dic` d
+		ON
+		oi.`detectionClass` = d.`dic_id`
+		LEFT JOIN `tb_crm_org` o
+		ON
+		oi.`detectionOrg` = o.`orgId`
+		LEFT JOIN `tb_crm_detection2department`
+		dd
+		ON oi.`detectionClass` = dd.`detection_class`
+		WHERE
+		dd.`deptcode`=#{user}
+		<if test="phone!='' and phone !=null">
+			and oi.phone like '%${phone}%'
+		</if>
+		<if test="client!='' and client != null">
+			and oi.client like '%${client}%'
+		</if>
+		and oi.orderInDate >= #{starttime} and #{endtime} >= oi.orderInDate
+	</select>
+</mapper>

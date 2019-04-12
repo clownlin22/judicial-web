@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialExceptionMapper" >
+    <select id="queryAll" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialExceptionModel">
+      select a.*,b.exception_desc,c.case_id from  tb_judicial_exception a
+      inner join tb_judicial_exception_dic b on a.exception_id = b.exception_id
+      inner join tb_judicial_case_info c on a.case_code = c.case_code where 1
+        and a.laboratory_no = #{laboratory_no}
+    <if test="case_code!=null and case_code!=''">
+        and a.case_code like '%${case_code}%'
+    </if>
+    <if test="sample_code!=null and sample_code!=''">
+        and (a.sample_code1 like '%${sample_code}%' or a.sample_code2 like '%${sample_code}%')
+    </if>
+    <if test=" starttime!=null and  starttime != '' ">
+        and date(trans_date) >= date(#{starttime})
+    </if>
+    <if test=" endtime!=null and  endtime != '' ">
+        and  date(#{endtime}) > date(trans_date)-1
+    </if>
+    <if test=" choose_flag!=null and  choose_flag != '' ">
+        and  #{choose_flag} = choose_flag
+    </if>
+      order by choose_flag desc,case_code asc
+      limit #{start},#{limit}
+    </select>
+
+    <select id="queryAllCount" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_exception where 1
+        and laboratory_no = #{laboratory_no}
+        <if test="case_code!=null and case_code!=''">
+            and case_code like '%${case_code}%'
+        </if>
+        <if test="sample_code!=null and sample_code!=''">
+            and (sample_code1 like '%${sample_code}%' or sample_code2 like '%${sample_code}%')
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and date(trans_date) >= date(#{starttime})
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  date(#{endtime}) > date(trans_date)-1
+        </if>
+        <if test=" choose_flag!=null and  choose_flag != '' ">
+            and  #{choose_flag} = choose_flag
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="map">
+        insert into tb_judicial_exception(uuid, exception_id,case_code,
+        sample_code1,sample_code2 ,trans_date, state, choose_flag,laboratory_no)
+        values(#{uuid},#{exception_id},#{case_code},#{sample_code1},#{sample_code2},
+        #{trans_date},#{state},#{choose_flag},#{laboratory_no})
+    </insert>
+
+    <update id="update" parameterType="map">
+        update tb_judicial_exception set choose_flag = #{choose_flag}
+        where uuid = #{uuid}
+    </update>
+
+    <select id="queryCrossCompare" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialExceptionModel">
+        select a.exception_id,a.choose_flag,a.case_code as case_code1,a.sample_code1,a.sample_code2,
+        a.trans_date,b.case_code as case_code2 from tb_judicial_exception a left join
+        tb_judicial_exception b on a.trans_date = b.trans_date
+        where a.sample_code1=b.sample_code1
+        and a.sample_code2=b.sample_code2
+        and a.case_code!=b.case_code
+        and a.exception_id='A002'
+        and a.choose_flag=1
+        and a.laboratory_no = #{laboratory_no}
+        <if test="case_code!=null and case_code!=''">
+            and (a.case_code like '%${case_code}%' or b.case_code like '%${case_code}%')
+        </if>
+        <if test="sample_code!=null and sample_code!=''">
+            and (a.sample_code1 like '%${sample_code}%' or a.sample_code2 like '%${sample_code}%')
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and a.trans_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} > a.trans_date-1
+        </if>
+        group by  sample_code1,sample_code2,trans_date
+        order by trans_date desc
+        limit #{start},#{limit}
+    </select>
+
+    <select id="queryCountCrossCompare" parameterType="map"
+            resultType="int">
+        select count(*) from (select a.exception_id,a.choose_flag,a.case_code as case_code1,a.sample_code1,a.sample_code2,
+        a.trans_date,b.case_code as case_code2 from tb_judicial_exception a left join
+        tb_judicial_exception b on a.trans_date = b.trans_date
+        where a.sample_code1=b.sample_code1
+        and a.sample_code2=b.sample_code2
+        and a.case_code!=b.case_code
+        and a.exception_id='A002'
+        and a.choose_flag=1
+        and a.laboratory_no = #{laboratory_no}
+        <if test="case_code!=null and case_code!=''">
+            and (a.case_code like '%${case_code}%' or b.case_code like '%${case_code}%')
+        </if>
+        <if test="sample_code!=null and sample_code!=''">
+            and (a.sample_code1 like '%${sample_code}%' or a.sample_code2 like '%${sample_code}%')
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and a.trans_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} > a.trans_date-1
+        </if>
+        group by  sample_code1,sample_code2,trans_date) z
+    </select>
+</mapper>

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseAttachmentMapper">
+	<select id="getAttachMent" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		select * from tb_judicial_case_attachment where 1=1  
+		<if test=" attachment_type !=null and  attachment_type != '' ">
+			AND attachment_type!=6
+		</if>
+		<if test=" case_id !=null and  case_id != '' ">
+			AND case_id = #{case_id}
+		</if>
+		<if test=" id !=null and  id != '' ">
+			AND id = #{id}
+		</if>
+		order by attachment_type
+	</select>
+	<select id="getAttachMentOne" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		select * from tb_judicial_case_attachment where 1=1  
+		<if test=" attachment_type !=null and  attachment_type != '' ">
+			AND attachment_type=#{attachment_type}
+		</if>
+		<if test=" attachment_path !=null and  attachment_path != '' ">
+			AND attachment_path LIKE '%${attachment_path}'
+		</if>
+	</select>
+	<insert id="insertAttachment"
+		parameterType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		INSERT INTO
+		`tb_judicial_case_attachment` (`id`,
+		`case_id`,
+		`case_code`, `attachment_path`, `attachment_date`,
+		`attachment_type`,create_per,create_date)
+		VALUES
+		(#{id},#{case_id},#{case_code},#{attachment_path},#{attachment_date},#{attachment_type},#{create_per},sysdate());
+	</insert>
+	
+	<select id="queryAllPage" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		SELECT 
+		  att.*,u.`username`,ci.verify_state
+		FROM
+		  `tb_judicial_case_info` ci 
+		  LEFT JOIN `tb_judicial_case_attachment` att 
+		    ON ci.`case_id` = att.`case_id` 
+		    LEFT JOIN tb_upc_users u ON att.`create_per`= u.`userid`
+		WHERE ci.`case_in_per` IS NOT NULL 
+		  AND att.`case_id` IS NOT NULL 
+		<if test=" starttime!=null and  starttime != '' ">
+			AND ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=ci.accept_time
+		</if>
+		<if test="search != ''">
+			AND att.case_code LIKE '%${search}%'
+		</if>
+		<if test=" userid != null and userid != ''">
+			AND (att.create_per=#{userid} or ci.case_userid = #{userid})
+		</if>
+		order by att.case_code desc
+		LIMIT #{start},#{limit}
+	</select>
+	
+	<select id="queryAll" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		SELECT 
+		  att.*,u.`username`,ci.verify_state
+		FROM
+		  `tb_judicial_case_info` ci 
+		  LEFT JOIN `tb_judicial_case_attachment` att 
+		    ON ci.`case_id` = att.`case_id` 
+		    LEFT JOIN tb_upc_users u ON att.`create_per`= u.`userid`
+		WHERE ci.`case_in_per` IS NOT NULL 
+		  AND att.`case_id` IS NOT NULL 
+		<if test=" case_id !=null and  case_id != '' ">
+			AND ci.case_id = #{case_id}
+		</if>
+	</select>
+
+	<select id="queryCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(*)
+		FROM
+		`tb_judicial_case_info` ci 
+		  LEFT JOIN `tb_judicial_case_attachment` att 
+		    ON ci.`case_id` = att.`case_id` 
+		WHERE ci.`case_in_per` IS NOT NULL 
+		  AND att.`case_id` IS NOT NULL 
+		<if test=" starttime!=null and  starttime != '' ">
+			AND ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			AND #{endtime}>=ci.accept_time
+		</if>
+		<if test="search != ''">
+			AND att.case_code LIKE '%${search}%'
+		</if>
+		<if test=" case_id !=null and case_id != ''">
+			AND ci.case_id=#{case_id}
+		</if>
+		<if test=" userid != null and userid != ''">
+			AND (att.create_per=#{userid} or ci.case_userid = #{userid})
+		</if>
+	</select>
+	<select id="queryPathById" parameterType="String" resultType="String">
+		SELECT attachment_path FROM `tb_judicial_case_attachment` WHERE id =
+		#{id}
+	</select>
+	<select id="queryAttachmentByType" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		select * from tb_judicial_case_attachment where
+		case_id=#{case_id} and
+		attachment_type=#{type}
+	</select>
+	<select id="isFileExist"
+		parameterType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel"
+		resultType="String">
+		SELECT ca.id FROM `tb_judicial_case_attachment` ca WHERE
+		ca.case_id
+		=#{case_id} AND ca.`attachment_type`=#{attachment_type}
+	</select>
+	<update id="updateFile"
+		parameterType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		UPDATE
+		tb_judicial_case_attachment ca SET
+		ca.`attachment_path`=#{attachment_path},
+		ca.`attachment_date`=#{attachment_date}
+		where ca.id=#{id}
+	</update>
+	<update id="updateAllAttachment" parameterType="java.util.List">
+		update
+		tb_judicial_case_attachment set is_print=1 where
+		(
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			case_code = #{item}
+		</foreach>
+		)
+		and
+		attachment_type=3
+	</update>
+	<select id="getAllCaseAttachment" parameterType="java.util.List"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+
+		SELECT * FROM(SELECT
+		*
+		FROM
+		`tb_judicial_case_attachment` att
+		WHERE(
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			att.case_code = #{item}
+		</foreach>) and
+		att.`attachment_type` = 3
+		ORDER BY att.`attachment_date` )att
+		GROUP BY att.case_id
+	</select>
+	<delete id="deleteFile" parameterType="map">
+		delete from tb_judicial_case_attachment  where id = #{id}
+	</delete>
+</mapper>

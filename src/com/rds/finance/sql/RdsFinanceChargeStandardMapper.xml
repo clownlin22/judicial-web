@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.finance.mapper.RdsFinanceChargeStandardMapper" >
+	<resultMap id="chargeModel" type="com.rds.finance.model.RdsFinanceChargeStandardModel">
+	</resultMap>
+	<resultMap id="specialModel" type="com.rds.finance.model.RdsFinanceSpecialModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		insert into tb_charge_standard_new(
+		                              id,createuserid,userid,username,areacode,areaname,agentid,agentname,source_type,program_type,
+		                              type,equation,remark,create_time,singlePrice,doublePrice,samplePrice,
+		                              gapPrice,specialPirce,specialPirce1,specialPirce2,urgentPrice,urgentPrice1,urgentPrice2)
+		values (#{id},#{createuserid},#{userid},#{username},#{areacode},#{areaname},#{agentid},#{agentname},#{source_type},#{program_type},
+		       #{type},#{equation},#{remark},sysdate(),#{singlePrice},#{doublePrice},#{samplePrice},
+		       #{gapPrice},#{specialPirce},#{specialPirce1},#{specialPirce2},#{urgentPrice},#{urgentPrice1},#{urgentPrice2})
+	</insert>
+	
+	<insert id="insertOld" parameterType="map">
+		insert into tb_charge_standard(id,createuserid,userid,username,userinitials,areacode,areaname,agentid,agentname,areainitials,type,
+										equation,discountrate,remark,create_time,attach_need,companyid)
+		values (#{id},#{createuserid},#{userid},#{username},#{userinitials},#{areacode},#{areaname},#{agentid},#{agentname},#{areainitials},
+										#{type},#{equation},#{discountrate},#{remark},sysdate(),#{attach_need},#{companyid})
+	</insert>
+	
+	<insert id="insertInvasiveStandard" parameterType="map">
+		insert into tb_charge_standard_invasive(
+		                              id,createuserid,areacode,areaname,program_type,
+		                             equation,remark,create_time,samplePrice,urgentPrice,urgentPrice1,urgentPrice2,hospital)
+		values (#{id},#{createuserid},#{areacode},#{areaname},#{program_type},
+		     #{equation},#{remark},sysdate(),#{samplePrice},#{urgentPrice},#{urgentPrice1},#{urgentPrice2},#{hospital})
+	</insert>
+	
+	<update id="updateInvasiveStandard" parameterType="map">
+		update tb_charge_standard_invasive
+			set 
+			<if test="createuserid != null">
+				createuserid = #{createuserid},
+			</if>
+				areacode = #{areacode},
+				areaname = #{areaname},
+				program_type=#{program_type},
+				hospital=#{hospital},
+			<if test="equation != null">
+				equation = #{equation},
+			</if>
+				remark = #{remark},
+			<if test="samplePrice != null">
+				samplePrice = #{samplePrice},
+			</if>
+			<if test="urgentPrice != null">
+				urgentPrice = #{urgentPrice},
+			</if>
+			<if test="urgentPrice1 != null">
+				urgentPrice1 = #{urgentPrice1},
+			</if>
+			<if test="urgentPrice2 != null">
+				urgentPrice2 = #{urgentPrice2},
+			</if>
+				create_time=sysdate()
+				where id = #{id}
+	</update>
+
+	<update id="update" parameterType="map">
+		update tb_charge_standard_new
+			set 
+			<if test="createuserid != null">
+				createuserid = #{createuserid},
+			</if>
+				areacode = #{areacode},
+				areaname = #{areaname},
+				userid = #{userid},
+				username = #{username},
+				agentid = #{agentid},
+				agentname = #{agentname},
+				type = #{type},
+				source_type = #{source_type},
+				program_type=#{program_type},
+			<if test="equation != null">
+				equation = #{equation},
+			</if>
+				remark = #{remark},
+			<if test="singlePrice != null">
+				singlePrice = #{singlePrice},
+			</if>
+			<if test="doublePrice != null">
+				doublePrice = #{doublePrice},
+			</if>
+			<if test="samplePrice != null">
+				samplePrice = #{samplePrice},
+			</if>
+			<if test="gapPrice != null">
+				gapPrice = #{gapPrice},
+			</if>
+			<if test="specialPirce != null">
+				specialPirce = #{specialPirce},
+			</if>
+			<if test="specialPirce1 != null">
+				specialPirce1 = #{specialPirce1},
+			</if>
+			<if test="specialPirce2 != null">
+				specialPirce2 = #{specialPirce2},
+			</if>
+			<if test="urgentPrice != null">
+				urgentPrice = #{urgentPrice},
+			</if>
+			<if test="urgentPrice1 != null">
+				urgentPrice1 = #{urgentPrice1},
+			</if>
+			<if test="urgentPrice2 != null">
+				urgentPrice2 = #{urgentPrice2},
+			</if>
+				create_time=sysdate()
+				where id = #{id}
+	</update>
+	
+	<update id="updates" parameterType="map">
+		update tb_charge_standard_new
+			set 
+			<if test="createuserid != null">
+				createuserid = #{createuserid},
+			</if>
+			<if test="equation != null">
+				equation = #{equation},
+			</if>
+			<if test="singlePrice != null">
+				singlePrice = #{singlePrice},
+			</if>
+			<if test="doublePrice != null">
+				doublePrice = #{doublePrice},
+			</if>
+			<if test="samplePrice != null">
+				samplePrice = #{samplePrice},
+			</if>
+			<if test="gapPrice != null">
+				gapPrice = #{gapPrice},
+			</if>
+			<if test="specialPirce != null">
+				specialPirce = #{specialPirce},
+			</if>
+			<if test="urgentPrice != null">
+				urgentPrice = #{urgentPrice},
+			</if>
+				create_time=sysdate()
+				where id in  (${id})
+	</update>
+	
+	<update id="delete" parameterType="map">
+		update tb_charge_standard_new t set t.delete=2 where t.id=#{id}
+	</update>
+	
+	<update id="deleteInvasiveStandard" parameterType="map">
+		update tb_charge_standard_invasive t set t.delete=2 where id=#{id}
+	</update>
+	
+	<select id="queryInvasiveAllPage" parameterType="map" resultMap="chargeModel">
+		SELECT 
+		  t.id,
+		  t.areaname,
+		  t.areacode,
+		  t.program_type,
+		  t.equation,
+		  t.remark,
+		  t.samplePrice,
+		  t.urgentPrice,
+		  t.urgentPrice1,
+		  t.urgentPrice2,
+		  t.hospital
+		FROM
+		  tb_charge_standard_invasive t 
+		where t.delete =1 
+			<if test="areaname != null and areaname != ''">
+				and t.areaname like '%${areaname}%'
+			</if>	
+			<if test="program_type != null and program_type != ''">
+				and t.program_type =#{program_type}
+			</if>
+			<if test="hospital != null and hospital != ''">
+				and t.hospital like '%${hospital}%'
+			</if>
+			<if test="userid != null and userid != ''">
+				and (t.userid =#{userid} or  t.createuserid =#{userid})
+			</if>
+			<if test="limit != null and limit != ''">
+				limit #{start},#{limit}   
+		 	</if> 
+	</select>
+	
+	<select id="queryInvasiveAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+		 count(1) 
+		FROM
+		  tb_charge_standard_invasive t 
+		    where t.delete =1 
+			<if test="areaname != null and areaname != ''">
+				and t.areaname like '%${areaname}%'
+			</if>
+			<if test="userid != null and userid != ''">
+				and (t.userid =#{userid} or  t.createuserid =#{userid})
+			</if>
+			<if test="hospital != null and hospital != ''">
+				and t.hospital like '%${hospital}%'
+			</if>
+			<if test="program_type != null and program_type != ''">
+				and t.program_type =#{program_type}
+			</if>
+	</select>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="chargeModel">
+		SELECT 
+		  t.id,
+		  t.areaname,
+		  t.areacode,
+		  t.type,
+		  t.program_type,
+		  t.source_type,
+		  t.equation,
+		  t.remark,
+		  t.userid,
+		  t.username,
+		  t.agentid,
+		  t.agentname,
+		  t.singlePrice,
+		  t.doublePrice,
+		  t.samplePrice,
+		  t.gapPrice,
+		  t.specialPirce,
+	      t.specialPirce1,
+		  t.specialPirce2,
+		  t.urgentPrice,
+		  t.urgentPrice1,
+		  t.urgentPrice2
+		FROM
+		  tb_charge_standard_new t 
+		where t.delete =1 
+			<if test="areaname != null and areaname != ''">
+				and t.areaname like '%${areaname}%'
+			</if>	
+			<if test="type != null and type != ''">
+				and t.type =#{type}
+			</if>
+			<if test="source_type != null and source_type != ''">
+				and t.source_type =#{source_type}
+			</if>
+			<if test="program_type != null and program_type != ''">
+				and t.program_type =#{program_type}
+			</if>
+			<if test="username != null and username != ''">
+				and t.username like '%${username}%'
+			</if>
+			<if test="agentname != null and agentname != ''">
+				and t.agentname like '%${agentname}%'
+			</if>
+			<if test="userid != null and userid != ''">
+				and (t.userid =#{userid} or t.agentid =#{userid} or  t.createuserid =#{userid})
+			</if>
+			<if test="limit != null and limit != ''">
+				limit #{start},#{limit}   
+		 	</if> 
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="chargeModel">
+		select t.areaname,t.areacode,t.type,t.equation,t.discountrate,t.remark from tb_charge_standard t
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+		 count(1) 
+		FROM
+		  tb_charge_standard_new t 
+		    where t.delete =1 
+			<if test="areaname != null and areaname != ''">
+				and t.areaname like '%${areaname}%'
+			</if>
+			<if test="type != null and type != ''">
+				and t.type =#{type}
+			</if>	
+			<if test="username != null and username != ''">
+				and t.username like '%${username}%'
+			</if>
+			<if test="agentname != null and agentname != ''">
+				and t.agentname like '%${agentname}%'
+			</if>
+			<if test="userid != null and userid != ''">
+				and (t.userid =#{userid} or t.agentid =#{userid} or  t.createuserid =#{userid})
+			</if>
+			<if test="source_type != null and source_type != ''">
+				and t.source_type =#{source_type}
+			</if>
+			<if test="program_type != null and program_type != ''">
+				and t.program_type =#{program_type}
+			</if>
+	</select>
+	
+	<select id="queryExistInversiveCount" parameterType="map" resultType="Integer">
+		SELECT 
+		 count(1) 
+		FROM
+		  tb_charge_standard_invasive t 
+		    where t.delete =1 
+				and t.areacode =#{areacode}
+				and t.program_type =#{program_type}
+				and t.hospital =#{hospital}
+	</select>
+	
+	<select id="queryExistCount" parameterType="map" resultType="Integer">
+		SELECT 
+		 count(1) 
+		FROM
+		  tb_charge_standard_new t 
+		    where t.delete =1 
+			<if test="areacode != null and areacode != ''">
+				and t.areacode =#{areacode}
+			</if>
+			<if test="type != null and type != ''">
+				and t.type =#{type}
+			</if>	
+			<if test="source_type != null and source_type != ''">
+				and t.source_type =#{source_type}
+			</if>
+			<if test="program_type != null and program_type != ''">
+				and t.program_type =#{program_type}
+			</if>
+			<if test="userid != null and userid != ''">
+				and t.userid =#{userid}
+			</if>
+			<if test="id != null and id != ''">
+				and t.id = #{id}
+			</if>
+	</select>
+	
+	<select id="queryModel" parameterType="map" resultType="map">
+		SELECT 
+		  CONCAT(
+		    IFNULL(CONCAT(m.`name`,'-'),''),
+		    IFNULL(CONCAT(e.`name`,'-'),''),
+		    IFNULL(t.`name`,'')
+		  ) AS 'areaname' ,
+		  IF(m.id IS NULL AND e.id IS NULL,t.id,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,e.`id`,m.id)) AS 'provincecode',
+		  IF(m.id IS NULL AND e.id IS NULL,e.`id`,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,t.`id`,e.id)) AS 'citycode',
+		  IF(m.id IS NULL AND e.id IS NULL,m.`id`,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,m.`id`,t.id)) AS 'areacode'
+		FROM
+		  tb_dic_area_info t 
+		  LEFT JOIN tb_dic_area_info e 
+		    ON t.`parentID` = e.`id` 
+		  LEFT JOIN tb_dic_area_info m 
+		    ON e.`parentID` = m.`id` 
+		WHERE t.`id` = #{areacode}
+	</select>
+	
+	<select id="queryAreaInitials" parameterType="map" resultType="map">
+		SELECT t.`name`,t.`initials` FROM  `tb_dic_area_info`  t WHERE t.`id` = #{areacode}
+	</select>
+	
+	<select id="queryMarketByAgent" parameterType="map" resultType="map">
+		SELECT u.`username`,u.`userid` FROM tb_judicial_agent t LEFT JOIN tb_upc_users u 
+		ON t.`peruserid`=u.`userid` WHERE u.`delstatus` IS NULL  AND t.`delstatus`=0 and t.`userid` = #{userid}
+	</select>
+	
+	<select id="queryAscription" parameterType="map" resultType="com.rds.finance.model.RdsFinanceAscriptionInfo">
+		SELECT  t.`id`,t.`areaname`,t.`username`,t.`agentname`,t.`type` FROM tb_charge_standard t 
+		where 1=1  and t.`is_delete`='1'
+		<if test="query != null and query != ''">
+		    and t.`userinitials` LIKE '%${query}%'
+		 </if>
+		 <if test="companyid != null and companyid != ''">
+			and (t.companyid =#{companyid} or t.companyid is null)
+		 </if>
+		 <if test="id != null and id != ''">
+			and t.id=#{id}
+		 </if>
+		 order by t.areacode asc
+	</select>
+	
+	<select id="getEquation" parameterType="map"
+		resultType="com.rds.finance.model.RdsFinanceChargeStandardModel">
+		SELECT t.username,t.`equation`,t.specialPirce,t.specialPirce1,t.specialPirce2,t.samplePrice,t.urgentPrice,t.urgentPrice1,t.urgentPrice2 
+		FROM tb_charge_standard_new t
+		 WHERE t.`source_type`=#{source_type} 
+			and t.program_type=#{program_type}
+			and t.delete =1
+		<if test="type != null and type != ''">
+			and t.type=#{type}
+		 </if>
+		 <if test="case_userid != null and case_userid != ''">
+			and t.userid=#{case_userid}
+		 </if>
+		 <if test="case_areacode != null and case_areacode != ''">
+			and t.areacode=#{case_areacode}
+		 </if>
+		<!--  and t.`id`=#{receiver_id}  -->
+	</select>
+	
+	<select id="getInversivePerFinance" parameterType="map"
+		resultType="com.rds.finance.model.RdsFinanceChargeStandardModel">
+		SELECT * FROM `tb_charge_standard_invasive` t 
+		WHERE t.program_type=#{program_type}
+		 <if test="areaname != null and areaname != ''">
+			and #{areaname} LIKE CONCAT(t.`areaname`,'%') 
+		 </if>
+        <if test="hospital != null and hospital != ''">
+			and t.hospital=#{hospital}
+		 </if>
+		 ORDER BY t.`areacode` DESC
+	</select>
+	
+	<!-- 插入优惠编码 -->
+	<insert id="insertApplicationCode" parameterType="map">
+		insert into tb_judicial_casefee_special(id,confirm_code,oa_code,discount_amount,apply_date,apply_per,
+		monthly_per,monthly_area,estimate_date,confirm_per,confirm_date,case_state,case_type,remark) 
+		values(#{id},#{confirm_code},#{oa_code},#{discount_amount},#{apply_date},#{apply_per},
+		#{monthly_per},#{monthly_area},#{estimate_date},#{confirm_per},sysdate(),#{case_state},#{case_type},#{remark})
+	</insert>
+
+	<update id="updateCodeUsed" parameterType="map">
+		update tb_judicial_casefee_special set user_state=#{user_state},case_id=#{case_id} where confirm_code=#{confirm_code}
+	</update>
+
+	<select id="queryAllSpecialFinance" parameterType="map" resultMap="specialModel">
+		SELECT 
+		  t.*,
+		  u.`username` AS 'monthly_pername',
+		  i.areaname AS 'monthly_areaname' ,
+		  u1.username as 'apply_pername'
+		FROM
+		  tb_judicial_casefee_special t 
+		  LEFT JOIN tb_upc_users u 
+		    ON t.`monthly_per` = u.`userid` 
+		    LEFT JOIN tb_upc_users u1
+		    ON t.`apply_per` = u1.`userid` 
+		  LEFT JOIN 
+		    (SELECT 
+		      CONCAT(
+		        IFNULL(CONCAT(m.`name`, '-'), ''),
+		        IFNULL(CONCAT(e.`name`, '-'), ''),
+		        IFNULL(t.`name`, '')
+		      ) AS 'areaname',
+		      t.`id` 
+		    FROM
+		      tb_dic_area_info t 
+		      LEFT JOIN tb_dic_area_info e 
+		        ON t.`parentID` = e.`id` 
+		      LEFT JOIN tb_dic_area_info m 
+		        ON e.`parentID` = m.`id`) i 
+		    ON t.`monthly_area` = i.id 
+		    where  1=1 and t.delete=0
+		 <if test="userid != null and userid != ''">
+				and t.confirm_per =#{userid}
+		 </if>
+		 <if test="confirm_code != null and confirm_code != ''">
+				and t.confirm_code = #{confirm_code}
+		 </if>
+		 <if test="oa_code != null and oa_code != ''">
+				and t.oa_code like '%${oa_code}%'
+		 </if>
+		  <if test="case_state != null and case_state != ''">
+				and t.case_state = #{case_state}
+		 </if>
+		 <if test="case_type != null and case_type != ''">
+				and t.case_type = #{case_type}
+		 </if>
+		  <if test="case_id != null and case_id != ''">
+				and t.case_id = #{case_id}
+		 </if>
+		 <if test="activation_state != null and activation_state != ''">
+				and t.activation_state = #{activation_state}
+		 </if>
+		 <if test="settlement_state != null and settlement_state != ''">
+				and t.settlement_state = #{settlement_state}
+		 </if>
+		  <if test="user_state != null and user_state != ''">
+				and t.user_state = #{user_state}
+		 </if>
+		 <if test="monthly_areaname != null and monthly_areaname != ''">
+				and i.areaname like '%${monthly_areaname}%'
+		 </if>
+		 <if test="monthly_pername != null and monthly_pername != ''">
+				and u.username like '%${monthly_pername}%'
+		 </if>
+		  <if test="monthly_area != null and monthly_area != ''">
+				and t.monthly_area IN (SELECT 
+						    t.id 
+						  FROM
+						    tb_dic_area_info t 
+						  WHERE t.`id` = #{monthly_area}
+						  UNION
+						  SELECT 
+						    e.`id` 
+						  FROM
+						    tb_dic_area_info t 
+						    LEFT JOIN tb_dic_area_info e 
+						      ON t.`parentID` = e.`id` 
+						  WHERE t.`id` = #{monthly_area}
+						  UNION
+						  SELECT 
+						    m.`id` 
+						  FROM
+						    tb_dic_area_info t 
+						    LEFT JOIN tb_dic_area_info e 
+						      ON t.`parentID` = e.`id` 
+						    LEFT JOIN tb_dic_area_info m 
+						      ON e.`parentID` = m.`id` 
+						  WHERE t.id = #{monthly_area})
+		 </if>
+		 <if test="monthly_per != null and monthly_per != ''">
+				and t.monthly_per = #{monthly_per}
+		 </if>
+		  <if test="apply_pername != null and apply_pername != ''">
+				and u1.username like '%${apply_pername}%'
+		 </if>
+		 <if test="create_endtime != null and create_endtime != ''">
+				and #{create_endtime} >= t.confirm_date
+		 </if>
+		 <if test="create_starttime != null and create_starttime != ''">
+				and t.confirm_date >= #{create_starttime}
+		 </if>
+		 ORDER BY t.`apply_date` DESC
+		 <if test="limit != null and limit != ''">
+			LIMIT #{start},#{limit} 
+		 </if>
+	</select>
+	
+	<select id="queryCountSpecialFinance" parameterType="map" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		  tb_judicial_casefee_special t 
+		  LEFT JOIN tb_upc_users u 
+		    ON t.`monthly_per` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1
+		    ON t.`apply_per` = u1.`userid` 
+		  LEFT JOIN 
+		    (SELECT 
+		      CONCAT(
+		        IFNULL(CONCAT(m.`name`, '-'), ''),
+		        IFNULL(CONCAT(e.`name`, '-'), ''),
+		        IFNULL(t.`name`, '')
+		      ) AS 'areaname',
+		      t.`id` 
+		    FROM
+		      tb_dic_area_info t 
+		      LEFT JOIN tb_dic_area_info e 
+		        ON t.`parentID` = e.`id` 
+		      LEFT JOIN tb_dic_area_info m 
+		        ON e.`parentID` = m.`id`) i 
+		    ON t.`monthly_area` = i.id 
+		  where  1=1 and t.delete=0
+		 <if test="userid != null and userid != ''">
+				and t.confirm_per =#{userid}
+		 </if>
+		 <if test="confirm_code != null and confirm_code != ''">
+				and t.confirm_code like '%${confirm_code}%'
+		 </if>
+		 <if test="oa_code != null and oa_code != ''">
+				and t.oa_code like '%${oa_code}%'
+		 </if>
+		  <if test="case_state != null and case_state != ''">
+				and t.case_state = #{case_state}
+		 </if>
+		 <if test="case_type != null and case_type != ''">
+				and t.case_type = #{case_type}
+		 </if>
+		  <if test="case_id != null and case_id != ''">
+				and t.case_id = #{case_id}
+		 </if>
+		 <if test="activation_state != null and activation_state != ''">
+				and t.activation_state = #{activation_state}
+		 </if>
+		 <if test="settlement_state != null and settlement_state != ''">
+				and t.settlement_state = #{settlement_state}
+		 </if>
+		 <if test="user_state != null and user_state != ''">
+				and t.user_state = #{user_state}
+		 </if>
+		 <if test="monthly_areaname != null and monthly_areaname != ''">
+				and i.areaname like '%${monthly_areaname}%'
+		 </if>
+		 <if test="monthly_pername != null and monthly_pername != ''">
+				and u.username like '%${monthly_pername}%'
+		 </if>
+		 <if test="apply_pername != null and apply_pername != ''">
+				and u1.username like '%${apply_pername}%'
+		 </if>
+		  <if test="create_endtime != null and create_endtime != ''">
+				and #{create_endtime} >= t.confirm_date
+		 </if>
+		 <if test="create_starttime != null and create_starttime != ''">
+				and t.confirm_date >= #{create_starttime}
+		 </if>
+	</select>
+	
+	<select id="queryFinanceSpecialExist" parameterType="map"  resultType="Integer">
+		SELECT COUNT(1) FROM tb_judicial_casefee_special t
+		WHERE  t.user_state  &lt;&gt; 3 AND t.`monthly_per` = #{monthly_per} AND t.`monthly_area`=#{monthly_area}
+		and t.case_type=#{case_type}
+	</select>
+	
+	<update id="deleteConfirm" parameterType="map">
+		update tb_judicial_casefee_special t set t.delete=1,t.delete_per=#{userid} where t.id=#{id}
+	</update>
+</mapper>

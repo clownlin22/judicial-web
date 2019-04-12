@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcLaboratoryMapper">
+    <insert id="insertLaboratory" parameterType="map">
+        insert into tb_upc_laboratory (laboratory_name)
+        values(#{laboratory_name});
+    </insert>
+
+    <select id="queryLaboratory" parameterType="map"
+            resultType="com.rds.upc.model.RdsUpcLaboratoryModel">
+        select deptcode as laboratory_no,
+        deptname as laboratory_name from tb_upc_department
+        where islaboratory = 'Y'
+    </select>
+
+    <select id="queryCountLaboratory" parameterType="map" resultType="int">
+        select count(*) from tb_upc_laboratory
+        where 1
+        <if test="laboratory_name!=null and laboratory_name!=''">
+            and laboratory_name like '%${laboratory_name}%'
+        </if>
+    </select>
+
+    <update id="updateLaboratory" parameterType="map">
+        update tb_upc_laboratory set laboratory_name = #{laboratory_name}
+        where laboratory_no = #{laboratory_no}
+    </update>
+
+    <delete id="deleteLaboratory" parameterType="string">
+        delete from tb_upc_laboratory
+        where laboratory_no = #{laboratory_no}
+    </delete>
+</mapper>

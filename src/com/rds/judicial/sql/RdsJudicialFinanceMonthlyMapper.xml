@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialFinanceMonthlyMapper">
+	<insert id="insertMonthly" parameterType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		INSERT INTO
+		`tb_judicial_financedaily` (`id`, `userid`, `sum`,
+		`type`,`daily_time`, `balancetype`,`status`) VALUES (#{id},#{userid}, #{sum},
+		#{type},#{daily_time}, '1','2')
+	</insert>
+	
+	<select id="getManagerListMonthly" resultType="String">
+	SELECT t.case_userid FROM tb_judicial_casefee c LEFT JOIN tb_judicial_case_info t ON c.`case_id`=t.`case_id`
+		WHERE NOW() >= c.`update_date` AND c.`type` = 4 AND c.`dailyid` IS NULL AND t.`case_userid` IS NOT NULL GROUP BY t.`case_userid`
+		<!-- SELECT 
+		  t.`case_userid` 
+		FROM
+		tb_judicial_casefee c
+		LEFT JOIN 
+		  tb_judicial_case_info t 
+		  ON c.`case_id`=t.`case_id`
+		  LEFT JOIN tb_judicial_casefee_special cs
+		  ON t.`case_userid`=cs.monthly_per
+		WHERE c.`type` = 4 AND cs.`estimate_date` = CURDATE() AND cs.delete=0  AND c.`dailyid` IS NULL
+		  AND DATE_FORMAT(c.`update_date`,'%Y-%m-%d') >=  DATE_SUB(DATE_SUB(DATE_FORMAT(NOW(),'%y-%m-%d'),INTERVAL EXTRACT(    
+   DAY FROM NOW())-1 DAY),INTERVAL 1 MONTH)
+		  AND DATE_SUB(DATE_SUB(DATE_FORMAT(NOW(),'%y-%m-%d'),INTERVAL EXTRACT(  
+   DAY FROM NOW()) DAY),INTERVAL 0 MONTH) >= DATE_FORMAT(c.`update_date`,'%Y-%m-%d')
+		GROUP BY t.`case_userid` 
+		-->
+		<!-- 
+		SELECT
+		a.`userid`
+		FROM
+		`tb_upc_area` a
+		WHERE a.`userid` IS NOT NULL
+		AND a.`is_delete` = 0
+		GROUP
+		BY a.`userid`
+		 -->
+	</select>
+
+	<select id="getCase4Monthly" parameterType="String" resultType="map">
+		SELECT 
+		  f.id as 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_judicial_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`is_delete` = 0 
+		 <!--  AND f.`status`=3 -->
+		  AND f.type = 4
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_userid` = #{userid} 
+	<!--  
+		SELECT 
+		  f.id as 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum` ,
+		  f.real_sum,
+		  f.`discount`
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_judicial_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND DATE_FORMAT(f.`update_date`,'%Y-%m-%d') >=  DATE_SUB(DATE_SUB(DATE_FORMAT(NOW(),'%y-%m-%d'),INTERVAL EXTRACT(    
+   DAY FROM NOW())-1 DAY),INTERVAL 1 MONTH)   
+		  AND DATE_SUB(DATE_SUB(DATE_FORMAT(NOW(),'%y-%m-%d'),INTERVAL EXTRACT(  
+   DAY FROM NOW()) DAY),INTERVAL 0 MONTH) >= DATE_FORMAT(f.`update_date`,'%Y-%m-%d')
+		  AND i.`is_delete` = 0 
+		  AND f.`status`=3
+		  AND f.type = 4
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_userid` = #{userid}-->
+	<!-- 
+		SELECT
+		i.`case_id`,
+		f.`stand_sum`,
+		f.`discount`
+		FROM
+		`tb_judicial_casefee`
+		f
+		LEFT JOIN
+		`tb_judicial_case_info` i
+		ON f.`case_id` = i.`case_id`
+		LEFT
+		JOIN
+		`tb_upc_area` ar
+		ON ar.`area_id` = i.`receiver_id`
+		WHERE f.`status`
+		= 0
+		AND f.`type` = 4
+		AND ar.`userid` = #{userid} -->
+	</select>
+
+	<select id="getMonthly" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		SELECT
+		*
+		FROM
+		`tb_judicial_financedaily` m
+		WHERE m.`balancetype`=1 and m.status=0
+		AND m.`userid` = #{userid}
+		ORDER BY m.`daily_time` DESC
+		LIMIT 0,6
+	</select>
+	<select id="getAllMonthly" parameterType="map" resultType="map">
+		SELECT
+		m.*,
+		u.`username`
+		FROM
+		`tb_judicial_financedaily` m
+		LEFT JOIN
+		`tb_upc_users` u
+		ON m.`userid`=u.`userid`
+		where m.status = 2 and m.`balancetype`=1
+		<if test="search!=null and search!=''">
+			and u.username like '%${search}%'
+		</if>
+		<if test="userid !=null and userid !=''">
+			and m.userid=#{userid}
+		</if>
+		ORDER BY m.`status` DESC
+		LIMIT #{start},#{limit}
+	</select>
+	<select id="getAllMonthlyCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(1)
+		FROM
+		`tb_judicial_financedaily` m
+		LEFT JOIN
+		`tb_upc_users` u
+		ON m.`userid`=u.`userid`
+		where  m.status = 2 and m.`balancetype`=1
+		<if test="search!=null and search!=''">
+			and u.username like '%${search}%'
+		</if>
+		<if test="userid !=null and userid !=''">
+			and m.userid=#{userid}
+		</if>
+	</select>
+	<update id="updateStatus" parameterType="map">
+		UPDATE
+		`tb_judicial_financedaily` m
+		SET
+		m.`status` =0,
+		m.`sum`=#{sum},
+		m.`discountsum`=#{discountsum},
+		m.`remark`=#{remark}
+		WHERE m.`id`=#{id}
+	</update>
+
+	<update id="confirmStatus" parameterType="String">
+		UPDATE
+		`tb_judicial_financedaily` d SET d.`status`= 1 WHERE d.`id`=#{id}
+	</update>
+</mapper>

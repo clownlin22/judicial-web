@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcDepartmentMapper" >
+	<resultMap id="department" type="com.rds.upc.model.RdsUpcDepartmentModel">
+		<id column="departmentcode" property="departmentcode"/>
+		<result column='departmentname' property="departmentname"/>
+		<result column='companyname' property="companyname"/>
+		<result column='companyid' property="companyid"/>
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_department
+		(deptid,deptname,parentid,deptcode,parentdeptcode,delstatus,companyid,islaboratory)
+  		values(#{deptid},#{deptname},#{parentid},#{deptcode},#{parentdeptcode},'0',#{companyid},#{islaboratory})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_upc_department 
+		set deptname=#{deptname},
+			parentid=#{parentid},
+			deptcode = #{deptcode},
+			islaboratory = #{islaboratory},
+			parentdeptcode = #{parentdeptcode},
+			companyid=#{companyid}
+			 where deptid = #{deptid} 
+	</update>
+	<update id="updateJunior" parameterType="map">
+		update tb_upc_department 
+		set companyid=#{companyid} where deptid in (${ids}) 
+	</update>
+	<delete id="delete" parameterType="map">
+		 update tb_upc_department set delstatus = 1 where deptid in (${ids}) 
+		<!--delete from tb_upc_department where deptid in (${ids})-->
+	</delete>
+	
+	<select id="queryChildInfo" parameterType="map" resultType="string">
+		select queryChildrenDeptInfo('${ids}')
+	</select>
+	
+	<select id="queryAllPage" parameterType="map" resultType="department">
+		select *
+		  from (select t.*, rownum xh from tb_upc_department t where 1=1 and t.delstatus=0
+		  	<if test="companyid != null">
+				and companyid = #{companyid}
+			</if>	
+			<if test="departmentname != null">
+				and departmentname like '%'||#{departmentname}||'%'
+			</if>	
+			order by t.companyid desc	  
+		  )
+		 where xh <![CDATA[>]]> #{start}
+		   and xh <![CDATA[<=]]> #{end}
+	</select>
+	<select id="queryModel" parameterType="map" resultType="department">
+	select * from tb_upc_department t where 1=1 and t.delstatus=0
+		<if test="deptid != null and deptid != '' and deptid != 'null' ">
+			and t.deptid=#{deptid}
+		</if>	
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_company t where 1=1 and t.status=1
+		  	<if test="companyid != null">
+				and companyid = #{companyid}
+			</if>	
+	</select>
+	<select id="queryCountByCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_department t where 1=1 and t.delstatus=0
+		  	<if test="deptcode != null and deptcode != '' and deptcode != 'null'">
+				and deptcode = #{deptcode}
+			</if>	
+			<if test="deptid != null and deptid != '' and deptid != 'null' ">
+				and t.deptid=#{deptid}
+			</if>	
+	</select>
+	
+	<select id="queryDepartmentList"  parameterType="map" resultType="com.rds.upc.model.RdsTreeStoreModel">
+		select 	   
+			t.deptid as id,
+		    t.deptname as text,
+		       (select case
+		                 when count(*) > 0 then
+		                  'false'
+		                 else
+		                  'true'
+		               end
+		          from tb_upc_department a
+		         where a.parentid = t.deptid and delstatus=0) leaf,
+		         (SELECT 
+				    CASE
+				      WHEN COUNT(*) > 0 
+				      THEN 'true' 
+				      ELSE 'false' 
+				    END 
+				  FROM
+				    `tb_upc_users` u 
+				  WHERE u.deptcode = t.`deptcode` 
+				    AND u.usercode = #{usercode}) AS checked
+		  from tb_upc_department t
+		  LEFT JOIN tb_upc_company b ON t.companyid=b.companyid
+		 where t.parentid = #{node}
+		  <if test="companyid != null and companyid != '' and companyid != 'null' ">
+				and b.companyid = #{companyid}
+		  </if>
+		  <if test="deptname != null and deptname != '' and deptname != 'null' ">
+				and t.deptname like concat('%', #{deptname}, '%') 
+		  </if>
+		 and t.delstatus=0 and b.status=1
+		 order by leaf asc
+	</select>
+	
+	<!-- 部门树形结构 -->
+	<select id="queryAll" parameterType="map" resultType="department">
+		select * from (
+		select t.deptid ,
+		       t.deptname,
+		       t.parentdeptcode,
+			   t.parentid,
+               t.islaboratory,
+		       (case
+		         when t.parentid='0' then
+		          '无'
+		         else
+		          (select deptname
+		             from tb_upc_department aa
+		            where t.parentid = aa.deptid)
+		       end) parentname,
+		       t.deptcode,
+		       b.companyid,
+		       b.companyname,
+		       (select case
+		                 when count(*) > 0 then
+		                  'false'
+		                 else
+		                  'true'
+		               end
+		          from tb_upc_department a
+		         where a.parentid = t.deptid and delstatus=0) leaf
+		  from tb_upc_department t
+		  LEFT JOIN tb_upc_company b ON t.companyid=b.companyid
+		 where t.parentid = #{parentcode}
+		  <if test="companyid != null and companyid != '' and companyid != 'null' ">
+				and b.companyid = #{companyid}
+		  </if>
+		 and t.delstatus=0 and b.status=1) tt
+		 where 1=1
+		  <if test="deptcode != null and deptcode != '' and deptcode != 'null' ">
+				and tt.deptcode like '%${deptcode}%' 
+		  </if>
+		  <if test="deptname != null and deptname != '' and deptname != 'null' ">
+				and (tt.deptname like '%${deptname}%' or tt.parentname like '%${deptname}%' )
+		  </if>
+		  order by tt.deptcode
+	</select>
+	<select id="queryTreeCombo" parameterType="map" resultType="upctreenode">
+		select t.deptid id,
+		       t.deptname text,
+		       t.parentdeptcode,
+			   t.parentid,
+		       (case
+		         when t.parentid='0' then
+		          '无'
+		         else
+		          (select deptname
+		             from tb_upc_department aa
+		            where t.parentid = aa.deptid)
+		       end) parentname,
+		       t.deptcode,
+		       (select case
+		                 when count(*) > 0 then
+		                  'false'
+		                 else
+		                  'true'
+		               end
+		          from tb_upc_department a
+		         where a.parentid = t.deptid and a.delstatus=0) leaf
+		  from tb_upc_department t INNER JOIN tb_upc_company c ON t.companyid = c.companyid
+		 where t.parentid = #{parentcode}
+		 <if test="companyid != null and companyid != '' and companyid != 'null' ">
+				and c.companyid = #{companyid}
+		 </if>
+		 and t.delstatus=0 and c.status=1
+		 order by t.companyid asc
+	</select>
+</mapper>

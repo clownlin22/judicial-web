@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>儿童基因详细信息</title>
+
+<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+<meta http-equiv="description" content="this is my page">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style type="text/css">
+html, body {
+	height: 100%;
+}
+
+.detail_bg {
+	width: 100%;
+	background: url(resources/assets/img/detail_bg.jpg) no-repeat center;
+	background-size: 1920px 2910px;
+	height: 2910px;
+	margin: 0 auto;
+	position: absolute;
+}
+
+.detail_body {
+	margin: 120px auto;
+	width: 1200px;
+}
+
+.children_grid, .parents_grid {
+	margin-bottom: 70px;
+	box-shadow: 0 0 10px #d6e2e5;
+}
+
+.grid_title {
+	padding-top: 15px;
+	padding-bottom: 15px;
+	padding-left: 30px;
+	height: 50px;
+	background-color: #628d0a;
+}
+
+.grid_title>p {
+	font-size: 18px;
+	color: #ffffff;
+	font-family: "黑体";
+}
+
+.grid_body {
+	background: #ffffff;
+	padding: 50px;
+}
+
+.table, .gtable {
+	border-collapse: collapse;
+}
+
+.table  td {
+	height: 40px;
+}
+
+.labelname {
+	width: 165px;
+	background-color: #ededed;
+	text-align: center;
+	color: #666666;
+	font-size: 18px;
+	font-family: "黑体";
+}
+
+.detailtext, .address {
+	text-align: center;
+	font-family: "黑体";
+	font: 14px #666666;
+}
+
+#child_name {
+	width: 185px;
+}
+
+#labelbirth {
+	width: 205px;
+}
+
+#child_birth {
+	width: 215px;
+}
+
+#child_sex {
+	width: 155px;
+}
+
+#creditcard {
+	width: 392px;
+}
+
+#parent_name {
+	width: 185px;
+}
+
+#parent_credit {
+	width: 465px;
+}
+
+#parent_phone {
+	width: 440px;
+}
+
+#parent_addr {
+	height: 80px;
+}
+
+.gene_title {
+	width: 173px;
+	float: left;
+	margin-right: 20px;
+	margin-bottom: 70px;
+	margin-right: 20px;
+}
+
+#gene_title_text {
+	text-align: center;
+	font-size: 36px;
+	font-family: "黑体";
+	color: #669900;
+}
+
+.child_name_code {
+	float: left;
+	width: 1000px;
+	font-size: 18px;
+	font-family: "黑体";
+	color: #669900;
+	padding-top: 20px;
+	margin-bottom: 70px;
+}
+
+.gene_table {
+	margin-left: 150px;
+	float: left;
+}
+
+#gene_dna_png {
+	height: 978px;
+	width: 604px;
+}
+
+.tyellow, .tgreen, .vyellowheavy, .vyellowlite, .vgreenheavy,
+	.vgreenlite {
+	height: 30px;
+	text-align: center;
+	color: #ffffff;
+	font-size: 18px;
+	font-family: "黑体";
+}
+
+.vyellowheavy, .vyellowlite, .vgreenheavy, .vgreenlite {
+	width: 71px;
+}
+
+.tyellow, .tgreen {
+	width: 142px;
+}
+
+.tyellow {
+	background-color: #f09b5b;
+}
+
+.tgreen {
+	background-color: #7fa33c;
+}
+
+.vyellowheavy {
+	background-color: #f7bd62;
+}
+
+.vyellowlite {
+	background-color: #facf88;
+}
+
+.vgreenheavy {
+	background-color: #9bce84;
+}
+
+.vgreenlite {
+	background-color: #b1da79;
+}
+
+.blankrow1 {
+	height: 5px;
+}
+
+.blankrow2 {
+	height: 20px;
+}
+
+.hint {
+	font: 18px "黑体";
+	float: left;
+}
+
+#hint_text {
+	color: #e75454;
+}
+
+.corporation_info {
+	text-align: right;
+	float: right;
+	font-size: 18px;
+	font-family: "黑体";
+	color: #666666;
+}
+</style>
+<script type="text/javascript" src="resources/assets/js/jquery.min.js"></script>
+<script type="text/javascript">
+var QueryString = "";
+$(document).ready(
+		function(){
+			var URL = document.location.toString();
+			if(URL.lastIndexOf("?")!=-1){
+				QueryString = URL.substring(URL.lastIndexOf("?")+1,URL.length);
+				$.ajax({
+					//url :'children/info/getChildGene.do',
+					url:'http://localhost:8080/judicial-web/ws/getChildrenGene/'+QueryString,
+					async : false,
+					type : 'GET',
+					dataType : 'jsonp',
+					jsonp:'_jsonp',
+					jsonpCallback:'jsonfun',
+					success : function(data) {
+						if (!data.success) {
+							alert(data.msg);
+							window.location = 'Childindex.html';
+						} else {
+							$("#child_name,#child_name2").text(data.childinfo.child_name);
+							$("#child_birth").text(data.childinfo.birth_date);
+							$("#child_sex").text(function(){if(data.childinfo.child_sex==0)return "女";else return "男";});
+							$("#creditcard").text(data.childinfo.id_number);
+							$("#birthhospital").text(data.childinfo.birth_hospital);
+							$("#house_area").text(data.childinfo.house_area);
+							$("#life_area").text(data.childinfo.life_area);
+							$("#parents_name1").text(data.custodyinfo[0].custody_name);
+							$("#parents_name2").text(data.custodyinfo[1].custody_name);
+							$("#parents_id1").text(data.custodyinfo[0].id_number);
+							$("#parents_id2").text(data.custodyinfo[1].id_number);
+							$("#parents_phone1").text(data.custodyinfo[0].phone);
+							$("#parents_phone2").text(data.custodyinfo[1].phone);
+							$("#parents_addr").text(data.childinfo.mail_area);
+							$("#child_case_code").text("("+data.childinfo.case_code+")");
+							$("#parents_addr").text(data.childinfo.mail_area);
+							for(var i=1;i<=data.locusinfo.length;i++){
+								$("#gtt"+i).text(data.locusinfo[i-1].locus_name);
+								$("#gtv"+i).text(data.locusinfo[i-1].locus_value1);
+								$("#gvv"+i).text(data.locusinfo[i-1].locus_value2);
+								}
+						}
+					},
+					error : function() {
+						alert("出错了!");
+					}
+				});
+			}else{
+				window.location = 'Childindex.html';
+				alert("请求数据出错!");
+				}
+		}
+	);
+</script>
+</head>
+
+<body>
+	<div class="detail_bg">
+		<div class="detail_body">
+			<div class="children_grid">
+				<div class="grid_title">
+					<p>宝宝信息</p>
+				</div>
+				<div class="grid_body">
+					<div class="children_grid">
+						<table class="table" border="1">
+							<tr>
+								<td class="labelname">姓名</td>
+								<td class="detailtext" id="child_name"></td>
+								<td class="labelname" id="labelbirth">出生年月日（公历）</td>
+								<td class="detailtext" id="child_birth"></td>
+								<td class="labelname">性别</td>
+								<td class="detailtext" id="child_sex"></td>
+							</tr>
+							<tr>
+								<td class="labelname">身份证号</td>
+								<td class="detailtext" colspan="2" id="creditcard"></td>
+								<td class="labelname">出生医院名称</td>
+								<td colspan="2" class="detailtext" id="birthhospital"></td>
+							</tr>
+							<tr>
+								<td class="labelname">户籍所在地</td>
+								<td colspan="5" class="address" id="house_area"></td>
+							</tr>
+							<tr>
+								<td class="labelname">生活所在地</td>
+								<td colspan="5" class="address" id="life_area"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="parents_grid">
+				<div class="grid_title">
+					<p>监护人信息</p>
+				</div>
+				<div class="grid_body">
+					<div class="parents_grid">
+						<table class="table" border="1">
+							<tr>
+								<td class="labelname" id="parent_name">姓名</td>
+								<td class="labelname" id="parent_credit">身份证号</td>
+								<td class="labelname" id="parent_phone">手机号</td>
+							</tr>
+							<tr>
+								<td class="detailtext" id="parents_name1"></td>
+								<td class="detailtext" id="parents_id1"></td>
+								<td class="detailtext" id="parents_phone1"></td>
+							</tr>
+							<tr>
+								<td class="detailtext" id="parents_name2"></td>
+								<td class="detailtext" id="parents_id2"></td>
+								<td class="detailtext" id="parents_phone2"></td>
+							</tr>
+							<tr>
+								<td class="detailtext" id="parent_addr">信息反馈寄送地<br>
+									址及联系人信息
+								</td>
+								<td colspan="2" class="address" id="parents_addr"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="gene_grid">
+				<div class="gene_title">
+					<div id="gene_title_text">基因信息</div>
+					<img alt="color_bottom" src="resources/assets/img/detail_line.png">
+				</div>
+				<div class="child_name_code">
+					<div id="child_name2"></div>
+					<div id="child_case_code"></div>
+				</div>
+				<div class="gene_table">
+					<table class="gtable">
+						<tr>
+							<td class="tyellow" colspan="2" id="gtt1"></td>
+							<td rowspan="30"><img alt="gene_dna" id="gene_dna_png"
+								src="resources/assets/img/detail_dna.png"></td>
+							<td class="tgreen" colspan="2" id="gtt2"></td>
+						</tr>
+						<tr>
+							<td class="vyellowheavy" id="gtv1"></td>
+							<td class="vyellowlite" id="gvv1"></td>
+							<td class="vgreenheavy" id="gtv2"></td>
+							<td class="vgreenlite" id="gvv2"></td>
+						</tr>
+						<tr>
+							<td colspan="5" class="blankrow1"></td>
+						</tr>
+						<tr>
+							<td class="tyellow" colspan="2" id="gtt3"></td>
+							<td class="tgreen" colspan="2" id="gtt4"></td>
+						</tr>
+						<tr>
+							<td class="vyellowheavy" id="gtv3"></td>
+							<td class="vyellowlite" id="gvv3"></td>
+							<td class="vgreenheavy" id="gtv4"></td>
+							<td class="vgreenlite" id="gvv4"></td>
+						</tr>
+						<tr>
+							<td colspan="5" class="blankrow2"></td>
+						</tr>
+						<tr>
+							<td class="tgreen" colspan="2" id="gtt5"></td>
+							<td class="tyellow" colspan="2" id="gtt6"></td>
+						</tr>
+						<tr>
+							<td class="vgreenheavy" id="gtv5"></td>
+							<td class="vgreenlite" id="gvv5"></td>
+							<td class="vyellowheavy" id="gtv6"></td>
+							<td class="vyellowlite" id="gvv6"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tgreen" colspan="2" id="gtt7"></td>
+							<td class="tyellow" colspan="2" id="gtt8"></td>
+						</tr>
+						<tr>
+							<td class="vgreenheavy" id="gtv7"></td>
+							<td class="vgreenlite" id="gvv7"></td>
+							<td class="vyellowheavy" id="gtv8"></td>
+							<td class="vyellowlite" id="gvv8"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tgreen" colspan="2" id="gtt9"></td>
+							<td class="tyellow" colspan="2" id="gtt10"></td>
+						</tr>
+						<tr>
+							<td class="vgreenheavy" id="gtv9"></td>
+							<td class="vgreenlite" id="gvv9"></td>
+							<td class="vyellowheavy" id="gtv10"></td>
+							<td class="vyellowlite" id="gvv10"></td>
+						</tr>
+						<tr>
+							<td class="blankrow2" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tyellow" colspan="2" id="gtt11"></td>
+							<td class="tgreen" colspan="2" id="gtt12"></td>
+						</tr>
+						<tr>
+							<td class="vyellowheavy" id="gtv11"></td>
+							<td class="vyellowlite" id="gvv11"></td>
+							<td class="vgreenheavy" id="gtv12"></td>
+							<td class="vgreenlite" id="gvv12"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tyellow" colspan="2" id="gtt13"></td>
+							<td class="tgreen" colspan="2" id="gtt14"></td>
+						</tr>
+						<tr>
+							<td class="vyellowheavy" id="gtv13"></td>
+							<td class="vyellowlite" id="gvv13"></td>
+							<td class="vgreenheavy" id="gtv14"></td>
+							<td class="vgreenlite" id="gvv14"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tyellow" colspan="2" id="gtt15"></td>
+							<td class="tgreen" colspan="2" id="gtt16"></td>
+						</tr>
+						<tr>
+							<td class="vyellowheavy" id="gtv15"></td>
+							<td class="vyellowlite" id="gvv15"></td>
+							<td class="vgreenheavy" id="gtv16"></td>
+							<td class="vgreenlite" id="gvv16"></td>
+						</tr>
+						<tr>
+							<td class="blankrow2" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tgreen" colspan="2" id="gtt17"></td>
+							<td class="tyellow" colspan="2" id="gtt18"></td>
+						</tr>
+						<tr>
+							<td class="vgreenheavy" id="gtv17"></td>
+							<td class="vgreenlite" id="gvv17"></td>
+							<td class="vyellowheavy" id="gtv18"></td>
+							<td class="vyellowlite" id="gvv18"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+						<tr>
+							<td class="tgreen" colspan="2" id="gtt19"></td>
+							<td class="tyellow" colspan="2" id="gtt20"></td>
+						</tr>
+						<tr>
+							<td class="vgreenheavy" id="gtv19"></td>
+							<td class="vgreenlite" id="gvv19"></td>
+							<td class="vyellowheavy" id="gtv20"></td>
+							<td class="vyellowlite" id="gvv20"></td>
+						</tr>
+						<tr>
+							<td class="blankrow1" colspan="5"></td>
+						</tr>
+					</table>
+				</div>
+
+			</div>
+			<div class="hint">
+				<div>
+					<p>
+						<span id="hint_text">友情提示:</span>以上信息有任何变动，请及时与我公司联系修改。（4000706200）
+					</p>
+				</div>
+			</div>
+			<div class="corporation_info">
+				<p>江苏苏博生物医学科技有限公司</p>
+				<p>宿迁子渊司法鉴定所</p>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

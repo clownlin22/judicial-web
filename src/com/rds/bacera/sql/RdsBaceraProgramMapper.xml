@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraProgramMapper" >
+	<resultMap id="bacreaProgram" type="com.rds.bacera.model.RdsBaceraProgramModel">
+		<id column="id" property="id"/>
+		<result column='program_name' property="program_name"/>
+		<result column='program_code' property="program_code"/>
+		<result column='program_type' property="program_type" />
+		<result column='create_per' property="create_per"/>
+		<result column='create_pername' property="create_pername" />
+		<result column='create_time' property="create_time" />
+		<result column='is_delete' property="is_delete" />
+		<result column='remark' property="remark" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_bacera_program
+		(id,program_name,program_code,program_type,create_time,create_per,remark)
+		values(#{id},#{program_name},#{program_code},#{program_type},now(),#{create_per},#{remark})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_bacera_program 
+		set 
+		    create_time = now()
+			<if test="program_name != null">
+				,program_name=#{program_name}
+			</if>
+			<if test="program_code != null">
+				,program_code=#{program_code}
+			</if>	
+			<if test="program_type != null">
+				,program_type=#{program_type}
+			</if>	
+			<if test="create_per != null">
+				,create_per=#{create_per}
+			</if>	
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>
+			where id = #{id}
+	</update>
+	
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		update tb_bacera_program set is_delete='2' where id = #{id}
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="bacreaProgram">
+		 SELECT 
+			  a.*,u.username as create_pername
+			FROM
+			  tb_bacera_program a 
+			  left join tb_upc_users u on a.create_per=u.userid
+			  WHERE 1=1
+			<if test="program_name != '' and program_name != null">
+				and a.program_name like concat('%', #{program_name}, '%') 
+			</if>
+			<if test="program_type != '' and program_type != null">
+				and a.program_type like concat('%', #{program_type}, '%') 
+			</if>	
+			<if test="is_delete != '' and is_delete != null">
+				and a.is_delete = #{is_delete}
+			</if>	
+			order by a.create_time desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="bacreaProgram">
+		 SELECT a.* FROM tb_bacera_program a 
+		 WHERE 1=1 and a.program_type =#{program_type} and a.is_delete = '1'
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+			 count(1)
+			FROM
+			  tb_bacera_program a 
+			  WHERE 1=1
+			<if test="program_name != '' and program_name != null">
+				and a.program_name like concat('%', #{program_name}, '%') 
+			</if>
+			<if test="program_type != '' and program_type != null">
+				and a.program_type like concat('%', #{program_type}, '%') 
+			</if>	
+			<if test="is_delete != '' and is_delete != null">
+				and a.is_delete = #{is_delete}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_bacera_program where 1=1 
+		<if test="program_name != '' and program_name != null">
+			and program_name = #{program_name}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+</mapper>

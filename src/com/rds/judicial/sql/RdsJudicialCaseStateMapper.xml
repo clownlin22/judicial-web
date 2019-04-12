@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseStateMapper" >
+	<resultMap id="caseStateInfoModel" type="com.rds.judicial.model.RdsJudicialCaseStateInfoModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+	</insert>
+	
+	<update id="update" parameterType="map">
+	</update>
+	
+	<delete id="delete" parameterType="map">
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="caseStateInfoModel">
+	SELECT 
+		    t.`case_code`,
+		    t.`case_id`,
+		    t.`client`,
+		    t.`verify_state`,
+		    t.`accept_time`,
+		     DATE_FORMAT(
+		    t.`close_time`,
+		    '%Y-%m-%d %H:%i:%S'
+		  ) AS close_time,
+		  DATE_FORMAT(
+		    t.`sample_in_time`,
+		    '%Y-%m-%d %H:%i:%S'
+		  ) AS sample_in_time,
+		    t.`phone`,
+		    t.`is_delete`,
+		    i.`fandm`,
+		    i.`child`,
+		    u.`username`,
+		    mi.mail_code,
+		    t.process_instance_id
+		  FROM
+		    `tb_judicial_case_info` t 
+			  LEFT JOIN tb_upc_users u 
+			    ON t.`case_userid` = u.`userid` 
+			  left join tb_judicial_agent ag on ag.userid = t.case_userid
+		    LEFT JOIN tb_judicial_case_sample i 
+		    ON t.`case_id` = i.`case_id` 
+		    LEFT JOIN 
+		    (SELECT
+		GROUP_CONCAT(
+		CONCAT(
+		mi.`mail_code`
+		)
+		) AS mail_code,
+		mi.`case_id`
+		FROM
+		tb_judicial_mail_info mi
+		GROUP BY mi.`case_id`) mi
+		ON
+		mi.`case_id` = t.case_id
+		  WHERE 1 = 1 
+		   <if test=" userid != null and  userid != '' ">
+				and (t.case_userid = #{userid} or t.case_in_per = #{userid} or ag.peruserid=#{userid})
+			</if>
+			 <if test=" phone !=null and  phone != '' ">
+				and t.phone  like '%${phone}%'
+			</if>
+		   <if test=" starttime!=null and  starttime != '' ">
+				and t.accept_time>=#{starttime}
+			</if>
+			<if test=" endtime!=null and endtime != ''">
+				and #{endtime}>=t.accept_time
+			</if>
+			<if test=" case_code != null and case_code != ''">
+				and t.case_code like '%${case_code}%'
+			</if>
+			<if test=" is_delete !=-1 ">
+				and t.is_delete = #{is_delete}
+			</if>
+			<if test=" urgent_state !=-1 ">
+				and t.urgent_state = #{urgent_state}
+			</if>
+			<if test="name != null and name != '' ">
+				and (t.`client` like '%${name}%' or  i.`fandm` LIKE '%${name}%' or  i.`child` LIKE '%${name}%')
+			</if>
+			<if test=" ownperson != null and ownperson != ''">
+				and u.username like '%${ownperson}%'
+			</if>
+			<if test=" mail_code != null and mail_code != ''">
+				AND mi.`mail_code` LIKE '%${mail_code}%'
+			</if>
+			<if test=" id_card != null and id_card != ''">
+				AND s.`id_card` LIKE '%${id_card}%'
+			</if>
+			<if test=" is_report == 0 ">
+				AND mi.mail_code IS NOT NULL
+			</if>
+			<if test=" is_report == 1 ">
+				AND mi.mail_code IS NULL
+			</if>
+			ORDER BY t.accept_time DESC
+			<if test=" start != null and end != null">
+				limit #{start},#{end}
+			</if>
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="caseStateInfoModel">
+		SELECT GROUP_CONCAT(t.`id_number`) AS id_number FROM `tb_judicial_sample_info` t
+		 WHERE t.`case_id` = #{case_id}
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+			  count(t.case_id)
+			  FROM
+			    `tb_judicial_case_info` t  
+				  LEFT JOIN tb_upc_users u 
+				    ON t.`case_userid` = u.`userid` 
+			  left join tb_judicial_agent ag on ag.userid = t.case_userid
+			    LEFT JOIN tb_judicial_case_sample i 
+			    ON t.`case_id` = i.`case_id` 
+			    LEFT JOIN 
+			    (SELECT
+			GROUP_CONCAT(
+			CONCAT(
+			mi.`mail_code`
+			)
+			) AS mail_code,
+			mi.`case_id`
+			FROM
+			tb_judicial_mail_info mi
+			GROUP BY mi.`case_id`) mi
+			ON
+			mi.`case_id` = t.case_id
+		  WHERE 1 = 1 
+		  <if test=" phone !=null and  phone != '' ">
+				and t.phone  like '%${phone}%'
+			</if>
+		   <if test=" userid !=null and  userid != '' ">
+				and (t.case_userid = #{userid} or t.case_in_per = #{userid}  or ag.peruserid=#{userid})
+			</if>
+		   <if test=" starttime!=null and  starttime != '' ">
+				and t.accept_time>=#{starttime}
+			</if>
+			<if test=" endtime!=null and endtime != ''">
+				and #{endtime}>=t.accept_time
+			</if>
+			<if test=" case_code != null and case_code != ''">
+				and t.case_code like '%${case_code}%'
+			</if>
+			<if test=" is_delete!=-1 ">
+				and t.is_delete = #{is_delete}
+			</if>
+			<if test=" urgent_state !=-1 ">
+				and t.urgent_state = #{urgent_state}
+			</if>
+			<if test="name != null and name != '' ">
+				and (t.`client` like '%${name}%' or  i.`fandm` LIKE '%${name}%' or  i.`child` LIKE '%${name}%')
+			</if>
+			<if test=" ownperson != null and ownperson != ''">
+				and u.username like '%${ownperson}%'
+			</if>
+			<if test=" mail_code != null and mail_code != ''">
+				AND mi.`mail_code` LIKE '%${mail_code}%'
+			</if>
+			<if test=" id_card != null and id_card != ''">
+				AND s.`id_card` LIKE '%${id_card}%'
+			</if>
+			<if test=" is_report == 0 ">
+				AND mi.mail_code IS NOT NULL
+			</if>
+			<if test=" is_report == 1 ">
+				AND mi.mail_code IS NULL
+			</if>
+	</select>
+	
+	<select id="queryCompareResultCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM `tb_judicial_compare_result` t WHERE 
+		t.`unmatched_count` > 0 
+		AND t.`case_code` LIKE '%${case_code}%'
+	</select>
+	
+	
+	
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.appraisal.mapper.RdsAppraisalTypeMapper">
+	<resultMap id="typeModel" type="com.rds.appraisal.model.RdsAppraisalTypeModel">
+	</resultMap>
+	<resultMap id="standardModel" type="com.rds.appraisal.model.RdsAppraisalStandardModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		insert into
+		tb_appraisal_standard_type(type_id,create_time,standard_name,standard_desc,appendix_status,appendix_desc)
+		values
+		(#{type_id},SYSDATE(),#{standard_name},#{standard_desc},#{appendix_status},#{appendix_desc})
+	</insert>
+
+	<update id="update" parameterType="map">
+		update
+		tb_appraisal_standard_type
+		set standard_name = #{standard_name},
+		standard_desc=#{standard_desc},
+		appendix_status=#{appendix_status},
+		appendix_desc = #{appendix_desc},
+		create_time = SYSDATE()
+		where type_id
+		= #{type_id}
+	</update>
+
+	<delete id="delete" parameterType="map">
+		delete from
+		tb_appraisal_standard_type where type_id = #{type_id}
+	</delete>
+
+	<select id="queryAllPage" parameterType="map" resultMap="typeModel">
+		SELECT
+		t.type_id,t.standard_name,t.standard_desc,t.appendix_status,t.appendix_desc,t.create_time
+		FROM tb_appraisal_standard_type t
+		where 1=1
+		<if test="search != null and search != ''">
+			and (t.standard_name like '%${search}%' or t.standard_desc
+			like
+			'%${search}%' )
+		</if>
+		ORDER BY t.`standard_name` ASC LIMIT #{start},#{end}
+	</select>
+	
+	<select id="queryStandardAllPage" parameterType="map" resultMap="standardModel">
+		SELECT
+		t.`standard_id`,t.`content`,t.`series`,t.`type_id`,c.`standard_name`
+		FROM `tb_appraisal_standard_content` t LEFT JOIN
+		`tb_appraisal_standard_type` c ON t.`type_id` = c.`type_id`
+		where 1=1
+		<if test="type_id != null and type_id != '' ">
+			and t.`type_id` = #{type_id}
+		</if>
+		<if test="search != null and search != '' ">
+			and (t.content like '%${search}%' or t.series like '%${search}%')
+		</if>
+		ORDER BY t.`type_id` ASC LIMIT #{start},#{end}
+	</select>
+
+	<select id="queryStandardCount" parameterType="map" resultType="Integer">
+		SELECT count(1)
+		FROM `tb_appraisal_standard_content` t LEFT JOIN
+		`tb_appraisal_standard_type` c ON t.`type_id` = c.`type_id`
+		where 1=1
+		<if test="type_id != null and type_id != '' ">
+			and t.`type_id` = #{type_id}
+		</if>
+		<if test="search != null and search != ''">
+			and (t.content like '%${search}%' or t.series like '%${search}%')
+		</if>
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="typeModel">
+		SELECT
+		t.type_id,t.standard_name,t.standard_desc
+		<if test="case_id != null and case_id != '' ">
+		,(SELECT CASE
+	                 WHEN COUNT(*) >= 1 THEN
+	                  'ture'
+	                 ELSE
+	                  'false'
+	               END
+	          FROM tb_appraisal_relation r
+	          WHERE r.type_id = t.type_id AND r.case_id = #{case_id}) checked
+		
+		</if>
+		FROM tb_appraisal_standard_type t 
+		where 1=1
+		<if test="type_id != null and type_id != ''">
+			and t.type_id in (${type_id})
+		</if>
+	</select>
+	
+	<select id="queryModel" parameterType="map" resultMap="typeModel">
+		SELECT
+		t.type_id,t.standard_name,t.standard_desc,t.appendix_status,t.appendix_desc,t.create_time
+		FROM tb_appraisal_standard_type t where 1=1
+		<if test="standard_name != null and standard_name != ''">
+			and t.standard_name = #{standard_name}
+		</if>
+		LIMIT 1
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_appraisal_standard_type t where 1=1
+		<if test="search != null and search != ''">
+			and (t.standard_name like '%${search}%' or t.standard_desc
+			like
+			'%${search}%' )
+		</if>
+	</select>
+	
+	<insert id="insertStandard" parameterType="map">
+		insert into tb_appraisal_standard_content
+		(standard_id,content,series,type_id) values
+		(#{standard_id},#{content},#{series},#{type_id})
+	</insert>
+	
+	<update id="updateStandard"  parameterType="map">
+		update tb_appraisal_standard_content 
+		set content = #{content},series=#{series},type_id=#{type_id} 
+		where standard_id = #{standard_id}
+	</update>
+	
+	<delete id="deleteStandard" parameterType="map" >
+		delete from tb_appraisal_standard_content where standard_id = #{standard_id}
+	</delete>
+</mapper>

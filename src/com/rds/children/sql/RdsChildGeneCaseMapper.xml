@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildGeneCaseMapper">
+	<select id="getChild" parameterType="com.rds.children.model.RdsChildrenQueryModel"
+		resultType="com.rds.children.model.RdsChildrenCaseInfoModel">
+		SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.`case_areacode`,
+		ci.`birth_date`,
+		ci.`child_sex`,
+		ci.`house_area`,
+		ci.`life_area`,
+		ci.`birth_hospital`,
+		ci.`child_name`,
+		ci.`id_number`,
+		ci.`mail_area`
+		FROM
+		`tb_children_case_info` ci
+		LEFT JOIN
+		`tb_children_custody_info` pa
+		ON pa.`case_id` = ci.`case_id`
+		WHERE
+		ci.`child_name` = #{child_name}
+		AND ci.`birth_date`=#{birth_date}
+		AND
+		pa.`id_number` = #{id_number}
+	</select>
+	<select id="getCustody" parameterType="String"
+		resultType="com.rds.children.model.RdsChildrenCustodyInfoModel">
+		SELECT * FROM `tb_children_custody_info` pa WHERE
+		pa.`case_id`=#{case_id}
+	</select>
+	<select id="getLocus" parameterType="String"
+		resultType="com.rds.children.model.RdsChildrenCaseLocusModel">
+		SELECT * FROM `tb_children_locus_info` li WHERE
+		li.`case_id`=#{case_id}
+	</select>
+</mapper>

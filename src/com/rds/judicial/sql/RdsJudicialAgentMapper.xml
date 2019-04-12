@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialAgentMapper" >
+	<resultMap id="agentModel" type="com.rds.judicial.model.RdsJudicialAgentModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		insert into tb_judicial_agent(id,userid,peruserid,remark,createtime,flag,createper)
+		values (#{id},#{userid},#{peruserid},#{remark},sysdate(),#{flag},#{createper})
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_judicial_agent
+			set userid = #{userid},
+				peruserid = #{peruserid},
+				remark=#{remark},
+				createtime=sysdate(),
+				createper = #{createper}
+				where id = #{id}
+	</update>
+	
+	<delete id="delete" parameterType="map">
+		update tb_judicial_agent set delstatus='1' where id = #{id}
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="agentModel">
+		select * from (SELECT 
+		  i.case_id,
+		  a.peruserid,
+		  u.userid,
+		  u.username,
+		  i.case_code,
+		  a.remark,
+		  u1.username perusername ,
+		  info.areaname case_areaname,
+		  u2.username case_reciver,
+		  info.areaname idAdress,
+		  i.client,
+		  i.phone,
+		  i.urgent_state,
+		  i.verify_state,
+		  i.accept_time,
+		  i.close_time,
+		  m.text,
+		  i.is_delete
+		FROM
+		  tb_judicial_agent a 
+		   LEFT JOIN tb_upc_area ar ON a.userid=ar.userid
+		   INNER JOIN tb_judicial_case_info i ON i.receiver_id=ar.area_id
+		  LEFT JOIN tb_upc_users u ON a.userid = u.userid 
+		  LEFT JOIN tb_upc_users u1  ON a.peruserid = u1.userid 
+		   LEFT JOIN tb_upc_users u2 ON u2.userid=ar.userid
+		   LEFT JOIN tb_upc_area_info info ON ar.areacode=info.areacode
+		   LEFT JOIN tb_dic_print_model m ON m.code=i.report_model
+			WHERE 1=1  AND u.delstatus IS NULL AND ar.is_delete=0 AND a.delstatus=0 
+			and a.flag=1
+			<if test="userid != null and userid != ''">
+				and a.userid = #{userid}
+			</if>	
+			<if test="peruserid != null and peruserid != ''">
+				and a.userid =#{userid}
+			</if>	
+			<if test="urgent_state != null and urgent_state != '' ">
+				and i.urgent_state =#{urgent_state}
+			</if>	
+			<if test="case_code != null and case_code != ''">
+				and i.case_code  like '%${case_code}%'
+			</if>	
+			<if test="is_delete != null and is_delete != '' ">
+				and i.is_delete =#{is_delete}
+			</if>
+			<if test=" starttime!=null and  starttime != '' ">
+				and accept_time>=#{starttime}
+			</if>
+			<if test=" endtime !=null and endtime != ''">
+				and #{endtime}>=accept_time
+			</if>
+			<if test="verify_state != null and verify_state != '-1' ">
+				and i.verify_state = #{verify_state}
+			</if>	
+			<if test="peruserid != null and peruserid != '' ">
+				UNION SELECT 
+				  i.case_id,
+				  u.userid AS peruserid,
+				  u.userid,
+				  '' AS username,
+				  i.case_code,
+				  '' AS remark,
+				  u.username perusername,
+				  info.areaname case_areaname,
+				  u2.username case_reciver,
+				  info.areaname idAdress,
+				  i.client,
+				  i.phone,
+				  i.urgent_state,
+				  i.verify_state,
+				  i.accept_time,
+				  i.close_time,
+				  m.text,
+				  i.is_delete 
+				FROM tb_judicial_case_info i 
+				  LEFT JOIN tb_upc_area ar 
+				    ON i.receiver_id = ar.area_id 
+				  LEFT JOIN tb_upc_users u 
+				    ON ar.userid = u.userid 
+				  LEFT JOIN tb_upc_users u2 
+				    ON u2.userid = ar.userid 
+				  LEFT JOIN tb_upc_area_info info 
+				    ON ar.areacode = info.areacode 
+				  LEFT JOIN tb_dic_print_model m 
+				    ON m.code = i.report_model 
+				WHERE 1 = 1  AND u.delstatus IS NULL AND ar.is_delete=0
+ 				 AND ar.userid=#{peruserid} 
+				<if test="urgent_state != null and urgent_state != '' ">
+					and i.urgent_state =#{urgent_state}
+				</if>	
+				<if test="case_code != null and case_code != ''">
+					and i.case_code  like '%${case_code}%'
+				</if>	
+				<if test="is_delete != null and is_delete != '' ">
+					and i.is_delete =#{is_delete}
+				</if>
+				<if test=" starttime!=null and  starttime != '' ">
+					and accept_time>=#{starttime}
+				</if>
+				<if test=" endtime!=null and endtime != ''">
+					and #{endtime}>=accept_time
+				</if>
+				<if test="verify_state != null and verify_state != '-1'">
+					and i.verify_state = #{verify_state}
+				</if>
+	
+			</if>
+			<if test="roletype != null and roletype != ''">
+				UNION SELECT 
+				  i.case_id,
+				  u.userid AS peruserid,
+				  u.userid,
+				  '' AS username,
+				  i.case_code,
+				  '' AS remark,
+				  u.username perusername,
+				  info.areaname case_areaname,
+				  u2.username case_reciver,
+				  info.areaname idAdress,
+				  i.client,
+				  i.phone,
+				  i.urgent_state,
+				  i.verify_state,
+				  i.accept_time,
+				  i.close_time,
+				  m.text,
+				  i.is_delete 
+				FROM tb_judicial_case_info i 
+				  LEFT JOIN tb_upc_area ar 
+				    ON i.receiver_id = ar.area_id 
+				  LEFT JOIN tb_upc_users u 
+				    ON ar.userid = u.userid 
+				  LEFT JOIN tb_upc_users u2 
+				    ON u2.userid = ar.userid 
+				  LEFT JOIN tb_upc_area_info info 
+				    ON ar.areacode = info.areacode 
+				  LEFT JOIN tb_dic_print_model m 
+				    ON m.code = i.report_model 
+				WHERE 1 = 1 AND u.delstatus IS NULL AND ar.is_delete=0
+				 AND u.roletype=#{roletype} 
+				<if test="urgent_state != null and urgent_state != '' ">
+					and i.urgent_state =#{urgent_state}
+				</if>	
+				<if test="case_code != null and case_code != ''">
+					and i.case_code  like '%${case_code}%'
+				</if>	
+				<if test="is_delete != null and is_delete != '' ">
+					and i.is_delete =#{is_delete}
+				</if>
+				<if test=" starttime!=null and  starttime != '' ">
+					and accept_time>=#{starttime}
+				</if>
+				<if test=" endtime!=null and endtime != '' ">
+					and #{endtime}>=accept_time
+				</if>
+				<if test="verify_state != null and verify_state != '-1'">
+					and i.verify_state = #{verify_state}
+				</if>	
+			</if>)	t
+			order by t.username asc limit #{start},#{end} 
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultMap="agentModel">
+		select * from tb_judicial_agent
+	</select>
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from (SELECT 
+		  i.case_id,
+		  a.peruserid,
+		  u.userid,
+		  u.username,
+		  i.case_code,
+		  a.remark,
+		  u1.username perusername ,
+		  info.areaname case_areaname,
+		  u2.username case_reciver,
+		  info.areaname idAdress,
+		  i.client,
+		  i.phone,
+		  i.urgent_state,
+		  i.verify_state,
+		  i.accept_time,
+		  i.close_time,
+		  m.text,
+		  i.is_delete
+		FROM
+		  tb_judicial_agent a 
+		   LEFT JOIN tb_upc_area ar ON a.userid=ar.userid
+		   INNER JOIN tb_judicial_case_info i ON i.receiver_id=ar.area_id
+		  LEFT JOIN tb_upc_users u ON a.userid = u.userid 
+		  LEFT JOIN tb_upc_users u1  ON a.peruserid = u1.userid 
+		   LEFT JOIN tb_upc_users u2 ON u2.userid=ar.userid
+		   LEFT JOIN tb_upc_area_info info ON ar.areacode=info.areacode
+		   LEFT JOIN tb_dic_print_model m ON m.code=i.report_model
+			WHERE 1=1  AND u.delstatus IS NULL AND ar.is_delete=0 AND a.delstatus=0 
+			and a.flag=1
+			<if test="userid != null and userid != ''">
+				and a.userid = #{userid}
+			</if>	
+			<if test="peruserid != null and peruserid != ''">
+				and a.userid =#{userid}
+			</if>	
+			<if test="urgent_state != null and urgent_state != '' ">
+				and i.urgent_state =#{urgent_state}
+			</if>	
+			<if test="case_code != null and case_code != ''">
+				and i.case_code  like '%${case_code}%'
+			</if>	
+			<if test="is_delete != null and is_delete != '' ">
+				and i.is_delete =#{is_delete}
+			</if>
+			<if test=" starttime!=null and  starttime != '' ">
+				and accept_time>=#{starttime}
+			</if>
+			<if test=" endtime !=null and endtime != ''">
+				and #{endtime}>=accept_time
+			</if>
+			<if test="verify_state != null and verify_state != '-1'">
+				and i.verify_state = #{verify_state}
+			</if>	
+			<if test="peruserid != null and peruserid != '' ">
+				UNION SELECT 
+				  i.case_id,
+				  u.userid AS peruserid,
+				  u.userid,
+				  '' AS username,
+				  i.case_code,
+				  '' AS remark,
+				  u.username perusername,
+				  info.areaname case_areaname,
+				  u2.username case_reciver,
+				  info.areaname idAdress,
+				  i.client,
+				  i.phone,
+				  i.urgent_state,
+				  i.verify_state,
+				  i.accept_time,
+				  i.close_time,
+				  m.text,
+				  i.is_delete 
+				FROM tb_judicial_case_info i 
+				  LEFT JOIN tb_upc_area ar 
+				    ON i.receiver_id = ar.area_id 
+				  LEFT JOIN tb_upc_users u 
+				    ON ar.userid = u.userid 
+				  LEFT JOIN tb_upc_users u2 
+				    ON u2.userid = ar.userid 
+				  LEFT JOIN tb_upc_area_info info 
+				    ON ar.areacode = info.areacode 
+				  LEFT JOIN tb_dic_print_model m 
+				    ON m.code = i.report_model 
+				WHERE 1 = 1  AND u.delstatus IS NULL AND ar.is_delete=0
+ 				 AND ar.userid=#{peruserid} 
+				<if test="urgent_state != null and urgent_state != '' ">
+					and i.urgent_state =#{urgent_state}
+				</if>	
+				<if test="case_code != null and case_code != ''">
+					and i.case_code  like '%${case_code}%'
+				</if>	
+				<if test="is_delete != null and is_delete != '' ">
+					and i.is_delete =#{is_delete}
+				</if>
+				<if test=" starttime!=null and  starttime != '' ">
+					and accept_time>=#{starttime}
+				</if>
+				<if test=" endtime!=null and endtime != ''">
+					and #{endtime}>=accept_time
+				</if>
+				<if test="verify_state != null and verify_state != '-1'">
+					and i.verify_state = #{verify_state}
+				</if>
+	
+			</if>
+			<if test="roletype != null and roletype != ''">
+				UNION SELECT 
+				  i.case_id,
+				  u.userid AS peruserid,
+				  u.userid,
+				  '' AS username,
+				  i.case_code,
+				  '' AS remark,
+				  u.username perusername,
+				  info.areaname case_areaname,
+				  u2.username case_reciver,
+				  info.areaname idAdress,
+				  i.client,
+				  i.phone,
+				  i.urgent_state,
+				  i.verify_state,
+				  i.accept_time,
+				  i.close_time,
+				  m.text,
+				  i.is_delete 
+				FROM tb_judicial_case_info i 
+				  LEFT JOIN tb_upc_area ar 
+				    ON i.receiver_id = ar.area_id 
+				  LEFT JOIN tb_upc_users u 
+				    ON ar.userid = u.userid 
+				  LEFT JOIN tb_upc_users u2 
+				    ON u2.userid = ar.userid 
+				  LEFT JOIN tb_upc_area_info info 
+				    ON ar.areacode = info.areacode 
+				  LEFT JOIN tb_dic_print_model m 
+				    ON m.code = i.report_model 
+				WHERE 1 = 1 AND u.delstatus IS NULL AND ar.is_delete=0
+				 AND u.roletype=#{roletype} 
+				<if test="urgent_state != null and urgent_state != '' ">
+					and i.urgent_state =#{urgent_state}
+				</if>	
+				<if test="case_code != null and case_code != ''">
+					and i.case_code  like '%${case_code}%'
+				</if>	
+				<if test="is_delete != null and is_delete != '' ">
+					and i.is_delete =#{is_delete}
+				</if>
+				<if test=" starttime!=null and  starttime != '' ">
+					and accept_time>=#{starttime}
+				</if>
+				<if test=" endtime!=null and endtime != '' ">
+					and #{endtime}>=accept_time
+				</if>
+				<if test="verify_state != null and verify_state != '-1'">
+					and i.verify_state = #{verify_state}
+				</if>	
+			</if>
+			)	t
+	</select>
+	<select id="queryUserByType" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT u.username AS 'value',u.userid AS 'key' FROM tb_upc_users u WHERE 1=1   AND u.delstatus IS NULL 
+         <if test=" roletype != null and roletype != ''">
+         and u.roletype=#{roletype}
+         </if>
+		<if test=" userid != null and userid != ''">
+			AND u.userid IN (SELECT userid FROM tb_judicial_agent WHERE peruserid=#{userid})
+		</if>
+	</select>
+	<select id="queryAgent" parameterType="map" resultMap="agentModel">
+		SELECT a.id,a.userid,a.peruserid,u.username,a.remark,u1.username perusername ,a.createtime,u2.username as createper
+		FROM tb_judicial_agent a 
+		LEFT JOIN tb_upc_users u ON a.userid=u.userid 
+		LEFT JOIN tb_upc_users u1 ON u1.userid = a.peruserid 
+		LEFT JOIN tb_upc_users u2 ON u2.userid = a.createper 
+		where 1=1 and a.delstatus=0   AND u.delstatus IS NULL  AND u1.delstatus IS NULL 
+			<if test="flag != null and flag != ''">
+				and a.flag = #{flag}
+			</if>	
+			<if test="userid != null and userid != ''">
+				and a.userid = #{userid}
+			</if>	
+			<if test="peruserid != null and peruserid != ''">
+				and a.peruserid =#{peruserid}
+			</if>	
+			limit #{start},#{end} 
+	</select>
+	<select id="queryAgentCount" parameterType="map" resultType="Integer">
+		SELECT count(1)
+		FROM tb_judicial_agent a LEFT JOIN tb_upc_users u ON a.userid=u.userid LEFT JOIN tb_upc_users u1 ON u1.userid = a.peruserid 
+		where 1=1 and a.delstatus=0   AND u.delstatus IS NULL AND u1.delstatus IS NULL 
+			<if test="flag != null and flag != ''">
+				and a.flag = #{flag}
+			</if>	
+			<if test="userid != null and userid != ''">
+				and a.userid = #{userid}
+			</if>	
+			<if test="peruserid != null and peruserid != ''">
+				and a.peruserid =#{peruserid}
+			</if>	
+			<if test="id != null and id != ''">
+				and a.id =#{id}
+			</if>
+			<!-- 
+			<if test="perusercode != null and perusercode != ''">
+				and a.perusercode =#{perusercode}
+			</if>	
+			 -->
+	</select>
+	
+	<!--代理商协议管理查询 -->
+	<select id="queryAttachment" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+			SELECT 
+			  t.`id`,
+			  t.`attachment_date`,
+			  t.`attachment_path`,
+			  t.`attachment_type`,
+			  t.`create_date`,
+			  u.`username` 
+			FROM
+			  tb_judicial_agent_attachment t 
+			  LEFT JOIN tb_upc_users u 
+			    ON t.`create_per` = u.`userid` 
+			WHERE t.`case_id` = #{case_id} 
+	</select>
+	<!--删除代理商协议 -->
+	<delete id="deleteAttachment" parameterType="map">
+		delete from tb_judicial_agent_attachment where t.id=#{id}
+	</delete>
+	<!--上传代理商协议 -->
+	<insert id="uploadAttachment" parameterType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		insert into tb_judicial_agent_attachment(id,case_id,attachment_path,attachment_date,attachment_type,create_per,create_date)
+		values(#{id},#{case_id},#{attachment_path},#{attachment_date},#{attachment_type},#{create_per},now())
+	</insert>
+</mapper>

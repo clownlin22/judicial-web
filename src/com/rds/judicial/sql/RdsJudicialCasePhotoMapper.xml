@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCasePhotoMapper">
+	<select id="getPrintCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseInfoModel">
+		SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		fi.`compare_date`,
+		ci.`url` AS
+		report_url,
+		ci.chart AS
+		report_chart,
+		ci.`text`
+		AS
+		`report_modelname`,
+		ai.`print_copies`,
+		ar.attach_need,
+		ci.`reagent_name`,
+		ci.case_areacode,
+		ci.`receiver_id`,
+		ci.`urgent_state`,
+		ci.`accept_time`,
+		ci.`print_count`,
+		ci.`client`,
+		DATE_FORMAT(
+		ci.`close_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS
+		close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.verify_state,
+		ci.`case_in_per`,
+		DATE_FORMAT(
+		ci.`sample_in_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS sample_in_time,
+		users.`username` AS case_receiver,
+		ai.`areaname` AS receiver_area,
+		u2.`username` AS case_in_pername,
+		ci.sample_in_per,
+		ci.unit_type,
+		ci.case_type,
+		ci.sample_relation,
+		users.`roletype`,
+		users.`userid`,
+		att.attachment_path,
+		att.is_print as photo_state,
+		att.attachment_date
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info
+		ci,tb_dic_print_model m
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where
+			check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code
+			in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test="client!=null and client!=''">
+			AND ci.`client` like '%${client}%'
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state = 3
+		GROUP BY ci.`case_code`
+		) ci
+		LEFT JOIN tb_upc_area ar
+		ON ci.`receiver_id`
+		= ar.`area_id`
+		LEFT JOIN tb_upc_area_info ai
+		ON ar.areacode =
+		ai.`areacode`
+		LEFT JOIN tb_upc_users users
+		ON ar.userid = users.`userid`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result
+		IS NULL
+		OR result = '' GROUP BY case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE
+			check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_department dept
+		ON
+		users.`deptcode` = dept.`deptcode`
+		LEFT JOIN tb_upc_users u2
+		ON
+		ci.case_in_per = u2.`userid`
+		LEFT JOIN
+		(SELECT
+		MAX(compare_date) AS
+		compare_date,
+		sc.case_code
+		FROM
+		tb_judicial_compare_result cr,
+		tb_judicial_sub_case_info sc
+		WHERE cr.case_code = sc.sub_case_code
+		GROUP BY sc.case_code) fi
+		ON ci.`case_code` = fi.case_code
+		left join
+		(SELECT * FROM(SELECT
+		*
+		FROM
+		`tb_judicial_case_attachment` att
+		WHERE
+		att.`attachment_type` = 3
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(att.case_code) LIKE '%${case_code}%' or
+			upper(att.case_code) LIKE '%${case_code}%')
+		</if>
+		ORDER BY att.`attachment_date` )att
+		GROUP BY att.case_id) att
+		on
+		att.case_id = ci.case_id
+		WHERE
+		ci.`case_in_per` IS NOT NULL AND
+		fi.compare_date IS NOT NULL
+		<if test="photo_state!=-1">
+			and att.is_print=#{photo_state}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and fi.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_SUB(fi.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if>
+		<if test="receiver!=null and receiver!=''">
+			AND users.username like '%${receiver}%'
+		</if>
+		AND nc.case_code IS NULL
+		AND (
+		dept.delstatus = 0
+		OR dept.delstatus IS
+		NULL
+		)
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+
+	<select id="countPrintCaseInfo" parameterType="map" resultType="Integer">
+		SELECT
+		count(*)
+		FROM
+		(SELECT
+		ci.*,m.text,m.url,m.chart
+		FROM
+		tb_judicial_case_info ci,tb_dic_print_model m
+		<if test="checkNeg==1">
+			,(select case_code from
+			tb_judicial_checknegreport
+			where
+			check_flag = 'N') yc
+		</if>
+		WHERE
+		ci.`report_model` = m.`code`
+		<if test="checkNeg==1">
+			and ci.case_code=yc.case_code
+		</if>
+		AND ci.reagent_name
+		= m.reagent_name AND (ci.reagent_name_ext =
+		m.reagent_name_ext
+		OR ci.reagent_name_ext IS NULL) AND m.`type` = 'dna'
+		<if test="checkNeg!=1">
+			and m.code
+			in('cxjymodel','dnmodel','zyjdmodel','zyjymodel','zzjdmodel')
+		</if>
+		<if test=" modeltype!=null and modeltype!=''">
+			and m.code=#{modeltype}
+		</if>
+		<if test="print_state==0 ">
+			and ci.print_count>0
+		</if>
+		<if test="print_state==1 ">
+			and ci.print_count=0
+		</if>
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test="client!=null and client!=''">
+			AND ci.`client` like '%${client}%'
+		</if>
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state = 3
+		GROUP BY ci.`case_code` ) ci
+		LEFT JOIN tb_upc_area ar
+		ON
+		ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN tb_upc_users users
+		ON
+		ar.userid = users.`userid`
+		LEFT JOIN (
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info
+		WHERE result IS NULL
+		OR result = '' GROUP BY
+		case_code)
+		UNION
+		(SELECT
+		case_code
+		FROM
+		tb_judicial_exception
+		WHERE
+		choose_flag = 1)
+		<if test="checkNeg!=1">
+			UNION
+			(SELECT
+			case_code
+			FROM
+			tb_judicial_checknegreport
+			WHERE
+			check_flag = 'N')
+		</if>
+		) nc
+		ON nc.case_code = ci.case_code
+		LEFT JOIN tb_upc_department dept
+		ON
+		users.`deptcode` = dept.`deptcode`
+		LEFT JOIN
+		(SELECT
+		MAX(compare_date) AS
+		compare_date,
+		sc.case_code
+		FROM
+		tb_judicial_compare_result cr,
+		tb_judicial_sub_case_info sc
+		WHERE cr.case_code = sc.sub_case_code
+		GROUP BY sc.case_code) fi
+		ON ci.`case_code` = fi.case_code
+		left join
+		(SELECT * FROM(SELECT
+		*
+		FROM
+		`tb_judicial_case_attachment` att
+		WHERE
+		att.`attachment_type` = 3
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(att.case_code) LIKE '%${case_code}%' or
+			upper(att.case_code) LIKE '%${case_code}%')
+		</if>
+		ORDER BY att.`attachment_date` )att
+		GROUP BY att.case_id) att
+		on
+		att.case_id = ci.case_id
+		WHERE
+		ci.`case_in_per` IS NOT NULL AND
+		fi.compare_date IS NOT NULL
+		<if test="photo_state!=-1">
+			and att.is_print=#{photo_state}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and fi.compare_date>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_SUB(fi.compare_date,INTERVAL 1 DAY)
+		</if>
+		<if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if>
+		<if test="receiver!=null and receiver!=''">
+			AND users.username like '%${receiver}%'
+		</if>
+		AND nc.case_code IS NULL
+		AND (
+		dept.delstatus = 0
+		OR dept.delstatus IS
+		NULL
+		)
+	</select>
+	<select id="getCaseReceiver" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		SELECT
+		att.*,
+		CONCAT(ai.areaname, '-', us.username) AS
+		case_receiver
+		FROM
+		(SELECT
+		*
+		FROM
+		tb_judicial_case_info ci
+		WHERE
+		ci.`is_archived` = 0
+		AND ci.`is_delete` = 0
+		AND ci.`case_code` =
+		#{case_code}) ci
+		LEFT JOIN (SELECT * FROM `tb_judicial_case_attachment`
+		att WHERE att.`case_code`=#{case_code} AND att.`attachment_type`='3'
+		ORDER BY att.`attachment_date` DESC LIMIT 1 )
+		att
+		ON
+		att.`case_id` =
+		ci.`case_id`
+		LEFT JOIN `tb_upc_area` ar
+		ON
+		ar.`area_id`
+		= ci.`receiver_id`
+		LEFT JOIN `tb_upc_area_info` ai
+		ON
+		ar.`areacode` =
+		ai.`areacode`
+		LEFT JOIN
+		`tb_upc_users` us
+		ON ar.`userid`
+		= us.`userid`
+	</select>
+	<select id="getAllCasePhoto" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseAttachmentModel">
+		SELECT * FROM `tb_judicial_case_attachment` att WHERE
+		att.`attachment_type`=3
+		<if test="case_code !='' and case_code != null">
+			AND att.`case_code` like '%${case_code}%'
+		</if>
+		order by att.attachment_date desc
+		limit #{start},#{limit}
+	</select>
+	<select id="getAllCasePhotoCount" parameterType="map"
+		resultType="int">
+		SELECT COUNT(att.id) FROM `tb_judicial_case_attachment` att WHERE
+		att.`attachment_type`=3
+		<if test="case_code !='' and case_code != null">
+			AND att.`case_code` like '%${case_code}%'
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenAgentiaMapper">
+	<select id="getAgentiaInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenAgentiaModel">
+		SELECT
+		da.`agentia_id`,
+		da.`agentia_name`,
+		da.`remark`,
+		da.`status`
+		FROM
+		`tb_dic_agentia` da
+		limit #{start},#{limit}
+	</select>
+	<select id="getAgentiaInfoCount" parameterType="map" resultType="int">
+		SELECT
+		count(1)
+		FROM
+		`tb_dic_agentia` da
+	</select>
+	<insert id="insertAgentia" parameterType="com.rds.children.model.RdsChildrenAgentiaModel">
+		INSERT INTO
+		`tb_dic_agentia` (`agentia_id`, `agentia_name`,
+		`remark`) VALUES
+		(#{agentia_id},#{agentia_name},#{remark});
+	</insert>
+	<insert id="insertLocus" parameterType="java.util.List">
+		INSERT INTO `tb_dic_agentia_locus` (`locus_name`,
+		`agentia_id`,`order`) VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.locus_name}, #{item.agentia_id},#{item.order})
+		</foreach>
+	</insert>
+
+	<select id="getAgentiaCombo" resultType="com.rds.children.model.RdsChildrenAgentiaModel">
+		SELECT
+		da.`agentia_id`,
+		da.`agentia_name`
+		FROM
+		`tb_dic_agentia` da
+		where da.status = 0
+	</select>
+
+	<select id="getLocusName" parameterType="String" resultType="String"> 
+		SELECT al.`locus_name` FROM `tb_dic_agentia` ag LEFT JOIN `tb_dic_agentia_locus` 
+		al ON ag.`agentia_id`=al.`agentia_id` WHERE ag.`agentia_name`=#{agentia_name} 
+	</select>
+	<select id="getLocusInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenAgentiaLocusModel">
+		SELECT
+		al.*,
+		a.`agentia_name`
+		FROM
+		`tb_dic_agentia_locus` al
+		LEFT JOIN `tb_dic_agentia` a
+		ON a.`agentia_id` = al.`agentia_id`
+		WHERE
+		a.`agentia_id` = #{agentia_id}
+		ORDER BY al.`locus_name`
+	</select>
+
+	<update id="delete" parameterType="map">
+		UPDATE
+		`tb_dic_agentia`
+		SET
+		`status` = '1'
+		WHERE `agentia_id` = #{agentia_id}
+	</update>
+</mapper>

@@ -1,0 +1,1129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.finance.mapper.RdsCaseFinanceMapper">
+
+	<select id="getCaseFeeInfo" parameterType="map"
+		resultType="com.rds.finance.model.RdsCaseFinanceModel">
+		select cs.*
+		from (SELECT
+		ci.`case_code`,ci.client,ci.remark AS 'case_remark',
+		cf.id as fee_id,cf.stand_sum,cf.real_sum,cf.finance_remark,cf.return_sum,cf.discount,cf.status,ci.accept_time as date,cf.type,ci.sample_str,
+		DATE_FORMAT(cf.confirm_date,'%Y-%m-%d %H:%i:%s') as confirm_date,
+		cf.paragraphtime,cf.account,cf.remittanceName,cf.remittanceDate,cf.discountPrice,ci.receive_name,ci.areaname
+		FROM
+		<choose>
+			<when test="case_type=='dna'">
+				(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str,u.username as receive_name,ci.receiver_area as areaname
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+     			left join tb_upc_users u 
+     			on u.userid=ci.case_userid
+				where ci.is_delete &lt;&gt; 1
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.receiver_area LIKE '%${areaname}%'
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.case_userid = #{userid} or ci.case_in_per=#{userid})
+				</if>
+				<if test=" parnter_name !=null and parnter_name != ''">
+					and ci.parnter_name = #{parnter_name}
+				</if>
+				)
+			</when>
+			<when test="case_type=='inversive'">
+				(SELECT 
+				  ci.id AS case_id,
+				  ci.`num` AS case_code,
+				  ci.`name` AS CLIENT,
+				  ci.`remark`,
+				  ci.`date` as accept_time,
+				  ci.`cancelif` AS is_delete,
+				  '' AS sample_str,
+				  u.username AS receive_name,
+				  ci.`areaname`
+				FROM
+				  `tb_invasive_prenatal` ci 
+				  LEFT JOIN tb_upc_users u 
+				    ON u.userid = ci.`ownperson` 
+				where ci.cancelif = 2
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.areaname LIKE '%${areaname}%'
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.date,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.date,1,10)
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.ownperson = #{userid} or ci.inputperson=#{userid})
+				</if>
+				)
+			</when>
+			<when test="case_type=='alcohol'">(select ci.*,si.`sample_name` as sample_str,state as 'is_delete',ca.username as receive_name,ca.areaname from tb_alcohol_case_info ci
+								left join tb_charge_standard ca
+							on ci.receiver_id=ca.id
+							LEFT JOIN `tb_alcohol_sample_info` si
+							ON ci.`sample_id`=si.`sample_id`
+							where 1=1 and state &lt;&gt; 7
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+							</if>
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>
+			           )
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				ci.case_id,ci.case_no AS
+				case_code,ci.company_name as client,ci.receiver_id,'' as sample_str,ci.remark,ci.receive_time AS 'accept_time',ci.is_delete,ca.username as receive_name,ca.areaname
+				FROM
+				tb_trace_case_info ci
+				left join tb_charge_standard ca
+							on ci.receiver_id=ca.id
+							where 1=1 and ci.is_delete  &lt;&gt; 1 
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.receive_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.receive_time,1,10)
+							</if>
+							 )
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,bi.case_number AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.`accept_date` as 'accept_time','0' as 'is_delete',ca.username as receive_name,ca.areaname
+				FROM
+				tb_appraisal_base_info bi LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`
+				left join tb_charge_standard ca
+							on bi.recrive_id=ca.id
+							where 1=1 
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(bi.`accept_date`,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(bi.`accept_date`,1,10)
+							</if>
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>
+							<if test="usercode == 'subo_yangmeiming' ">
+								and ca.areaname LIKE '%云南%'
+							</if>
+				)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				si.sample_str,
+				'' as client,
+				ci.remark,
+				ci.gather_time as 'accept_time',
+				ci.is_delete,
+				u.username as receive_name,
+			    ci.`case_areaname` AS areaname
+				FROM
+				tb_children_case_info ci
+      			LEFT JOIN tb_upc_users u ON u.`userid`=ci.`case_userid`
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` = 'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				 where ci.is_delete=0 
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.gather_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.gather_time,1,10)
+							</if>
+							<if test=" receiver!=null and receiver != ''">
+								and u.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ci.case_areaname LIKE '%${areaname}%'
+							</if>)
+			</when>
+			<otherwise>(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str,u.username as receive_name,ci.receiver_area as areaname
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+     			left join tb_upc_users u 
+     			on u.userid=ci.case_userid
+				where ci.is_delete &lt;&gt; 1
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+				</if>
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.receiver_area LIKE '%${areaname}%'
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.case_userid = #{userid} or ci.case_in_per=#{userid})
+				</if>
+				<if test=" parnter_name !=null and parnter_name != ''">
+					and ci.parnter_name = #{parnter_name}
+				</if>
+				)
+			</otherwise>
+		</choose>
+		ci ,
+		tb_judicial_casefee cf WHERE
+		ci.`case_id`=cf.`case_id`
+		<if test="fee_state==0">
+			AND (cf.status=0 or cf.status=2)
+		</if>
+		<if test="fee_state==1">
+			AND (cf.status=1 or cf.status=3)
+		</if>
+		<if test="type_state!=-1">
+			and cf.type=#{type_state}
+		</if>
+		<if test="case_code!=null and case_code!=''">
+			AND ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="client!=null and client!=''">
+			and  (ci.client like '%${client}%' or ci.sample_str like '%${client}%')
+		</if>
+		<if test="paragraphtime_start !=null and paragraphtime_start !=''">
+			and cf.paragraphtime >= #{paragraphtime_start}
+		</if>
+		<if test="paragraphtime_end !=null and paragraphtime_end !=''">
+			and #{paragraphtime_end} >= cf.paragraphtime
+		</if>
+		<if test="account !=null and account !=''">
+			and cf.account like '%${account}%'
+		</if>
+		
+		and cf.case_type like '%${case_type}%'
+		)cs 
+		order by cs.case_code desc
+		<if test="limit != null and limit != ''">
+			limit #{start},#{limit}   
+	 	</if>
+	</select>
+
+	<select id="countCaseFeeInfo" parameterType="map" resultType="int">
+		SELECT count(1)
+		from (SELECT
+		ci.`case_code`
+		FROM
+		<choose>
+			<when test="case_type=='dna'">
+				(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+				left join tb_upc_users u 
+     			on u.userid=ci.case_userid
+				where ci.is_delete &lt;&gt; 1
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+				</if>
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.receiver_area LIKE '%${areaname}%'
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.case_userid = #{userid} or ci.case_in_per=#{userid})
+				</if>
+				<if test=" parnter_name !=null and parnter_name != ''">
+					and ci.parnter_name = #{parnter_name}
+				</if>
+				)
+			</when>
+			<when test="case_type=='inversive'">
+				(SELECT 
+				  ci.id AS case_id,
+				  ci.`num` AS case_code,
+				  ci.`name` AS CLIENT,
+				  ci.`remark`,
+				  ci.`date` as accept_time,
+				  ci.`cancelif` AS is_delete,
+				  '' AS sample_str,
+				  u.username AS receive_name,
+				  ci.`areaname`
+				FROM
+				  `tb_invasive_prenatal` ci 
+				  LEFT JOIN tb_upc_users u 
+				    ON u.userid = ci.`ownperson` 
+				where ci.cancelif = 2
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.areaname LIKE '%${areaname}%'
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.date,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.date,1,10)
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.ownperson = #{userid} or ci.inputperson=#{userid})
+				</if>
+				)
+			</when>
+			<when test="case_type=='alcohol'">(select ci.*,si.`sample_name` as sample_str,state as 'is_delete' from tb_alcohol_case_info ci  left join tb_charge_standard ca
+							on ci.receiver_id=ca.id
+							LEFT JOIN `tb_alcohol_sample_info` si
+							ON ci.`sample_id`=si.`sample_id`
+							where 1=1 and state &lt;&gt; 7
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+							</if>
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>)
+			</when>
+			<when test="case_type=='trace'"> (SELECT
+				ci.case_id,ci.case_no AS
+				case_code,ci.company_name as client,ci.receiver_id,'' as sample_str,ci.remark,ci.receive_time AS 'accept_time',ci.is_delete,ca.username as receive_name,ca.areaname
+				FROM
+				tb_trace_case_info ci
+				left join tb_charge_standard ca
+							on ci.receiver_id=ca.id
+							where 1=1 and ci.is_delete  &lt;&gt; 1 
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.receive_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.receive_time,1,10)
+							</if>)
+			</when>
+			<when test="case_type=='appraisal'">(SELECT
+				bi.case_id,bi.case_number AS
+				case_code,bi.entrust_per AS CLIENT,bi.recrive_id AS
+				receiver_id,ai.identify_per_name AS sample_str,'' as remark,bi.`accept_date` as 'accept_time','0' as 'is_delete'
+				FROM
+				tb_appraisal_base_info bi 
+				LEFT JOIN tb_appraisal_identify_info ai ON
+				ai.`case_id`=bi.`case_id`
+				left join tb_charge_standard ca
+							on bi.recrive_id=ca.id
+							where 1=1 
+							<if test="starttime !=null and starttime !=''">
+								and SUBSTRING(bi.`accept_date`,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(bi.`accept_date`,1,10)
+							</if>
+							<if test=" receiver!=null and receiver != ''">
+								and ca.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ca.areaname LIKE '%${areaname}%'
+							</if>
+							<if test=" companyid !=null and companyid != ''">
+								and ca.companyid LIKE '%${companyid}%'
+							</if>
+							<if test="usercode == 'subo_yangmeiming' ">
+								and ca.areaname LIKE '%云南%'
+							</if>
+				)
+			</when>
+			<when test="case_type=='children'">(SELECT
+				ci.case_id,
+				ci.case_code,
+				si.sample_str,
+				ci.remark,
+				ci.gather_time as 'accept_time',
+				ci.is_delete
+				FROM
+				tb_children_case_info ci
+				LEFT JOIN
+				(SELECT
+				ci.case_id,
+				GROUP_CONCAT(
+				dv.`keyvalue`,
+				'-',
+				ci.`custody_name`
+				) AS sample_str
+				FROM
+				tb_children_custody_info ci,
+				tb_upc_dic_values dv
+				WHERE dv.`keycode` = 'custody_call'
+				AND dv.`keyid` = ci.`custody_call`
+				GROUP BY ci.`case_id`) si
+				ON si.case_id = ci.case_id
+				 where ci.is_delete=0 
+							 <if test="starttime !=null and starttime !=''">
+								and SUBSTRING(ci.gather_time,1,10)>=#{starttime}
+							</if>
+							<if test="endtime !=null and endtime !=''">
+								and #{endtime}>=SUBSTRING(ci.gather_time,1,10)
+							</if>
+							 <if test=" receiver!=null and receiver != ''">
+								and u.username LIKE '%${receiver}%'
+							</if>
+							<if test=" areaname!=null and areaname != ''">
+								and ci.case_areaname LIKE '%${areaname}%'
+							</if>)
+			</when>
+			<otherwise>(SELECT
+				ci.case_id,ci.case_code,ci.client,ci.receiver_id,ci.`remark`,ci.`accept_time`,ci.is_delete, CONCAT(s.`fandm`,';',s.`child`) AS sample_str
+				FROM
+				tb_judicial_case_info ci
+				LEFT JOIN  tb_judicial_case_sample s
+     			ON ci.`case_id`=s.`case_id`
+				left join tb_upc_users u 
+     			on u.userid=ci.case_userid
+				where ci.is_delete &lt;&gt; 1
+				<if test="starttime !=null and starttime !=''">
+					and SUBSTRING(ci.accept_time,1,10)>=#{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					and #{endtime}>=SUBSTRING(ci.accept_time,1,10)
+				</if>
+				<if test="usercode == 'sq_wangyan' ">
+					AND ci.`report_model`='sqjdmodel'
+				</if>
+				<if test=" receiver!=null and receiver != ''">
+					and u.username LIKE '%${receiver}%'
+				</if>
+				<if test=" areaname!=null and areaname != ''">
+					and ci.receiver_area LIKE '%${areaname}%'
+				</if>
+				<if test=" userid !=null and userid != ''">
+					and (ci.case_userid = #{userid} or ci.case_in_per=#{userid})
+				</if>
+				<if test=" parnter_name !=null and parnter_name != ''">
+					and ci.parnter_name = #{parnter_name}
+				</if>
+				)
+			</otherwise>
+		</choose>
+		ci ,
+		tb_judicial_casefee cf WHERE
+		ci.`case_id`=cf.`case_id`
+		<if test="fee_state==0">
+			AND (cf.status=0 or cf.status=2)
+		</if>
+		<if test="fee_state==1">
+			AND (cf.status=1 or cf.status=3)
+		</if>
+		<if test="type_state!=-1">
+			and cf.type=#{type_state}
+		</if>
+		<if test="case_code!=null and case_code!=''">
+			AND ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="client!=null and client!=''">
+			and  (ci.client like '%${client}%' or ci.sample_str like '%${client}%')
+		</if>
+		<if test="paragraphtime_start !=null and paragraphtime_start !=''">
+			and cf.paragraphtime >= #{paragraphtime_start}
+		</if>
+		<if test="paragraphtime_end !=null and paragraphtime_end !=''">
+			and #{paragraphtime_end} >= cf.paragraphtime
+		</if>
+		<if test="account !=null and account !=''">
+			and cf.account like '%${account}%'
+		</if>
+		and cf.case_type like '%${case_type}%'
+		)cs 
+	</select>
+
+	<update id="updateCaseFee" parameterType="map">
+		update tb_judicial_casefee set
+		<if test=" stand_sum !=null and stand_sum != ''">
+			stand_sum=#{stand_sum},
+		</if>
+		<if test=" real_sum !=null">
+			real_sum=#{real_sum},
+		</if>
+		<if test=" return_sum !=null and return_sum != ''">
+			return_sum=#{return_sum},
+		</if>
+		<if test=" paragraphtime !=null and paragraphtime != ''">
+			paragraphtime=#{paragraphtime},
+		</if>
+		<if test=" account !=null and account != ''">
+			account=#{account},
+		</if>
+		<if test=" finance_remark !=null and finance_remark != ''">
+			finance_remark=#{finance_remark},
+		</if>
+		<if test=" type !=null and type != ''">
+			type=#{type},
+		</if>
+		<if test=" finance_type !=null and finance_type != ''">
+			finance_type=#{finance_type},
+		</if>
+		<if test=" remittanceName !=null and remittanceName != ''">
+			remittanceName=#{remittanceName},
+		</if>
+		<if test=" remittanceDate !=null and remittanceDate != ''">
+			remittanceDate=#{remittanceDate},
+		</if>
+		<if test=" discount_amount !=null and discount_amount != ''">
+			discountPrice=#{discount_amount},
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			confirm_code=#{confirm_code},
+		</if>
+		update_user=#{update_user},
+		update_date=now()
+		where 
+		  <choose>  
+             <when test="case_id != null"> case_id=#{case_id}</when>  
+             <when test="case_id == null">id=#{fee_id}</when>   
+          </choose>
+          and case_type='dna'
+	</update>
+	
+	<update id="updateCaseFeeUnite" parameterType="map">
+		update tb_judicial_casefee set
+		<if test=" stand_sum !=null and stand_sum != ''">
+			stand_sum=#{stand_sum},
+		</if>
+		<if test=" real_sum !=null">
+			real_sum=#{real_sum},
+		</if>
+		<if test=" return_sum !=null and return_sum != ''">
+			return_sum=#{return_sum},
+		</if>
+		<if test=" paragraphtime !=null and paragraphtime != ''">
+			paragraphtime=#{paragraphtime},
+		</if>
+		<if test=" account !=null and account != ''">
+			account=#{account},
+		</if>
+		<if test=" finance_remark !=null and finance_remark != ''">
+			finance_remark=#{finance_remark},
+		</if>
+		<if test=" type !=null and type != ''">
+			type=#{type},
+		</if>
+		<if test=" finance_type !=null and finance_type != ''">
+			finance_type=#{finance_type},
+		</if>
+		<if test=" remittanceName !=null and remittanceName != ''">
+			remittanceName=#{remittanceName},
+		</if>
+		<if test=" remittanceDate !=null and remittanceDate != ''">
+			remittanceDate=#{remittanceDate},
+		</if>
+		<if test=" discount_amount !=null and discount_amount != ''">
+			discountPrice=#{discount_amount},
+		</if>
+		<if test=" confirm_code !=null and confirm_code != ''">
+			confirm_code=#{confirm_code},
+		</if>
+		update_user=#{update_user},
+		update_date=now()
+		where 
+		  <choose>  
+             <when test="case_id != null"> case_id=#{case_id}</when>  
+             <when test="case_id == null">id=#{fee_id}</when>   
+          </choose>
+          <if test=" case_type !=null and case_type != ''">
+	          <choose>  
+	             <when test="case_type != null and case_type != '' "> and case_type=#{case_type}</when>  
+	             <when test="case_type == null or case_type == '' ">and case_type='dna'</when>   
+	          </choose>
+		  </if>
+	</update>
+	
+	<update id="confirmCaseFee" parameterType="map">
+		update tb_judicial_casefee set status=#{status},confirm_date=now(),update_user=#{update_user} where id IN (${ids})
+	</update>
+	
+	<insert id="addCaseFee" parameterType="map">
+		insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,status,update_date,update_user,discountPrice,case_type,finance_type,type,finance_remark,confirm_code)
+		values(#{id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},3,now(),#{update_user},#{discount_amount},'dna',#{finance_type},#{type},#{finance_remark},#{confirm_code})
+	</insert>
+	
+	<!-- 删除无创财务信息 -->
+		<delete id="deleteInvasivePre" parameterType="map">
+		delete from tb_judicial_casefee where case_id = #{id}
+	</delete>
+	
+	<insert id="addCaseFeeOther" parameterType="map">
+		insert into
+		tb_judicial_casefee(id,case_id,stand_sum,real_sum,return_sum,status,update_date,update_user,discountPrice,case_type,finance_type,type,finance_remark,confirm_code)
+		values(#{id},#{case_id},#{stand_sum},#{real_sum},#{return_sum},3,now(),#{update_user},#{discount_amount},#{case_type},#{finance_type},#{type},#{finance_remark},#{confirm_code})
+	</insert>
+	
+	<select id="queryCasefeePrompt" resultType="com.rds.finance.model.RdsFinancePromptInfo">
+		SELECT 
+		  s.`username`,
+		  s.`agentname`,
+		  i.`case_code` 
+		FROM
+		  `tb_judicial_casefee` t 
+		  LEFT JOIN tb_judicial_case_info i 
+		    ON t.`case_id` = i.`case_id` 
+		  LEFT JOIN `tb_charge_standard` s 
+		    ON i.`receiver_id` = s.`id` 
+		WHERE i.`sample_in_time` >= SUBDATE(NOW(), INTERVAL 60 SECOND)
+		UNION ALL 
+		SELECT 
+		  s.`username`,
+		  s.`agentname`,
+		  i.`case_code` 
+		FROM
+		  `tb_finance_info` t 
+		  LEFT JOIN `tb_upc_identify_info` i 
+		    ON t.`id` = i.`case_id` 
+		  LEFT JOIN `tb_charge_standard` s 
+		    ON i.`receiver_id` = s.`id` 
+		    WHERE i.`sample_in_time` >= SUBDATE(NOW(), INTERVAL 60 SECOND)
+ 	</select>
+
+	<insert id="insertRemittanceRecord" parameterType="map">
+		insert into tb_judicial_remittance(remittance_id,remittance,remittance_date,remittance_account,remittance_num,daily_type,
+											arrival_account,remittance_per,remittance_remark,create_date,create_per,urgent_state,deductible,remittance_att)
+		values(#{remittance_id},#{remittance},#{remittance_date},#{remittance_account},#{remittance_num},#{daily_type},
+							#{arrival_account},#{remittance_per},#{remittance_remark},sysdate(),#{create_per},#{urgent_state},#{deductible},#{remittance_att})
+	</insert> 	
+	<update id="updateRemittanceRecord" parameterType="map">
+		update tb_judicial_remittance set
+		confirm_per=#{confirm_per},
+		confirm_date=sysdate(),
+		confirm_state=#{confirm_state},
+		confirm_remark=#{confirm_remark}
+		where remittance_id  in 
+		<foreach item="item" index="index" collection="remittance_ids" open="("
+	           separator="," close=")">
+	           #{item}  
+	     </foreach>
+	</update> 
+	
+	<update id="updateRemittance" parameterType="map">
+		update tb_judicial_remittance set 
+		remittance_date=#{remittance_date},
+		remittance_per=#{remittance_per},
+		remittance_account=#{remittance_account},
+		arrival_account=#{arrival_account},
+		remittance_remark=#{remittance_remark},
+		confirm_state=#{confirm_state},
+		deductible=#{deductible},
+		confirm_per=null,
+		confirm_date=null
+		where remittance_id=#{remittance_id}
+	</update>
+	
+	<update id="updateRemittancePhoto" parameterType="map">
+		update tb_judicial_remittance set 
+		remittance_att = #{remittance_att},
+		confirm_state=#{confirm_state},
+		confirm_per=null,
+		confirm_date=null
+		where remittance_id=#{remittance_id}
+	</update>
+	
+	<select id="queryPageRemittanceInfo" parameterType="map" resultType="com.rds.finance.model.RdsRemittanceInfoModel">
+		SELECT 
+		  t.*,
+		  u1.`username` AS 'create_per_name',
+		  u2.`username` AS 'remittance_per_name',
+		  u3.`username` AS 'confirm_per_name' 
+		FROM
+		  tb_judicial_remittance t 
+		  LEFT JOIN tb_upc_users u1 
+		    ON t.`create_per` = u1.`userid` 
+		  LEFT JOIN tb_upc_users u2 
+		    ON u2.`userid` = t.`remittance_per` 
+		  LEFT JOIN tb_upc_users u3 
+		    ON u3.`userid` = t.`confirm_per` 
+		WHERE 1=1
+		<if test="create_per_name !=null and create_per_name != ''">
+			and u1.username LIKE '%${create_per_name}%'
+		</if>
+		<if test="remittance_per_name !=null and remittance_per_name != ''">
+			and u2.username LIKE '%${remittance_per_name}%'
+		</if>
+		<if test="confirm_per_name !=null and confirm_per_name != ''">
+			and u3.username LIKE '%${confirm_per_name}%'
+		</if>
+		<if test="starttime !=null and starttime != ''">
+			and t.remittance_date >= #{starttime}
+		</if>
+		<if test="userid !=null and userid != ''">
+			and (t.create_per = #{userid} or t.`remittance_per`=#{userid})
+		</if>
+		<if test="endtime !=null and endtime != ''">
+			and #{endtime} >= t.remittance_date
+		</if>
+		<if test="remittance_num !=null and remittance_num != ''">
+			and t.remittance_num like '%${remittance_num}%'
+		</if>
+		<if test="remittance_account !=null and remittance_account != ''">
+			and t.remittance_account like '%${remittance_account}%'
+		</if>
+		<if test="arrival_account !=null and arrival_account != ''">
+			and t.arrival_account like '%${arrival_account}%'
+		</if>
+		<if test="deductible !=null and deductible != ''">
+			and t.deductible = #{deductible}
+		</if>
+		<if test="status==0 ">
+			and t.`confirm_per` IS NOT NULL
+		</if>
+		<if test="status==1 ">
+			and t.`confirm_per` IS NULL
+		</if>
+		<if test="confirm_state !=null and confirm_state != ''">
+			and t.confirm_state= #{confirm_state}
+		</if>
+		<if test="daily_type !=null and daily_type != ''">
+			and t.daily_type= #{daily_type}
+		</if>
+		order by t.urgent_state desc ,t.remittance_num desc
+		<if test="limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>	
+	<select id="countRemittanceInfo" parameterType="map" resultType="int">
+		SELECT count(1)
+		FROM
+		  tb_judicial_remittance t 
+		  LEFT JOIN tb_upc_users u1 
+		    ON t.`create_per` = u1.`userid` 
+		  LEFT JOIN tb_upc_users u2 
+		    ON u2.`userid` = t.`remittance_per` 
+		  LEFT JOIN tb_upc_users u3 
+		    ON u3.`userid` = t.`confirm_per` 
+		WHERE 1=1
+		<if test="create_per_name !=null and create_per_name != ''">
+			and u1.username LIKE '%${create_per_name}%'
+		</if>
+		<if test="remittance_per_name !=null and remittance_per_name != ''">
+			and u2.username LIKE '%${remittance_per_name}%'
+		</if>
+		<if test="confirm_per_name !=null and confirm_per_name != ''">
+			and u3.username LIKE '%${confirm_per_name}%'
+		</if>
+		<if test="starttime !=null and starttime != ''">
+			and t.remittance_date >= #{starttime}
+		</if>
+		<if test="userid !=null and userid != ''">
+			and (t.create_per = #{userid} or t.`remittance_per`=#{userid})
+		</if>
+		<if test="endtime !=null and endtime != ''">
+			and #{endtime} >= t.remittance_date
+		</if>
+		<if test="remittance_num !=null and remittance_num != ''">
+			and t.remittance_num like '%${remittance_num}%'
+		</if>
+		<if test="remittance_account !=null and remittance_account != ''">
+			and t.remittance_account like '%${remittance_account}%'
+		</if>
+		<if test="arrival_account !=null and arrival_account != ''">
+			and t.arrival_account like '%${arrival_account}%'
+		</if>
+		<if test="deductible !=null and deductible != ''">
+			and t.deductible = #{deductible}
+		</if>
+		<if test="status==0 ">
+			and t.`confirm_per` IS NOT NULL
+		</if>
+		<if test="status==1 ">
+			and t.`confirm_per` IS NULL
+		</if>
+		<if test="daily_type !=null and daily_type != ''">
+			and t.daily_type= #{daily_type}
+		</if>
+		<if test="confirm_state !=null and confirm_state != ''">
+			and t.confirm_state= #{confirm_state}
+		</if>
+	</select>	
+	
+	<update id="updateCaseFeeRemittance" parameterType="map">
+		update tb_judicial_casefee set return_sum = real_sum, remittance_id = #{remittance_id},remittanceDate=#{remittance_date},
+		account=#{arrival_account},remittanceName=#{remittance_account},finance_remark=#{remittance_remark}
+		where id IN  
+	 	<foreach item="item" index="index" collection="fee_ids" open="("
+	           separator="," close=")">
+	           #{item}  
+	     </foreach>
+	</update>
+	
+	<update id="updateCaseFeeStatus" parameterType="map">
+		update tb_judicial_casefee set 
+		<if test="status !=null and status != ''">
+			status = #{status},
+		</if>
+		paragraphtime=curdate()
+		where remittance_id IN  
+	 	<foreach item="item" index="index" collection="remittance_ids" open="("
+	           separator="," close=")">
+	           #{item}  
+	     </foreach>
+	</update>
+	
+	<insert id="insertContractPlan" parameterType="map" >
+		insert into tb_finance_contract_plan(contract_id,contract_num,contract_program,contract_price,contract_unit,customer_name,contract_userid,contract_areacode,contract_areaname,create_per,create_date,oa_num,remark,accept_date)
+		values(#{contract_id},#{contract_num},#{contract_program},#{contract_price},#{contract_unit},#{customer_name},#{contract_userid},#{contract_areacode},#{contract_areaname},#{create_per},sysdate(),#{oa_num},#{remark},#{accept_date})
+	</insert>
+	
+	<update id="updateContractPlan" parameterType="map">
+		update tb_finance_contract_plan set 
+		contract_price = #{contract_price},
+		contract_program=#{contract_program},
+		contract_unit = #{contract_unit},
+		contract_userid = #{contract_userid},
+		contract_areacode = #{contract_areacode},
+		contract_areaname = #{contract_areaname},
+		customer_name = #{customer_name},
+		remark = #{remark},
+		oa_num=#{oa_num},
+		accept_date=#{accept_date},
+		create_per =#{create_per},
+		create_date = sysdate()
+		where contract_id = #{contract_id}
+	</update>
+	
+	<select id="queryPageContractPlan" parameterType="map" resultType="com.rds.finance.model.RdsContractPlanInfoModel">
+		SELECT 
+		  p.*,
+		  u.`username` AS 'contract_username',
+		  u1.`username` AS create_per_name 
+		FROM
+		  tb_finance_contract_plan p 
+		  LEFT JOIN tb_upc_users u 
+		    ON p.`contract_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1 
+		    ON p.`create_per` = u1.userid 
+		    WHERE 1=1 
+		    <if test="contract_username !=null and contract_username != ''">
+				and u.username LIKE '%${contract_username}%'
+			</if>
+			 <if test="create_per_name !=null and create_per_name != ''">
+				and u1.username LIKE '%${create_per_name}%'
+			</if>
+			<if test="contract_unit !=null and contract_unit != ''">
+				and p.contract_unit LIKE '%${contract_unit}%'
+			</if>
+			<if test="contract_num !=null and contract_num != ''">
+				and p.contract_num LIKE '%${contract_num}%'
+			</if>
+			<if test="contract_areaname !=null and contract_areaname != ''">
+				and p.contract_areaname LIKE '%${contract_areaname}%'
+			</if>
+			<if test="customer_name !=null and customer_name != ''">
+				and p.customer_name LIKE '%${customer_name}%'
+			</if>
+			<if test="starttime !=null and starttime != ''">
+				and p.accept_date >= #{starttime}
+			</if>
+			<if test="endtime !=null and endtime != ''">
+				and #{endtime} >= p.accept_date
+			</if>
+			<if test="status !=null and status != ''">
+				and p.status = #{status}
+			</if>
+			<if test="oa_num !=null and oa_num != ''">
+				and p.oa_num LIKE '%${oa_num}%'
+			</if>
+			<if test="contract_program !=null and contract_program != ''">
+				and p.contract_program LIKE '%${contract_program}%'
+			</if>
+			<if test="userid !=null and userid != ''">
+				and (p.contract_userid =#{userid} or p.`create_per` = #{userid})
+			</if>
+			order by p.contract_num 
+			<if test="limit !=null and limit != ''">
+				LIMIT #{start},#{limit} 
+			</if>
+	</select>
+	
+	<select id="queryCountContractPlan" parameterType="map" resultType="int">
+		SELECT 
+		  count(1)
+		FROM
+		  tb_finance_contract_plan p 
+		  LEFT JOIN tb_upc_users u 
+		    ON p.`contract_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1 
+		    ON p.`create_per` = u1.userid 
+		    WHERE 1=1 
+		    <if test="contract_username !=null and contract_username != ''">
+				and u.username LIKE '%${contract_username}%'
+			</if>
+			 <if test="create_per_name !=null and create_per_name != ''">
+				and u1.username LIKE '%${create_per_name}%'
+			</if>
+			<if test="contract_unit !=null and contract_unit != ''">
+				and p.contract_unit LIKE '%${contract_unit}%'
+			</if>
+			<if test="contract_num !=null and contract_num != ''">
+				and p.contract_num LIKE '%${contract_num}%'
+			</if>
+			<if test="contract_areaname !=null and contract_areaname != ''">
+				and p.contract_areaname LIKE '%${contract_areaname}%'
+			</if>
+			<if test="customer_name !=null and customer_name != ''">
+				and p.customer_name LIKE '%${customer_name}%'
+			</if>
+			<if test="starttime !=null and starttime != ''">
+				and p.accept_date >= #{starttime}
+			</if>
+			<if test="endtime !=null and endtime != ''">
+				and #{endtime} >= p.accept_date
+			</if>
+			<if test="status !=null and status != ''">
+				and p.status = #{status}
+			</if>
+			<if test="oa_num !=null and oa_num != ''">
+				and p.oa_num LIKE '%${oa_num}%'
+			</if>
+			<if test="userid !=null and userid != ''">
+				and (p.contract_userid =#{userid} or p.`create_per` = #{userid})
+			</if>
+			<if test="contract_program !=null and contract_program != ''">
+				and p.contract_program LIKE '%${contract_program}%'
+			</if>
+		</select>
+		
+		<select id="queryAllContractPlan" parameterType="map" resultType="com.rds.finance.model.RdsRemittancePlanInfoModel">
+			select r.*,u.username as create_pername from tb_finance_remittance_plan r left join tb_upc_users u on r.create_per = u.userid
+			where contract_id = #{contract_id}
+		</select>
+		
+		<insert id="insertRemittancePlan" parameterType="map" >
+			insert into tb_finance_remittance_plan(contract_remittance_planid,contract_id,remittance,remittance_date,status,
+			insideCost,insideCostUnit,manageCost,manageUnit,externalCost,create_per,create_date)
+			values(#{contract_remittance_planid},#{contract_id},#{remittance},#{remittance_date},#{status},#{insideCost},
+			#{insideCostUnit},#{manageCost},#{manageUnit},#{externalCost},#{create_per},now())
+		</insert>
+		
+		<update id="updateRemittancePlan" parameterType="map" >
+			update tb_finance_remittance_plan 
+			set remittance = #{remittance},
+				remittance_date=#{remittance_date},
+				insideCost=#{insideCost},
+				insideCostUnit=#{insideCostUnit},
+				manageCost=#{manageCost},
+				manageUnit=#{manageUnit},
+				externalCost=#{externalCost},
+				create_per=#{create_per},
+				create_date=now()
+				where contract_remittance_planid=#{contract_remittance_planid}
+		</update>
+	
+		<delete id="deleteRemittancePlan" parameterType="map">
+			delete from tb_finance_remittance_plan where contract_remittance_planid=#{contract_remittance_planid}
+		</delete>
+		
+		<update id="updateContractRemittance" parameterType="map">
+			update tb_finance_remittance_plan set status = 3, remittance_id = #{remittance_id}
+			where contract_remittance_planid IN  
+		 	<foreach item="item" index="index" collection="fee_ids" open="("
+		           separator="," close=")">
+		           #{item}  
+		     </foreach>
+		</update>
+		
+		<update id="updateContractSatus" parameterType="map">
+			update tb_finance_remittance_plan set status = 4 ,paragraphtime=curdate()
+			where remittance_id IN  
+		 	<foreach item="item" index="index" collection="remittance_ids" open="("
+		           separator="," close=")">
+		           #{item}  
+		     </foreach>
+		</update>
+		
+		<insert id="insertRemittanceLogs" parameterType="map">
+			insert into tb_judicial_remittance_logs (remittance_id,confirm_state,confirm_per,confirm_date,confirm_remark)
+			values (#{remittance_id},#{confirm_state},#{confirm_per},sysdate(),#{confirm_remark})
+		</insert>
+		
+		<select id="queryRemittanceLogs" parameterType="map" resultType="com.rds.finance.model.RdsRemittanceLogInfoModel">
+			SELECT l.*,u.`username` AS 'confirm_per_name' FROM tb_judicial_remittance_logs l LEFT JOIN tb_upc_users u ON l.`confirm_per` = u.`userid` 
+			WHERE l.`remittance_id`= #{remittance_id}
+		</select>
+		
+		<!--删除汇款单号 start  -->
+		<update id="deleteCaseFeeRemittance" parameterType="map">
+			<if test="daily_type == 2">
+				update tb_finance_remittance_plan set status=2,remittance_id=null where remittance_id = #{remittance_id}
+			</if>
+			<if test="daily_type != 2">
+				update tb_judicial_casefee set status=2,return_sum = 0 ,remittanceDate='',
+				account='',remittanceName='',remittance_id=null where remittance_id = #{remittance_id}
+			</if>
+		</update>
+		
+		<delete id="deleteRemittanceInfo" parameterType="map">
+			delete from tb_judicial_remittance where remittance_id = #{remittance_id}
+		</delete>
+		<!--删除汇款单号 end  -->
+		
+		<select id="queryConfirmCase"  parameterType="map" resultType="int">
+			select count(1) from tb_judicial_casefee c
+			<if test="case_type == 'dna'">
+				inner join tb_judicial_case_info t 
+				on t.case_id = c.case_id
+				 where t.is_delete=0 and c.status=0 and t.case_code=#{case_code}
+			</if>
+			<if test="case_type == 'children'">
+				inner join tb_children_case_info t  
+				on t.case_id = c.case_id
+	     		where t.is_delete=0 and c.status=0 and t.case_code=#{case_code}
+			</if>
+			<if test="case_type == 'inversive'">
+				inner join tb_invasive_prenatal t  
+				on t.id = c.case_id
+	     		where t.cancelif='2' and c.status=0 and t.num=#{num}
+			</if>
+		</select>
+		
+		<select id="queryCaseFeeById"  parameterType="map" resultType="map">
+			select * from tb_judicial_casefee where case_id = #{case_id} 
+			<if test="case_type !=null and case_type != ''">
+				and case_type=#{case_type}
+			</if>
+			limit 1
+		</select>
+		
+		<update id="updateConfirmCodeByCaseId" parameterType="map">
+			update tb_judicial_case_info set confirm_code = #{confirm_code} ,case_state = #{case_state}
+			where case_id=#{case_id}
+		</update>
+		
+		<insert id="insertContractAttachment" parameterType="com.rds.finance.model.RdsFinanceContractAttachmentModel">
+			INSERT INTO
+			`tb_finance_contract_attachment` (`id`,
+			`contract_id`,
+			`contract_num`, `attachment_path`, `attachment_date`,
+			`attachment_type`,create_per)
+			VALUES
+			(#{id},#{contract_id},#{contract_num},#{attachment_path},#{attachment_date},#{attachment_type},#{create_per});
+		</insert>
+		
+		<update id="deleteContractAttachment" parameterType="map">
+			update tb_finance_contract_attachment set is_delete = 2
+			where id=#{id}
+		</update>
+		
+		<select id="queryContractAttachment" parameterType="map" resultType="com.rds.finance.model.RdsFinanceContractAttachmentModel">
+			select t.*,u.username as 'create_pername' from tb_finance_contract_attachment t left join tb_upc_users u on t.create_per = u.userid
+			where 1=1 and t.is_delete=1
+			<if test="id !=null and id != ''">
+				and  t.id = #{id}
+			</if>
+			<if test="contract_id !=null and contract_id != ''">
+				and  t.contract_id = #{contract_id}
+			</if>
+			<if test="attachment_path !=null and attachment_path != ''">
+				and  t.attachment_path = #{attachment_path}
+			</if>
+		</select>
+		
+		<update id="deductibleCaseInfo" parameterType="map">
+			update tb_judicial_casefee set return_sum = 0.0 where remittance_id=#{remittance_id}
+		</update>
+		
+		<select id="queryFinanceAttachment" parameterType="map" resultType="com.rds.finance.model.RdsCaseFinanceAttachmentModel">
+			SELECT a.*,u.`username` AS create_pername FROM tb_finance_attachment a LEFT JOIN tb_upc_users u ON a.`create_per`=u.`userid`
+			where 1=1 and status = '1'
+			<if test="remittance_id !=null and remittance_id != ''">
+				and  a.remittance_id = #{remittance_id}
+			</if>
+		</select>
+		
+		<insert id="insertFinanceAttachment" parameterType="map">
+			insert into tb_finance_attachment(id,remittance_id,attachment_path,create_per,create_date)
+			values(#{id},#{remittance_id},#{attachment_path},#{create_per},now())
+		</insert>
+		
+		<update id="updateFinanceAttachment" parameterType="map">
+			update tb_finance_attachment set status = '2' where id = #{id}
+		</update>
+</mapper>

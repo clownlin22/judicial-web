@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialBankMapper">
+	<select id="queryBank" resultType="com.rds.judicial.model.RdsJudicialBankModel">
+		select * from tb_dic_bank_info
+	</select>
+	<insert id="insert" parameterType="map">
+		INSERT INTO `tb_dic_bank_info`
+		(`id`, `bankaccount`, `bankname`, `remark`,`companyid`)
+		VALUES
+		(#{id},#{bankaccount},#{bankname},#{remark},#{companyid});
+	</insert>
+
+	<update id="update" parameterType="map">
+		UPDATE `tb_dic_bank_info` SET
+		`bankaccount` = #{bankaccount} , `bankname` =
+		#{bankname} , `remark` =
+		#{remark} WHERE `id` = #{id};
+	</update>
+
+	<delete id="delete" parameterType="map">
+		DELETE FROM `tb_dic_bank_info`
+		WHERE `id` = #{id};
+	</delete>
+
+	<select id="queryAllPage" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialBankModel">
+		SELECT i.*,c.`companyname` FROM tb_dic_bank_info i LEFT JOIN
+		`tb_upc_company` c ON i.`companyid`=c.`companyid`
+		<if test="search != ''">
+			where bankname like '%${search}%'
+		</if>
+		limit #{start},#{limit}
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(*) from tb_dic_bank_info
+		<if test="search != ''">
+			where bankname = #{search}
+		</if>
+	</select>
+
+	<select id="getBankname" resultType="map">
+		SELECT
+		CONCAT(
+		b.`bankname`,
+		'(',
+		b.`bankaccount`,
+		')'
+		) AS bankname,
+		b.`bankaccount`
+		FROM
+		`tb_dic_bank_info` b
+	</select>
+
+	<select id="getCompany" resultType="map">
+		SELECT
+		c.`companyid`,c.`companyname` FROM `tb_upc_company` c WHERE
+		c.`status`=1
+	</select>
+</mapper>

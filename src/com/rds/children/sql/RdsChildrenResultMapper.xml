@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenResultMapper">
+
+	<select id="getResultInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenCaseResultModel">
+		SELECT
+		  cr.`result_id`,
+		  cr.`result_in_time`,
+		  ci.`case_code`,
+  		  ci.`sample_code`,
+		  ci.`child_name`,
+		  ci.`case_id` ,
+  		  ci.`gather_time`,
+  		  ci.child_sex
+		FROM
+		  tb_children_case_info ci 
+		  LEFT JOIN tb_children_case_result cr 
+		    ON ci.`case_id` = cr.`case_id` 
+		    WHERE 1=1  and ci.is_delete=0
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name!=null and child_name!= '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" gather_time_start != null and  gather_time_start != '' ">
+			and ci.gather_time>=#{gather_time_start}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" gather_time_end != null and gather_time_end != ''">
+			and #{gather_time_end}>=ci.gather_time
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and cr.result_in_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=cr.result_in_time
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and ci.verify_state=#{verify_state}
+		</if>
+		<if test=" sample_result == 1">
+			and cr.result_id is null
+		</if>
+		<if test=" sample_result == 2">
+			and cr.result_id is not null
+		</if>
+		ORDER BY ci.case_code
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countResultInfo" parameterType="map" resultType="int">
+		SELECT count(1)
+		FROM
+		  tb_children_case_info ci 
+		  LEFT JOIN tb_children_case_result cr 
+		    ON ci.`case_id` = cr.`case_id` 
+		    WHERE 1=1  and ci.is_delete=0
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" child_name!=null and child_name!= '' ">
+			and ci.child_name like '%${child_name}%'
+		</if>
+		<if test=" gather_time_start != null and  gather_time_start != '' ">
+			and ci.gather_time>=#{gather_time_start}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" gather_time_end != null and gather_time_end != ''">
+			and #{gather_time_end}>=ci.gather_time
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and cr.result_in_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=cr.result_in_time
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and ci.verify_state=#{verify_state}
+		</if>
+		<if test=" sample_result == 1">
+			and cr.result_id is null
+		</if>
+		<if test=" sample_result == 2">
+			and cr.result_id is not null
+		</if>
+	</select>
+
+	<insert id="insertResult" parameterType="com.rds.children.model.RdsChildrenCaseResultModel">
+		insert into
+		tb_children_case_result(result_id,case_id,case_code,result_in_time)
+		values(#{result_id},#{case_id},#{case_code},now())
+	</insert>
+
+	<insert id="insertCaseLocus" parameterType="java.util.List">
+		INSERT INTO `tb_children_locus_info` (`case_id`, `locus_name`,
+		`locus_value`) VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.case_id}, #{item.locus_name},#{item.locus_value})
+		</foreach>
+	</insert>
+
+	<select id="getCaseInfoModel" parameterType="String"
+		resultType="com.rds.children.model.RdsChildrenCaseInfoModel">
+		SELECT * FROM `tb_children_case_info` ci LEFT JOIN
+		`tb_dic_agentia` ag ON ci.`agentia_id` = ag.`agentia_id` WHERE 
+		(case_code = #{case_code} or case_id =#{case_code}) LIMIT 0,1
+	</select>
+
+	<select id="exsitCase_code" parameterType="string" resultType="int">
+		select count(*) from tb_children_case_result where
+		case_code=#{case_code}
+	</select>
+	<select id="getCaseId" parameterType="string" resultType="string">
+		SELECT
+		case_id FROM `tb_children_case_info` WHERE case_code=#{case_code}
+		LIMIT 0,1
+	</select>
+	<delete id="deleteCaseResult" parameterType="string">
+		delete from
+		tb_children_case_result where case_id=#{case_id};
+	</delete>
+	<delete id="deleteCaseLocus" parameterType="string">
+	DELETE FROM
+		`tb_children_locus_info` WHERE case_id=#{case_id};
+	</delete>
+	<delete id="deleteCaseHistory" parameterType="string">
+		delete from
+		tb_children_locus_history where case_code=#{case_code};
+	</delete>
+	<select id="getLoucsInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenCaseLocusModel">
+		SELECT
+		li.*
+		FROM
+		`tb_children_locus_info` li
+		LEFT JOIN
+		`tb_children_case_result` cr
+		ON cr.`case_id` = li.`case_id`
+		WHERE 1=1 
+		<if test=" result_id !=null and result_id != ''">
+			and cr.result_id=#{result_id}
+		</if>
+		<if test=" case_id !=null and case_id != ''">
+			and cr.case_id=#{case_id}
+		</if>
+		ORDER BY li.`locus_name`
+	</select>
+	
+	<update id="updateCaseAgentia" parameterType="map">
+		update tb_children_case_info set agentia_id=#{agentia_id} 
+		where 1=1
+		<if test=" case_id !=null and case_id != ''">
+			and case_id=#{case_id}
+		</if>
+		<if test=" sample_code !=null and sample_code != ''">
+			and sample_code=#{sample_code}
+		</if> 
+	</update>
+	
+	<select id="queryOtherRecord" parameterType="map" resultType="string">
+        select case_code from tb_children_locus_history a  where
+        a.resultstr = #{resultstr} and
+        a.case_code!= #{case_code}
+    </select>
+    
+    <insert id="insertHistoryRecord" parameterType="map">
+    	insert into tb_children_locus_history(case_code,resultstr) values(#{case_code},#{resultstr})
+    </insert>
+    
+    <select id="queryIdentifySample" parameterType="String" resultType="map">
+        select experiment_no,resultstr,ext_flag from tb_judicial_sample_result where
+        sample_code= #{sample_code}
+    </select>
+    
+     <select id="queryCaseCodeBySampleCode" parameterType="String" resultType="map">
+        select case_id,case_code from tb_children_case_info where
+        sample_code= #{sample_code} and is_delete=0
+    </select>
+    
+    <select id="queryChildrenRecordData" parameterType="map" resultType="map">
+        select name,value from tb_judicial_sample_result_data
+        where experiment_no = #{experiment_no}
+        and sample_code = #{sample_code}
+    </select>
+</mapper>

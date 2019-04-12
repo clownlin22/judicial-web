@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenTariffMapper">
+	<select id="getTariffInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenTariffModel">
+		SELECT
+		tf.`tariff_id`,
+		tf.`tariff_name`,
+		tf.`tariff_price`,
+		tf.`tariff_remark`,
+		tf.`tariff_state`
+		FROM
+		`tb_children_tariff` tf
+		order by tf.`tariff_state`
+		LIMIT
+		#{start},#{limit}
+	</select>
+	<select id="getTariffInfoCount" parameterType="map" resultType="int">
+		SELECT
+		count(1)
+		FROM
+		`tb_children_tariff` tf
+	</select>
+	<insert id="save" parameterType="map">
+		INSERT INTO `tb_children_tariff`
+		(
+		`tariff_id`,
+		`tariff_name`,
+		`tariff_price`,
+		`tariff_remark`
+		)
+		VALUES
+		(#{tariff_id},#{tariff_name},#{tariff_price},#{tariff_remark})
+	</insert>
+	<update id="delete" parameterType="map">
+		UPDATE
+		`tb_children_tariff`
+		SET
+		`tariff_state` = '1'
+		WHERE `tariff_id` = #{tariff_id}
+	</update>
+</mapper>

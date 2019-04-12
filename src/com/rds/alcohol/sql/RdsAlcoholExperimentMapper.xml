@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.alcohol.mapper.RdsAlcoholExperimentMapper">
+	<insert id="setRegressionData" parameterType="java.util.List">
+		INSERT INTO `tb_alcohol_regression_data` (`reg_id`, `concentration`,
+		`alcohol`, `butanol`) VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.reg_id}, #{item.concentration}, #{item.alcohol},
+			#{item.butanol})
+		</foreach>
+	</insert>
+	<insert id="setRegression" parameterType="com.rds.alcohol.model.RdsAlcoholRegressionModel">
+		INSERT INTO
+		`tb_alcohol_regression` (`reg_id`, `reg_code`, `reg_time`,
+		`reg_A`,
+		`reg_B`, `reg_R2`, `reg_qualify`) VALUES
+		(#{reg_id},#{reg_code},#{reg_time},#{reg_A},#{reg_B},#{reg_R2},#{reg_qualify});
+	</insert>
+	<select id="getRegModel" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholRegressionModel">
+		SELECT * FROM
+		`tb_alcohol_regression` reg
+		<if test="reg_date != null and reg_date != ''">
+			where reg_time > #{reg_date}
+		</if>
+		ORDER BY reg.`reg_time` DESC LIMIT 0,1
+	</select>
+	<insert id="addExperiment" parameterType="com.rds.alcohol.model.RdsAlcoholExperimentModel">
+		INSERT INTO
+		`tb_alcohol_experiment` (`exper_id`, `exper_code`,
+		`case_id`, `reg_id`,
+		`exper_time`,
+		`exper_isdelete`,
+		`remark`) VALUES
+		(#{exper_id},#{exper_code},#{case_id},#{reg_id},#{exper_time},#{exper_isdelete},#{remark});
+
+	</insert>
+	<insert id="addExperimentData" parameterType="java.util.List">
+		INSERT INTO `tb_alcohol_experiment_data` (`id`, `exper_id`, `alcohol`,
+		`butanol`, `result`)
+		VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.id},#{item.exper_id},#{item.alcohol},#{item.butanol},#{item.result})
+		</foreach>
+	</insert>
+	<update id="updateCaseState" parameterType="map">
+		UPDATE
+		`tb_alcohol_case_info` SET `state` = #{state} WHERE
+		`case_id`=#{case_id}
+	</update>
+	<select id="getExperCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM`tb_alcohol_experiment` t WHERE
+		t.`case_id`=#{case_id} AND t.`exper_isdelete`=0
+	</select>
+	<select id="queryCaseForExper" parameterType="map" resultType="map">
+		SELECT
+		samp.`sample_id`,
+		samp.`sample_name`,
+		samp.`id_number`,
+		samp.`sample_sex`,
+		info.`case_id`,
+		info.`case_code`,
+		info.`remark`
+		FROM
+		`tb_alcohol_case_info` info
+		LEFT JOIN `tb_alcohol_sample_info` samp
+		ON
+		info.`sample_id` = samp.`sample_id`
+		WHERE 1=1
+		<if test="sample_name != null and sample_name!=''">
+			and samp.sample_name like '%${sample_name}%' </if>
+		<if test="case_code!=null and case_code != ''">
+			and info.case_code like '%${case_code}%' </if>
+		<if test="state==2">
+			and info.state = 2
+		</if>
+		<if test="state==3">
+			and info.state >= 3 and 6 >= info.state
+		</if>
+		ORDER BY state ASC
+		Limit #{start},#{end}
+	</select>
+	<select id="queryCaseForExperCount" parameterType="map"
+		resultType="Integer">
+		SELECT COUNT(1) FROM `tb_alcohol_case_info` info
+		LEFT JOIN
+		`tb_alcohol_sample_info` samp
+		ON info.`sample_id` = samp.`sample_id`
+		WHERE 1=1
+		<if test="sample_name != null and sample_name!=''">
+			and samp.sample_name like '%${sample_name}%' </if>
+		<if test="case_code!=null and case_code != ''">
+			and info.case_code like '%${case_code}%' </if>
+		<if test="state==2">
+			and info.state = 2
+		</if>
+		<if test="state==3">
+			and info.state >= 3 and 6 >= info.state
+		</if>
+	</select>
+	<select id="getExperDetail" parameterType="map" resultType="map">
+		SELECT
+		exper.`case_id`,
+		exper.`exper_id`,
+		exper.`exper_code`,
+		exper.`exper_isdelete`,
+		DATE_FORMAT(
+		exper.`exper_time`,
+		'%Y-%m-%d
+		%H:%i:%s'
+		) AS exper_time,
+		detail.`alcohol`,
+		detail.`butanol`,
+		detail.`result`,
+		CONCAT('Y=',reg.`reg_A`,IF(reg.`reg_B`>0,'X+','X'),reg.`reg_B`) AS reg
+		FROM
+		`tb_alcohol_experiment` exper
+		LEFT JOIN
+		`tb_alcohol_experiment_data` detail
+		ON exper.`exper_id` =
+		detail.`exper_id`
+		LEFT JOIN `tb_alcohol_regression` reg
+		ON reg.`reg_id`
+		= exper.`reg_id`
+		WHERE exper.`case_id`=#{case_id}
+		ORDER BY
+		exper.`exper_code` ASC
+	</select>
+
+	<update id="deleteExper" parameterType="map">
+		UPDATE
+		`tb_alcohol_experiment` t SET t.`exper_isdelete`=1 WHERE t.`case_id`=
+		#{case_id}
+	</update>
+</mapper>

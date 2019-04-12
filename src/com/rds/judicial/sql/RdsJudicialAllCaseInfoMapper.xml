@@ -1,0 +1,1215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialAllCaseInfoMapper">
+	
+	<select id="getAllCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialAllCaseInfoModel">
+		SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.`client`,
+		ci.`case_areacode`,
+		ci.`close_time`,
+		ci.`sample_in_time`,
+		ci.`accept_time`,
+		ci.`receiver_area`,
+		ci.parnter_name,
+		us.`username` AS case_receiver,
+		us1.username as 'case_in_per',
+		cf.real_sum,
+		CONCAT(si.fandm,';',si.child) AS sample_info,
+		CONCAT(
+		IF(
+		cf.`type` = 0,
+		'常规',
+		IF(
+		cf.`type` = 1,
+		'先出报告后付款',
+		IF(cf.`type`=2,'免单',IF(cf.`type`=3,'优惠',IF(cf.`type`=4,'月结',IF(cf.`type`=5,'二次采样','补样'))))
+		)
+		),
+		'-',
+		IF(
+		cf.`status`= 0 ,
+		'已确认回款',
+		'未确认回款'
+		)
+		) AS fee_info,
+	    DATE_FORMAT(tt.update_date,'%Y-%m-%d') AS update_date,
+		mi.mail_info,
+		ci.remark,
+		cf.finance_remark,
+		IF(us.`roletype`=104,(SELECT
+		u3.username
+		FROM
+		tb_judicial_agent ag,
+		tb_upc_users u3
+		WHERE ag.userid = us.userid
+		AND u3.userid = ag.peruserid AND ag.delstatus=0),'') AS agent
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN
+		`tb_upc_users` us
+		ON us.`userid` = ci.`case_userid`
+		LEFT JOIN
+		`tb_upc_users` us1
+		ON us1.`userid` = ci.case_in_per
+		INNER JOIN
+		tb_judicial_casefee cf
+		ON cf.`case_id` = ci.case_id
+		LEFT JOIN `tb_judicial_remittance` re 
+		ON re.remittance_id = cf.remittance_id
+		LEFT JOIN
+		(SELECT
+		GROUP_CONCAT(
+		CONCAT(
+		dvm.`keyvalue`,'-',mi.mail_time,
+		'-',
+		mi.`mail_code`,
+			          '|',
+			          mi.mail_per
+		)
+		) AS mail_info,
+		mi.`case_id`
+		FROM
+		tb_judicial_mail_info mi
+		LEFT JOIN `tb_upc_dic_values`
+		dvm
+		ON mi.`mail_type` = dvm.`keyid`
+		GROUP BY mi.`case_id`) mi
+		ON
+		mi.`case_id` = ci.case_id
+		LEFT JOIN
+		tb_judicial_case_sample si
+	    ON ci.`case_id`=si.`case_id`
+	     LEFT JOIN (SELECT t.`PROC_INST_ID_`,MIN(t.`START_TIME_`) AS update_date FROM `act_hi_taskinst` t 
+	    WHERE t.`TASK_DEF_KEY_`='taskRegister' GROUP BY t.`PROC_INST_ID_`
+		) tt 
+		ON tt.PROC_INST_ID_=ci.process_instance_id
+		where ci.is_delete=0
+		<if test="case_code != null and case_code!=''">
+			and ci.case_code like '%${case_code}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and ci.accept_time >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="update_date_start != null and update_date_start != ''">
+			and tt.update_date >= #{update_date_start}
+		</if>
+		<if test="update_date_end != null and update_date_end !=''">
+			and #{update_date_end}>=tt.update_date
+		</if>
+		<if test="area != null and area != ''">
+			and ci.`receiver_area` like '%${area}%'
+		</if>
+		<if test="mail_code !=null and mail_code!='' ">
+			and mi.mail_info like '%${mail_code}%'
+		</if>
+		<if test="fee_type != null and fee_type!='' ">
+			and cf.type=#{fee_type}
+		</if>
+		<if test="fee_status==0">
+			and cf.status &lt;&gt; 0
+		</if>
+		<if test="fee_status==1">
+			and cf.status = 0
+		</if>
+		<if test="case_name !=null and case_name != '' ">
+			and (si.fandm like '%${case_name}%' or si.child like '%${case_name}%' or us.username
+			like '%${case_name}%' or ci.client like  '%${case_name}%' )
+		</if>
+		<if test="report_model != null and report_model != ''">
+			AND ci.`report_model`=#{report_model}
+		</if>
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.parnter_name like '%${parnter_name}%'
+		</if>
+		<if test="source_type !=null and source_type != '' ">
+			and ci.source_type like '%${source_type}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and re.confirm_date >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end}>=re.confirm_date
+		</if>
+		limit #{start},#{limit}
+	</select>
+	
+	<select id="getAllCaseInfoCount" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		tb_judicial_case_info ci
+		LEFT JOIN `tb_upc_users` us
+		ON us.`userid` = ci.case_userid
+		INNER JOIN tb_judicial_casefee cf
+		ON cf.`case_id` = ci.case_id
+		LEFT JOIN `tb_judicial_remittance` re 
+		ON re.remittance_id = cf.remittance_id
+		LEFT JOIN
+		(SELECT
+		GROUP_CONCAT(
+		CONCAT(
+		dvm.`keyvalue`,
+		'-',
+		mi.`mail_code`
+		)
+		) AS mail_info,
+		mi.`case_id`
+		FROM
+		tb_judicial_mail_info mi
+		LEFT JOIN `tb_upc_dic_values`
+		dvm
+		ON mi.`mail_type` = dvm.`keyid`
+		GROUP BY mi.`case_id`) mi
+		ON
+		mi.`case_id` = ci.case_id
+		LEFT JOIN
+		tb_judicial_case_sample si
+	    ON ci.`case_id`=si.`case_id`
+	    LEFT JOIN (SELECT t.`PROC_INST_ID_`,MIN(t.`START_TIME_`) AS update_date FROM `act_hi_taskinst` t 
+	    WHERE t.`TASK_DEF_KEY_`='taskRegister' GROUP BY t.`PROC_INST_ID_`
+		) tt
+		ON tt.PROC_INST_ID_=ci.process_instance_id
+		where ci.is_delete=0
+		<if test="case_code != null and case_code!=''">
+			and ci.case_code like '%${case_code}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and ci.accept_time >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="update_date_start != null and update_date_start != ''">
+			and tt.update_date >= #{update_date_start}
+		</if>
+		<if test="update_date_end != null and update_date_end !=''">
+			and #{update_date_end}>=tt.update_date
+		</if>
+		<if test="area != null and area != ''">
+			and ci.`receiver_area` like '%${area}%'
+		</if>
+		<if test="mail_code !=null and mail_code!=''">
+			and mi.mail_info like '%${mail_code}%'
+		</if>
+		<if test="fee_type != null and fee_type!= ''">
+			and cf.type=#{fee_type}
+		</if>
+		<if test="fee_status==0">
+			and cf.status &lt;&gt; 0
+		</if>
+		<if test="fee_status==1">
+			and cf.status = 0
+		</if>
+		<if test="case_name !=null and case_name != '' ">
+			and (si.fandm like '%${case_name}%' or si.child like '%${case_name}%' or us.username
+			like '%${case_name}%' or ci.client like  '%${case_name}%' )
+		</if>
+		<if test="report_model != null and report_model != ''">
+			AND ci.`report_model`=#{report_model}
+		</if>
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.parnter_name like '%${parnter_name}%'
+		</if>
+		<if test="source_type !=null and source_type != '' ">
+			and ci.source_type like '%${source_type}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and re.confirm_date >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end}>=re.confirm_date
+		</if>
+	</select>
+	
+	<select id="queryAllCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialParamsModel"
+		resultType="com.rds.judicial.model.RdsJudicialExportCaseInfoModel">
+		SELECT 
+			  ci.`case_code`,
+			  ci.`accept_time`,
+			  ci.`consignment_time`,
+			  ci.`client`,
+			  ci.`sample_in_time`,
+			  ci.`phone`,
+			  ci.`receiver_area`,
+			  us.`username` AS case_receiver,
+			  si.`fandm`,
+			  si.`child`,
+			  si.`id_card`,
+			  si.`birth_date`,
+			  si.`sample_count`,
+			  cf.`return_sum`,
+			  cf.`real_sum`,
+			  cf.`paragraphtime`,
+			  ci.`close_time`,
+			  cf.`type`,
+			  cf.`account`,
+			  ci.remark,
+			  ci.report_model,
+			  cf.`finance_remark` AS financeRemark,
+			  cf.status AS financeStatus,
+			  cf.remittanceDate,
+			  re.confirm_date,
+			  ci.`parnter_name`,
+			  mi.mail_info,
+			  DATE_FORMAT(tt.update_date,'%Y-%m-%d') AS update_date,
+			  IF(
+			    us.`roletype` = 104,
+			    (SELECT 
+			      u3.username 
+			    FROM
+			      tb_judicial_agent ag,
+			      tb_upc_users u3 
+			    WHERE ag.userid = us.userid 
+			      AND u3.userid = ag.peruserid 
+			      AND ag.delstatus = 0),
+			    ''
+			  ) AS agent 
+			FROM
+			  tb_judicial_case_info ci 
+			  LEFT JOIN `tb_upc_users` us 
+			    ON us.`userid` = ci.case_userid
+			  INNER JOIN tb_judicial_casefee cf 
+			    ON cf.`case_id` = ci.case_id 
+				LEFT JOIN `tb_judicial_remittance` re 
+				ON re.remittance_id = cf.remittance_id
+			  LEFT JOIN 
+			    (SELECT 
+			      GROUP_CONCAT(
+			        CONCAT(
+			          dvm.`keyvalue`,
+			          '-',
+			          mi.mail_time,
+			          '-',
+			          mi.`mail_code`,
+			          '|',
+			          mi.mail_per
+			        )
+			      ) AS mail_info,
+			      mi.`case_id` 
+			    FROM
+			      tb_judicial_mail_info mi 
+			      LEFT JOIN `tb_upc_dic_values` dvm 
+			        ON mi.`mail_type` = dvm.`keyid` 
+			    GROUP BY mi.`case_id`) mi 
+			    ON mi.`case_id` = ci.case_id 
+			  LEFT JOIN tb_judicial_case_sample si 
+			    ON ci.`case_id` = si.`case_id` 
+			    LEFT JOIN (SELECT t.`PROC_INST_ID_`,MIN(t.`START_TIME_`) AS update_date FROM `act_hi_taskinst` t 
+			    WHERE t.`TASK_DEF_KEY_`='taskRegister' GROUP BY t.`PROC_INST_ID_`
+				) tt
+				ON tt.PROC_INST_ID_=ci.process_instance_id
+			WHERE ci.is_delete = 0 
+			 <if test="case_code != null and case_code!=''">
+			and ci.case_code like '%${case_code}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and ci.accept_time >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and re.confirm_date >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end}>=re.confirm_date
+		</if>
+		<if test="update_date_start != null and update_date_start != ''">
+			and tt.update_date >= #{update_date_start}
+		</if>
+		<if test="update_date_end != null and update_date_end !=''">
+			and #{update_date_end}>=tt.update_date
+		</if>
+		<if test="area != null and area != ''">
+			and ci.`receiver_area` like '%${area}%'
+		</if>
+		<if test="mail_code !=null and mail_code!=''">
+			and mi.mail_info like '%${mail_code}%'
+		</if>
+		<if test="fee_type != null and fee_type!= ''">
+			and cf.type=#{fee_type}
+		</if>
+		<if test="fee_status==0">
+			and cf.status &lt;&gt; 0
+		</if>
+		<if test="fee_status==1">
+			and cf.status = 0
+		</if>
+		<if test="case_name !=null and case_name != '' ">
+			and (si.fandm like '%${case_name}%' or si.child like '%${case_name}%' or us.username
+			like '%${case_name}%' or ci.client like  '%${case_name}%' )
+		</if>
+		<if test="report_model != null and report_model != ''">
+			AND ci.`report_model`=#{report_model}
+		</if>
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.parnter_name like '%${parnter_name}%'
+		</if>
+		<if test="source_type !=null and source_type != '' ">
+			and ci.source_type like '%${source_type}%'
+		</if>
+			ORDER BY ci.accept_time DESC
+	</select>
+	
+	<select id="queryParentSampleInfoList" parameterType="java.util.List"
+		resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type,
+		vv.`value` AS sample_callname
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON s.sample_type =
+		v.key1
+		LEFT JOIN tb_dic_values vv
+		ON vv.`key1` = s.`sample_call`
+		WHERE (
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			s.case_id = #{item.case_id}
+		</foreach>
+		)
+		AND (
+		s.sample_call = 'father'
+		OR s.sample_call= 'mother' 
+		OR s.sample_call = 'grandpa'
+		OR s.sample_call = 'uncle'
+		OR s.sample_call = 'uncle2' 
+		OR s.sample_call = 'A'
+		)
+		GROUP BY
+		s.`sample_code`
+		ORDER BY v.sort
+	</select>
+
+	<select id="queryChildSampleInfoList" parameterType="java.util.List"
+		resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel">
+		SELECT
+		ss.*,
+		vv.value AS sample_callname
+		FROM
+		(SELECT
+		s.sample_id,
+		s.sample_code,
+		s.sample_call,
+		s.sample_username,
+		s.id_number,
+		s.birth_date,
+		s.case_id,
+		v.sort,
+		v.value AS sample_typename,
+		s.sample_type
+		FROM
+		tb_judicial_sample_info s
+		LEFT JOIN tb_dic_values v
+		ON
+		s.sample_type =
+		v.key1
+		ORDER BY v.sort) ss
+		LEFT JOIN tb_dic_values vv
+		ON
+		ss.sample_call =
+		vv.key1
+		WHERE (
+		<foreach collection="list" index="index" item="item"
+			separator="or">
+			ss.case_id = #{item.case_id}
+		</foreach>
+		)
+		AND (
+		ss.sample_call = 'son'
+		OR
+		ss.sample_call = 'daughter'
+		OR
+		ss.sample_call = 'grandson'
+		OR
+		ss.sample_call = 'nephew'
+		OR
+		ss.sample_call = 'brother'
+		OR
+		ss.sample_call = 'brother2'
+		OR
+		ss.sample_call = 'sister'
+		OR
+		ss.sample_call = 'sister2'
+		OR
+		ss.sample_call = 'child'
+		OR
+		ss.sample_call = 'fetus'
+		OR
+		ss.sample_call = 'B'
+		OR
+		ss.sample_call = 'C'
+		)
+		ORDER BY
+		vv.sort
+	</select>
+	
+	<select id="queryPlaceBySamplecode" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialExperimentModel">
+		SELECT t.`experiment_no`,t.`experiment_date`, LEFT(RIGHT(SUBSTRING_INDEX(t.places,#{sample_code},1),3),2) AS 'places' FROM tb_judicial_experiment t WHERE t.places LIKE '%${sample_code}%';
+	</select>
+	
+	<select id="queryExportCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialExportCaseInfoModel">
+		SELECT  * FROM tb_judicial_export_info ci
+			LEFT JOIN  tb_judicial_serial_number q
+           ON q.`case_id`=ci.`case_id` 
+		WHERE 1=1
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and ci.confirm_date >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end}>=ci.confirm_date
+		</if>
+		<if test="case_code != null and case_code!=''">
+			and ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and ci.`accept_time` >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=ci.`accept_time`
+		</if>
+		<if test="update_date_start != null and update_date_start != ''">
+			and ci.`update_date` >= #{update_date_start}
+		</if>
+		<if test="update_date_end != null and update_date_end !=''">
+			and #{update_date_end}>=ci.`update_date`
+		</if>
+		<if test="receiver_area != null and receiver_area != ''">
+			and ci.`receiver_area` like '%${receiver_area}%'
+		</if>
+		<if test="receiver_area_provice != null and receiver_area_provice != ''">
+			and ci.`receiver_area` like '%${receiver_area_provice}%'
+		</if>
+		<if test="mail_code !=null and mail_code!=''">
+			and ci.`mail_info` like '%${mail_code}%'
+		</if>
+		<if test="serial_number != null and serial_number !=''">
+			and q.serial_number like '%${serial_number}%'
+		</if>
+		<if test="account != null and account !=''">
+			and ci.account like '%${account}%'
+		</if>
+		<if test="fee_type != null and fee_type!= ''">
+			and ci.`type`=#{fee_type}
+		</if>
+		<if test="fee_status==0">
+			and ci.`financeStatus` &lt;&gt; 0
+		</if>
+		<if test="fee_status==1">
+			and ci.`financeStatus` = 0
+		</if>
+		<if test="case_name !=null and case_name != '' ">
+			and (ci.`fandm` like '%${case_name}%' or ci.`child` like '%${case_name}%' or ci.`case_receiver`
+			like '%${case_name}%' or ci.`client` like  '%${case_name}%' )
+		</if>
+		<if test="report_model != null and report_model != ''">
+			AND ci.`report_model`=#{report_model}
+		</if>
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.`parnter_name` like '%${parnter_name}%'
+		</if>
+		<if test="source_type !=null and source_type != '' ">
+			and ci.`source_type` like '%${source_type}%'
+		</if>
+		<if test="sample_in_per !=null and sample_in_per != '' ">
+			and ci.`sample_in_per` like '%${sample_in_per}%'
+		</if>
+		<if test="limit !=null and limit != '' ">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryCountExportCaseInfo" parameterType="map" resultType="int">
+		SELECT  count(1) FROM tb_judicial_export_info ci
+			LEFT JOIN  tb_judicial_serial_number q
+           ON q.`case_id`=ci.`case_id` 
+		WHERE 1=1
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and ci.confirm_date >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end}>=ci.confirm_date
+		</if>
+		<if test="case_code != null and case_code!=''">
+			and ci.`case_code` like '%${case_code}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and ci.`accept_time` >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=ci.`accept_time`
+		</if>
+		<if test="update_date_start != null and update_date_start != ''">
+			and ci.`update_date` >= #{update_date_start}
+		</if>
+		<if test="update_date_end != null and update_date_end !=''">
+			and #{update_date_end}>=ci.`update_date`
+		</if>
+		<if test="receiver_area != null and receiver_area != ''">
+			and ci.`receiver_area` like '%${receiver_area}%'
+		</if>
+		<if test="receiver_area_provice != null and receiver_area_provice != ''">
+			and ci.`receiver_area` like '%${receiver_area_provice}%'
+		</if>
+		<if test="account != null and account !=''">
+			and ci.account like '%${account}%'
+		</if>
+		<if test="mail_code !=null and mail_code!=''">
+			and ci.`mail_info` like '%${mail_code}%'
+		</if>
+		<if test="serial_number != null and serial_number !=''">
+			and q.serial_number like '%${serial_number}%'
+		</if>
+		<if test="fee_type != null and fee_type!= ''">
+			and ci.`type`=#{fee_type}
+		</if>
+		<if test="fee_status==0">
+			and ci.`financeStatus` &lt;&gt; 0
+		</if>
+		<if test="fee_status==1">
+			and ci.`financeStatus` = 0
+		</if>
+		<if test="case_name !=null and case_name != '' ">
+			and (ci.`fandm` like '%${case_name}%' or ci.`child` like '%${case_name}%' or ci.`case_receiver`
+			like '%${case_name}%' or ci.`client` like  '%${case_name}%' )
+		</if>
+		<if test="report_model != null and report_model != ''">
+			AND ci.`report_model`=#{report_model}
+		</if>
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.`parnter_name` like '%${parnter_name}%'
+		</if>
+		<if test="source_type !=null and source_type != '' ">
+			and ci.`source_type` like '%${source_type}%'
+		</if>
+		<if test="sample_in_per !=null and sample_in_per != '' ">
+			and ci.`sample_in_per` like '%${sample_in_per}%'
+		</if>
+	</select>
+	
+	<select id="queryPartnerAllCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialExportCaseInfoModel">
+		SELECT 
+			  ci.`case_code`,
+			  ci.`accept_time`,
+			  q.`serial_number`,
+			  ci.`client`,
+			  ci.`sample_in_time`,
+			  ci.`phone`,
+			  ci.`receiver_area`,
+			  us.`username` AS case_receiver,
+			  si.`fandm`,
+			  si.`child`,
+			  si.`id_card`,
+			  si.`birth_date`,
+			  si.`sample_count`,
+			  ci.remark,
+			  ci.report_model,
+			  ci.`parnter_name`,
+			  mi.mail_info,
+			  IF(
+			    us.`roletype` = 104,
+			    (SELECT 
+			      u3.username 
+			    FROM
+			      tb_judicial_agent ag,
+			      tb_upc_users u3 
+			    WHERE ag.userid = us.userid 
+			      AND u3.userid = ag.peruserid 
+			      AND ag.delstatus = 0 
+			      AND u3.delstatus IS NULL),
+			    ''
+			  ) AS agent 
+			FROM
+			  tb_judicial_case_info ci 
+			  	LEFT JOIN  tb_judicial_serial_number q
+              ON q.`case_id`=ci.`case_id` 
+			  LEFT JOIN `tb_upc_users` us 
+			    ON us.`userid` = ci.case_userid
+			  LEFT JOIN 
+			    (SELECT 
+			      GROUP_CONCAT(
+			        CONCAT(
+			          dvm.`keyvalue`,
+			          '-',
+			          mi.mail_time,
+			          '-',
+			          mi.`mail_code`,
+			          '|',
+			          mi.mail_per
+			        )
+			      ) AS mail_info,
+			      mi.`case_id` 
+			    FROM
+			      tb_judicial_mail_info mi 
+			      LEFT JOIN `tb_upc_dic_values` dvm 
+			        ON mi.`mail_type` = dvm.`keyid` 
+			    GROUP BY mi.`case_id`) mi 
+			    ON mi.`case_id` = ci.case_id 
+			  LEFT JOIN tb_judicial_case_sample si 
+			    ON ci.`case_id` = si.`case_id` 
+			WHERE ci.is_delete = 0 
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and ci.parnter_name like '%${parnter_name}%'
+		</if>
+		<if test="receiver_area_provice != null and receiver_area_provice != ''">
+			and receiver_area like '%${receiver_area_provice}%'
+		</if>
+			ORDER BY ci.accept_time DESC
+	</select>
+	
+	<select id="getExceptionSampleInfo" resultType="com.rds.judicial.model.RdsJudicialSampleInfoModel" parameterType="map">
+		SELECT 
+			  s.sample_id,
+			  s.sample_code,
+			  s.sample_code_sys,
+			  s.sample_call,
+			  s.sample_username,
+			  s.id_number,
+			  s.birth_date,
+			  s.case_id,
+			  v2.value AS sample_callname,
+			  v1.value AS sample_typename,
+			  s.sample_type,
+			  s.special 
+			FROM
+			  tb_judicial_sample_info s,
+			  (SELECT 
+			    * 
+			  FROM
+			    tb_dic_values 
+			  WHERE keycode = '000000004') v1,
+			  (SELECT 
+			    * 
+			  FROM
+			    tb_dic_values 
+			  WHERE keycode = 'call') v2 
+			WHERE s.sample_type = v1.key1 
+			  AND s.sample_call = v2.key1 
+			  AND (s.`sample_code`= #{sample_code1} OR s.`sample_code`= #{sample_code2}) ORDER BY v2.sort 
+	</select>
+	
+	<select id="queryMessageCase" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialExportCaseInfoModel">
+		SELECT 
+		  t.`case_code`,
+		  t.`client`,
+		  t.`phone`,
+		  t.`accept_time`,
+		  u.`username` as case_receiver,
+		  t.`receiver_area`,
+		  GROUP_CONCAT(
+		    DATE_FORMAT(h.`TIME_`, '%Y-%m-%d'),
+		    ':',
+		    h.`USER_ID_`,
+		    ':',
+		    h.`MESSAGE_`
+		  ) AS remark
+		FROM
+		  `tb_judicial_case_info` t 
+		  LEFT JOIN tb_upc_users u 
+		  ON u.`userid`=t.`case_userid`
+		  LEFT JOIN `act_hi_comment` h 
+		    ON t.`process_instance_id` = h.`PROC_INST_ID_` 
+		WHERE t.`verify_state` = 2 
+		<if test="parnter_name !=null and parnter_name != '' ">
+			and t.parnter_name like '%${parnter_name}%'
+		</if>
+		<if test="starttime != null and starttime!=''">
+			and t.accept_time >= #{starttime}
+		</if>
+		<if test="endtime != null and endtime!=''">
+			and #{endtime}>=t.accept_time
+		</if>
+		GROUP BY h.`PROC_INST_ID_` 
+	</select>
+	
+	<select id="queryFMChild" parameterType="map" resultType="map">
+		 SELECT DATE_FORMAT(ci.`accept_time`,"%Y-%m-%d") AS accept_time,DATE_FORMAT(ci.`consignment_time`,"%Y-%m-%d") AS consignment_time,ci.case_code,i.* FROM tb_judicial_case_info ci LEFT JOIN (
+		 SELECT t.case_id,
+		 MAX(CASE t.`type` WHEN 'fmname' THEN t.fm ELSE '' END ) 'fm',
+		 MAX(CASE t.`type` WHEN 'fmname' THEN t.id_number ELSE '' END ) 'fmid',
+		 MAX(CASE t.`type` WHEN 'fmname' THEN t.birth_date ELSE '' END ) 'fmbirth',
+		 MAX(CASE t.`type` WHEN 'child' THEN t.fm ELSE '' END ) 'child',
+		 MAX(CASE t.`type` WHEN 'child' THEN t.id_number ELSE '' END ) 'childid',
+		 MAX(CASE t.`type` WHEN 'child' THEN t.birth_date ELSE '' END ) 'childbirth'
+		  FROM (
+		 SELECT t.`case_id`,GROUP_CONCAT( CASE  t.`sample_call` WHEN
+          'father'
+          THEN '父亲'
+          WHEN 'mother'
+          THEN '母亲'
+          WHEN 'aunt'
+          THEN '姑姑'
+          WHEN 'brother'
+          THEN '哥哥'
+          WHEN 'brother2'
+          THEN '弟弟'
+          WHEN 'child'
+          THEN '孩子'
+          WHEN 'daughter'
+          THEN '女儿'
+          WHEN 'elderCousin'
+          THEN '堂哥'
+          WHEN 'fetus'
+          THEN '胎儿'
+          WHEN 'granddaughter'
+          THEN '孙女'
+          WHEN 'grandma'
+          THEN '奶奶'
+          WHEN 'grandpa'
+          THEN '爷爷'
+          WHEN 'grandson'
+          THEN '孙子'
+          WHEN 'nephew'
+          THEN '侄子'
+          WHEN 'niece'
+          THEN '侄女'
+          WHEN 'sister'
+          THEN '姐姐'
+          WHEN 'sister2'
+          THEN '妹妹'
+          WHEN 'son'
+          THEN '儿子'
+          WHEN 'uncle'
+          THEN '伯父'
+          WHEN 'uncle2'
+          THEN '叔叔'
+          WHEN 'youngerCousi'
+          THEN '堂弟'
+          ELSE ''
+          END,'-',t.`sample_username`,'-', CASE
+          t.`sample_type`
+          WHEN 'cy01'
+          THEN '血痕'
+          WHEN 'cy02'
+          THEN '毛发'
+          WHEN 'cy03'
+          THEN '口腔试纸'
+          WHEN 'cy04'
+          THEN '指甲'
+          WHEN 'cy05'
+          THEN '羊水'
+          WHEN 'cy06'
+          THEN '其他'
+          WHEN 'cy07'
+          THEN '外周血'
+          WHEN 'cy08'
+          THEN '精斑'
+          WHEN 'cy09'
+          THEN '烟头'
+          WHEN 'cy10'
+          THEN '口香糖'
+          WHEN 'cy11'
+          THEN '经血'
+          WHEN 'cy12'
+          THEN '混合斑'
+          WHEN 'cy13'
+          THEN '牙刷'
+          WHEN 'cy14'
+          THEN '奶嘴'
+          WHEN 'cy15'
+          THEN '脐带血'
+          WHEN 'cy16'
+          THEN '尸体耳后软组织'
+          WHEN 'cy17'
+          THEN '胎盘'
+          ELSE ''
+          END) AS fm,
+		 GROUP_CONCAT(t.`id_number`) AS id_number,GROUP_CONCAT(t.`birth_date`) AS birth_date,'fmname' AS TYPE
+		  FROM tb_judicial_sample_info t WHERE (t.`sample_call`='father' OR t.`sample_call`='mother') GROUP BY t.`case_id`
+		 UNION
+		  SELECT t.`case_id`,GROUP_CONCAT( CASE  t.`sample_call` WHEN
+          'father'
+          THEN '父亲'
+          WHEN 'mother'
+          THEN '母亲'
+          WHEN 'aunt'
+          THEN '姑姑'
+          WHEN 'brother'
+          THEN '哥哥'
+          WHEN 'brother2'
+          THEN '弟弟'
+          WHEN 'child'
+          THEN '孩子'
+          WHEN 'daughter'
+          THEN '女儿'
+          WHEN 'elderCousin'
+          THEN '堂哥'
+          WHEN 'fetus'
+          THEN '胎儿'
+          WHEN 'granddaughter'
+          THEN '孙女'
+          WHEN 'grandma'
+          THEN '奶奶'
+          WHEN 'grandpa'
+          THEN '爷爷'
+          WHEN 'grandson'
+          THEN '孙子'
+          WHEN 'nephew'
+          THEN '侄子'
+          WHEN 'niece'
+          THEN '侄女'
+          WHEN 'sister'
+          THEN '姐姐'
+          WHEN 'sister2'
+          THEN '妹妹'
+          WHEN 'son'
+          THEN '儿子'
+          WHEN 'uncle'
+          THEN '伯父'
+          WHEN 'uncle2'
+          THEN '叔叔'
+          WHEN 'youngerCousi'
+          THEN '堂弟'
+          ELSE ''
+          END,'-',t.`sample_username`,'-', CASE
+          t.`sample_type`
+          WHEN 'cy01'
+          THEN '血痕'
+          WHEN 'cy02'
+          THEN '毛发'
+          WHEN 'cy03'
+          THEN '口腔试纸'
+          WHEN 'cy04'
+          THEN '指甲'
+          WHEN 'cy05'
+          THEN '羊水'
+          WHEN 'cy06'
+          THEN '其他'
+          WHEN 'cy07'
+          THEN '外周血'
+          WHEN 'cy08'
+          THEN '精斑'
+          WHEN 'cy09'
+          THEN '烟头'
+          WHEN 'cy10'
+          THEN '口香糖'
+          WHEN 'cy11'
+          THEN '经血'
+          WHEN 'cy12'
+          THEN '混合斑'
+          WHEN 'cy13'
+          THEN '牙刷'
+          WHEN 'cy14'
+          THEN '奶嘴'
+          WHEN 'cy15'
+          THEN '脐带血'
+          WHEN 'cy16'
+          THEN '尸体耳后软组织'
+          WHEN 'cy17'
+          THEN '胎盘'
+          ELSE ''
+          END) AS fm,
+		 GROUP_CONCAT(t.`id_number`) AS id_number,GROUP_CONCAT(t.`birth_date`) AS birth_date,'child' AS TYPE
+		  FROM tb_judicial_sample_info t WHERE (t.`sample_call` &lt;&gt; 'father' AND t.`sample_call`&lt;&gt;'mother') GROUP BY t.`case_id`)t
+		  GROUP BY t.case_id) i ON ci.`case_id`=i.case_id
+		  WHERE ci.`is_delete`=0
+		  <if test="accept_time_start != null and accept_time_start != ''">
+			  and ci.accept_time >= #{accept_time_start}
+		  </if>
+		  <if test="accept_time_end != null and accept_time_end != ''">
+			  and #{accept_time_end}>=ci.accept_time
+		  </if>
+		   <if test="consignment_time_start != null and consignment_time_start != ''">
+			  and ci.consignment_time >= #{consignment_time_start}
+		  </if>
+		  <if test="consignment_time_end != null and consignment_time_end != ''">
+			  and #{consignment_time_end}>=ci.consignment_time
+		  </if>
+		  <if test="case_code !=null and case_code != '' ">
+			  and ci.case_code like '%${case_code}%'
+		  </if>
+		   <if test="limit != null and limit != ''">
+		  		limit #{start},#{limit}
+		  </if>
+	</select>
+	
+		<select id="queryFMChildCount" parameterType="map" resultType="int">
+		  SELECT count(1) FROM tb_judicial_case_info ci 
+		  WHERE ci.`is_delete`=0
+		  <if test="accept_time_start != null and accept_time_start != ''">
+			  and ci.accept_time >= #{accept_time_start}
+		  </if>
+		  <if test="accept_time_end != null and accept_time_end != ''">
+			  and #{accept_time_end}>=ci.accept_time
+		  </if>
+		   <if test="consignment_time_start != null and consignment_time_start != ''">
+			  and ci.consignment_time >= #{consignment_time_start}
+		  </if>
+		  <if test="consignment_time_end != null and consignment_time_end != ''">
+			  and #{consignment_time_end}>=ci.consignment_time
+		  </if>
+		  <if test="case_code !=null and case_code != '' ">
+			  and ci.case_code like '%${case_code}%'
+		</if>
+	</select>
+	
+	<select id="queryExperimentInfo" parameterType="map" resultType="map">
+		SELECT 
+		  ci.`case_code`,
+		  DATE_FORMAT(ci.`accept_time`,"%Y-%m-%d") AS accept_time,
+  		  IF(ISNULL(ci.reagent_name_ext),'否','是') AS reagent_name_ext,
+		  MAX(CASE t.`TASK_DEF_KEY_` WHEN 'taskSampleConfim' THEN t.`END_TIME_` ELSE '' END ) 'sampleConfirm',
+		  MAX(CASE t.`TASK_DEF_KEY_` WHEN 'taskExperiment' THEN t.`END_TIME_` ELSE '' END ) 'experiment',
+		  MAX(CASE t.`TASK_DEF_KEY_` WHEN 'taskReportConfirm' THEN t.`END_TIME_` ELSE '' END ) 'reportConfirm',
+  		  MAX(CASE si.`result` WHEN 'failed' THEN '是' ELSE '否' END ) 'result',
+  		  ci.`parnter_name`
+		FROM
+		  tb_judicial_case_info ci 
+		  LEFT JOIN tb_judicial_sub_case_info si 
+		  ON ci.`case_code`=si.`case_code`
+		  LEFT JOIN act_hi_taskinst t 
+		    ON t.PROC_INST_ID_ = ci.process_instance_id 
+		WHERE ci.is_delete = 0 AND ci.`case_code` &lt;&gt; '' AND ci.`case_code` IS NOT NULL
+		   <if test="parnter_name !=null and parnter_name != '' ">
+			   and ci.parnter_name like '%${parnter_name}%'
+		   </if>
+		   <if test="case_code !=null and case_code != '' ">
+			   and ci.case_code like '%${case_code}%'
+		   </if>
+		   <if test="accept_time_start != null and accept_time_start != ''">
+			  and ci.accept_time >= #{accept_time_start}
+		  </if>
+		  <if test="accept_time_end != null and accept_time_end != ''">
+			  and #{accept_time_end}>=ci.accept_time
+		  </if>
+		  GROUP BY ci.`case_code`
+		  <if test="limit != null and limit != ''">
+		  		limit #{start},#{limit}
+		   </if>
+	</select>
+	
+	<select id="queryExperimentCount" parameterType="map" resultType="int">
+		select count(1) from tb_judicial_case_info ci 
+		where 1=1 AND ci.`case_code` &lt;&gt; '' AND ci.`case_code` IS NOT NULL
+		   <if test="case_code !=null and case_code != '' ">
+			   and ci.case_code like '%${case_code}%'
+		   </if>
+		   <if test="accept_time_start != null and accept_time_start != ''">
+			  and ci.accept_time >= #{accept_time_start}
+		  </if>
+		  <if test="accept_time_end != null and accept_time_end != ''">
+			  and #{accept_time_end}>=ci.accept_time
+		  </if>
+		  <if test="parnter_name !=null and parnter_name != '' ">
+			   and ci.parnter_name like '%${parnter_name}%'
+		   </if>
+	</select>
+	
+	<select id="queryCaseConfirmTime" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialCaseConfirmTime">
+		SELECT 
+		  i.`case_code`,
+		  u.username,
+		  u1.username AS 'registerUsername',
+		  (SELECT 
+		    t.`ASSIGNEE_` 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '登记信息' 
+		  ORDER BY t.`START_TIME_` ASC 
+		  LIMIT 1) AS 'registerPer',
+		  (SELECT 
+		    secondCount (
+		      MIN(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '登记信息') AS 'registerTime',
+		  (SELECT 
+		    t.`ASSIGNEE_` 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '审核信息' 
+		  ORDER BY t.`START_TIME_` DESC 
+		  LIMIT 1) AS 'verifyPer',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '审核信息') AS 'verifyTime',
+		  (SELECT 
+		    t.`ASSIGNEE_` 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '案例样本接收' 
+		  ORDER BY t.`START_TIME_` ASC 
+		  LIMIT 1) AS 'sampleRecivePer',
+		  (SELECT 
+		    secondCount (
+		      MIN(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '案例样本接收') AS 'sampleTime',
+		  (SELECT 
+		    t.`ASSIGNEE_` 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '案例样本确认' 
+		  ORDER BY t.END_TIME_ DESC 
+		  LIMIT 1) AS 'sampleConfirmPer',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '案例样本确认') AS 'sampleConfirmTime',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '做实验') AS 'reportCreateTime',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '报告打印') AS 'reportMakeTime',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '报告确认') AS 'reportCheckTime',
+		  (SELECT 
+		    t.`ASSIGNEE_` 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '邮寄' 
+		  ORDER BY t.END_TIME_ DESC 
+		  LIMIT 1) AS 'emailPer',
+		  (SELECT 
+		    secondCount (
+		      MAX(t.`START_TIME_`),
+		      MAX(t.`END_TIME_`)
+		    ) 
+		  FROM
+		    `act_hi_taskinst` t 
+		  WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		    AND t.`NAME_` = '邮寄') AS 'emailTime',
+		  secondCount (
+		    (SELECT 
+		      MAX(t.`END_TIME_`) 
+		    FROM
+		      act_hi_taskinst t 
+		    WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		      AND t.`NAME_` = '审核信息'),
+		    (SELECT 
+		      MAX(t.`END_TIME_`) 
+		    FROM
+		      act_hi_taskinst t 
+		    WHERE t.`PROC_INST_ID_` = i.`process_instance_id` 
+		      AND t.`NAME_` = '邮寄')
+		  ) AS 'reportCircleTime',
+		 IF((c.type=1||c.`type`=4),'0',IFNULL(secondCount(i.`compare_date`,r.confirm_date),'未确认')) AS 'financeTime',
+		  i.`remark`,
+		  e.`exception_desc`
+		FROM
+		  tb_judicial_case_info i  INNER JOIN tb_judicial_casefee c
+		  ON i.`case_id`=c.`case_id`
+		  LEFT JOIN(
+		  SELECT remittance_id,confirm_date FROM tb_judicial_remittance WHERE confirm_state = 1
+		  ) r ON c.`remittance_id`=r.remittance_id
+		  INNER JOIN tb_upc_users u 
+		    ON i.`case_userid` = u.`userid` 
+		  INNER JOIN tb_upc_users u1 
+		    ON i.`case_in_per` = u1.`userid` 
+		  LEFT JOIN `tb_judicial_case_exception` e 
+		    ON i.`case_id`=e.`case_id`
+		WHERE 1=1
+		 <if test="starttime != null and starttime != ''">
+			  and i.accept_time >= #{starttime}
+		  </if>
+		  <if test="endtime != null and endtime != ''">
+			  and #{endtime}>=i.accept_time
+		  </if>
+		  <if test="case_code !=null and case_code != '' ">
+			   and i.`case_code` like '%${case_code}%'
+		   </if>
+		    <if test="username !=null and username != '' ">
+			   and (u.`username` like '%${username}%' or u1.`username`like '%${username}%')
+		   </if>
+		   <if test="report_model != null and report_model != ''">
+				AND i.`report_model`=#{report_model}
+			</if>
+			<if test=" verify_state !=null and verify_state != ''">
+				and i.verify_state =#{verify_state}
+			</if>
+		   <if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="queryCaseConfirmTimeCount" parameterType="map" resultType="int">
+		SELECT 
+		  count(1)
+		FROM
+		  tb_judicial_case_info i 
+		  INNER JOIN tb_upc_users u 
+		    ON i.`case_userid` = u.`userid` 
+		  INNER JOIN tb_upc_users u1 
+		    ON i.`case_in_per` = u1.`userid` 
+		WHERE 1=1
+		  <if test="starttime != null and starttime != ''">
+			  and i.accept_time >= #{starttime}
+		  </if>
+		  <if test="endtime != null and endtime != ''">
+			  and #{endtime}>=i.accept_time
+		  </if>
+		  <if test="case_code !=null and case_code != '' ">
+			   and i.`case_code` like '%${case_code}%'
+		   </if>
+		    <if test="username !=null and username != '' ">
+			   and (u.`username` like '%${username}%' or u1.`username`like '%${username}%')
+		   </if>
+		   <if test="report_model != null and report_model != ''">
+				AND i.`report_model`=#{report_model}
+			</if>
+			<if test=" verify_state !=null and verify_state != ''">
+				and i.verify_state =#{verify_state}
+			</if>
+	</select>
+</mapper>

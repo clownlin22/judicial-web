@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraTumorMarkerMapper" >
+	<resultMap id="tumorMarker" type="com.rds.bacera.model.RdsBaceraTumorMarkerModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='expresstime' property="expresstime" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		<result column='discountPrice' property="discountPrice" />
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+	</resultMap>
+   <insert id="insert" parameterType="map">
+   <!-- 插入肿瘤标志物信息 -->
+     insert into tb_tumor_marker (
+     id,num,date,sex
+			,inspection,program,ownperson,name,remark
+     )values(#{id},#{num},#{date},#{sex}
+			,#{inspection},#{program},#{ownperson},#{name},#{remark}
+			)
+   </insert>
+   <select id="queryAllPage" parameterType="map"
+    resultType="com.rds.bacera.model.RdsBaceraTumorMarkerModel">
+		SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`name`,
+			  a.`date`,
+			  a.`inspection`,
+			  a.sex,
+			  a.`ownperson`AS ownperson,
+			  s.`username` AS ownpersonname,
+			  a.`program`,
+			  s.`agentname`,
+			  s.`areaname`,
+			  s.`areacode`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  a.`cancelif`,
+			  fi.`oa_num`,
+			  i.expressremark
+			FROM
+			  tb_tumor_marker a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="starttime != '' and starttime != null">
+				and a.date >= #{starttime}
+			</if>	
+			<if test="endtime != '' and endtime != null">
+				and #{endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="inspection != '' and inspection != null">
+				and a.`inspection`  like concat('%', #{inspection}, '%') 
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="program != '' and program != null">
+				and a.`program`  like concat('%', #{program}, '%') 
+			</if>	
+             <if test="areaname != '' and areaname != null">
+			    and s.areaname like concat('%', #{areaname}, '%') 
+			</if>
+			<if test="sex != '' and sex != null">
+				AND a.`sex`= #{sex}
+			</if>
+			<if test="oa_num != '' and oa_num != null">
+				AND fi.`oa_num` like concat('%', #{oa_num}, '%') 
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>
+			order by a.num asc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+    </select>
+    <select id="queryAllCount" parameterType="map" resultType="Integer">
+    SELECT COUNT(1)
+  		 FROM
+			  tb_tumor_marker a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="starttime != '' and starttime != null">
+				and a.date >= #{starttime}
+			</if>	
+			<if test="endtime != '' and endtime != null">
+				and #{endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="inspection != '' and inspection != null">
+				and a.`inspection`  like concat('%', #{inspection}, '%') 
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="program != '' and program != null">
+				and a.`program`  like concat('%', #{program}, '%') 
+			</if>	
+             <if test="areaname != '' and areaname != null">
+			    and s.areaname like concat('%', #{areaname}, '%') 
+			</if>
+			<if test="sex != '' and sex != null">
+				AND a.`sex`= #{sex}
+			</if>
+			<if test="oa_num != '' and oa_num != null">
+				AND fi.`oa_num` like concat('%', #{oa_num}, '%') 
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+    </select>
+    <select id="exsitCaseCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_tumor_marker where 1=1
+		<if test="num != '' and num != null">
+			and num=#{num}
+		</if> 
+		<if test="id != '' and id != null">
+			and id=#{id}
+		</if> 
+	</select>
+	<delete id="delete" parameterType="map">
+		delete from tb_tumor_marker where id = #{id}
+	</delete>
+	<update id="update" parameterType="map">
+		update tb_tumor_marker 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>	
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>
+			<if test="sex != null">
+				,sex=#{sex}
+			</if>
+			<if test="program != null">
+				,program=#{program}
+			</if>
+			<if test="inspection != null">
+				,inspection=#{inspection}
+			</if>
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>
+			<if test="remark != '' and remark != null">
+				,remark=#{remark}
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+</mapper>

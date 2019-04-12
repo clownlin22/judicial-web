@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/processdef">
+  <process id="processJudicial" name="亲子鉴定流程" isExecutable="true">
+    <startEvent id="start" name="开始"></startEvent>
+    <userTask id="taskAudit" name="审核信息"></userTask>
+    <userTask id="taskExperiment" name="做实验"></userTask>
+    <userTask id="taskPrint" name="报告打印"></userTask>
+    <userTask id="taskMail" name="邮寄"></userTask>
+    <userTask id="taskFile" name="归档"></userTask>
+    <endEvent id="end" name="结束"></endEvent>
+    <userTask id="taskRegister" name="登记信息"></userTask>
+    <exclusiveGateway id="gatewayAudit" name="审核"></exclusiveGateway>
+    <exclusiveGateway id="gatewayExperiment" name="报告结果"></exclusiveGateway>
+    <sequenceFlow id="fromTaskMailToTaskFile" sourceRef="taskMail" targetRef="taskFile"></sequenceFlow>
+    <sequenceFlow id="fromTaskFileToEnd" sourceRef="taskFile" targetRef="end"></sequenceFlow>
+    <userTask id="taskNonReportAudit" name="否定报告审核"></userTask>
+    <exclusiveGateway id="gatewayNonReportAudit" name="是否二次实验"></exclusiveGateway>
+    <sequenceFlow id="fromTaskExperimentToGatewayExperiment" sourceRef="taskExperiment" targetRef="gatewayExperiment"></sequenceFlow>
+    <sequenceFlow id="fromTaskNonReportAuditToGatewayNonReportAudit" sourceRef="taskNonReportAudit" targetRef="gatewayNonReportAudit"></sequenceFlow>
+    <sequenceFlow id="fromStartToTaskRegister" sourceRef="start" targetRef="taskRegister"></sequenceFlow>
+    <sequenceFlow id="fromTaskAuditToGatewayAudit" sourceRef="taskAudit" targetRef="gatewayAudit"></sequenceFlow>
+    <sequenceFlow id="fromGatewayAuditToTaskExperiment" name="审核通过" sourceRef="gatewayAudit" targetRef="taskSampleRecive">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${ispass==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromGatewayAuditToTaskRegister" name="审核不通过" sourceRef="gatewayAudit" targetRef="taskRegister">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${ispass==0}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromGatewayExperimentToTaskNonReportAudit" name="否定报告" sourceRef="gatewayExperiment" targetRef="taskNonReportAudit">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${isyesresult==0}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromGatewayNonReportAuditToTaskPrint" name="否" sourceRef="gatewayNonReportAudit" targetRef="taskPrint">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${yes==0}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromGatewayExperimentToTaskRegister" name="退回" sourceRef="gatewayExperiment" targetRef="taskRegister">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${isback==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromGatewayNonReportAuditToTaskRegister" name="是" sourceRef="gatewayNonReportAudit" targetRef="taskRegister">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${yes==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fromTaskExperimentToTaskPrint" name="肯定报告" sourceRef="gatewayExperiment" targetRef="taskPrint">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${isyesresult==1}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="taskSampleRecive" name="案例样本接收"></userTask>
+    <userTask id="taskSampleTransfer" name="案例样本交接"></userTask>
+    <sequenceFlow id="flow3" sourceRef="taskSampleRecive" targetRef="taskSampleTransfer"></sequenceFlow>
+    <userTask id="taskSampleConfim" name="案例样本确认"></userTask>
+    <sequenceFlow id="flow4" sourceRef="taskSampleTransfer" targetRef="taskSampleConfim"></sequenceFlow>
+    <userTask id="taskReportTransfer" name="报告交接"></userTask>
+    <sequenceFlow id="flow6" sourceRef="taskPrint" targetRef="taskReportTransfer"></sequenceFlow>
+    <userTask id="taskReportConfirm" name="报告确认"></userTask>
+    <sequenceFlow id="flow7" sourceRef="taskReportTransfer" targetRef="taskReportConfirm"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway4" name="样本审核"></exclusiveGateway>
+    <sequenceFlow id="flow13" sourceRef="taskSampleConfim" targetRef="exclusivegateway4"></sequenceFlow>
+    <sequenceFlow id="flow14" name="确认通过" sourceRef="exclusivegateway4" targetRef="taskExperiment">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${issamplepass==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow15" name="确认不通过" sourceRef="exclusivegateway4" targetRef="taskSampleRecive">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${issamplepass==0}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway5" name="报告审核确认"></exclusiveGateway>
+    <sequenceFlow id="flow16" sourceRef="taskReportConfirm" targetRef="exclusivegateway5"></sequenceFlow>
+    <sequenceFlow id="flow17" name="确认通过" sourceRef="exclusivegateway5" targetRef="taskMail">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${isreportpass==1}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow18" name="确认不通过" sourceRef="exclusivegateway5" targetRef="taskReportTransfer">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${isreportpass==0}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow19" sourceRef="gatewayAudit" targetRef="taskMail">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${ispass==2}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow20" sourceRef="taskRegister" targetRef="taskAudit"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_processJudicial">
+    <bpmndi:BPMNPlane bpmnElement="processJudicial" id="BPMNPlane_processJudicial">
+      <bpmndi:BPMNShape bpmnElement="start" id="BPMNShape_start">
+        <omgdc:Bounds height="35.0" width="35.0" x="445.0" y="0.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskAudit" id="BPMNShape_taskAudit">
+        <omgdc:Bounds height="80.0" width="100.0" x="410.0" y="195.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskExperiment" id="BPMNShape_taskExperiment">
+        <omgdc:Bounds height="80.0" width="100.0" x="410.0" y="420.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskPrint" id="BPMNShape_taskPrint">
+        <omgdc:Bounds height="80.0" width="100.0" x="670.0" y="760.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskMail" id="BPMNShape_taskMail">
+        <omgdc:Bounds height="80.0" width="100.0" x="670.0" y="880.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskFile" id="BPMNShape_taskFile">
+        <omgdc:Bounds height="80.0" width="100.0" x="670.0" y="996.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="end" id="BPMNShape_end">
+        <omgdc:Bounds height="35.0" width="35.0" x="960.0" y="1019.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskRegister" id="BPMNShape_taskRegister">
+        <omgdc:Bounds height="80.0" width="100.0" x="410.0" y="75.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="gatewayAudit" id="BPMNShape_gatewayAudit">
+        <omgdc:Bounds height="40.0" width="40.0" x="440.0" y="315.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="gatewayExperiment" id="BPMNShape_gatewayExperiment">
+        <omgdc:Bounds height="40.0" width="40.0" x="440.0" y="540.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskNonReportAudit" id="BPMNShape_taskNonReportAudit">
+        <omgdc:Bounds height="80.0" width="100.0" x="410.0" y="650.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="gatewayNonReportAudit" id="BPMNShape_gatewayNonReportAudit">
+        <omgdc:Bounds height="40.0" width="40.0" x="442.0" y="779.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskSampleRecive" id="BPMNShape_taskSampleRecive">
+        <omgdc:Bounds height="55.0" width="105.0" x="667.0" y="308.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskSampleTransfer" id="BPMNShape_taskSampleTransfer">
+        <omgdc:Bounds height="55.0" width="105.0" x="820.0" y="308.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskSampleConfim" id="BPMNShape_taskSampleConfim">
+        <omgdc:Bounds height="55.0" width="105.0" x="820.0" y="432.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskReportTransfer" id="BPMNShape_taskReportTransfer">
+        <omgdc:Bounds height="55.0" width="105.0" x="815.0" y="773.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="taskReportConfirm" id="BPMNShape_taskReportConfirm">
+        <omgdc:Bounds height="55.0" width="105.0" x="1020.0" y="773.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway4" id="BPMNShape_exclusivegateway4">
+        <omgdc:Bounds height="40.0" width="40.0" x="699.0" y="439.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway5" id="BPMNShape_exclusivegateway5">
+        <omgdc:Bounds height="40.0" width="40.0" x="862.0" y="899.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskMailToTaskFile" id="BPMNEdge_fromTaskMailToTaskFile">
+        <omgdi:waypoint x="720.0" y="960.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="996.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskFileToEnd" id="BPMNEdge_fromTaskFileToEnd">
+        <omgdi:waypoint x="770.0" y="1036.0"></omgdi:waypoint>
+        <omgdi:waypoint x="960.0" y="1036.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskExperimentToGatewayExperiment" id="BPMNEdge_fromTaskExperimentToGatewayExperiment">
+        <omgdi:waypoint x="460.0" y="500.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="540.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskNonReportAuditToGatewayNonReportAudit" id="BPMNEdge_fromTaskNonReportAuditToGatewayNonReportAudit">
+        <omgdi:waypoint x="460.0" y="730.0"></omgdi:waypoint>
+        <omgdi:waypoint x="462.0" y="779.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromStartToTaskRegister" id="BPMNEdge_fromStartToTaskRegister">
+        <omgdi:waypoint x="462.0" y="35.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="75.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskAuditToGatewayAudit" id="BPMNEdge_fromTaskAuditToGatewayAudit">
+        <omgdi:waypoint x="460.0" y="275.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="315.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayAuditToTaskExperiment" id="BPMNEdge_fromGatewayAuditToTaskExperiment">
+        <omgdi:waypoint x="480.0" y="335.0"></omgdi:waypoint>
+        <omgdi:waypoint x="667.0" y="335.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="499.0" y="355.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayAuditToTaskRegister" id="BPMNEdge_fromGatewayAuditToTaskRegister">
+        <omgdi:waypoint x="440.0" y="335.0"></omgdi:waypoint>
+        <omgdi:waypoint x="309.0" y="335.0"></omgdi:waypoint>
+        <omgdi:waypoint x="309.0" y="115.0"></omgdi:waypoint>
+        <omgdi:waypoint x="410.0" y="115.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="60.0" x="342.0" y="315.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayExperimentToTaskNonReportAudit" id="BPMNEdge_fromGatewayExperimentToTaskNonReportAudit">
+        <omgdi:waypoint x="460.0" y="580.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="650.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="470.0" y="580.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayNonReportAuditToTaskPrint" id="BPMNEdge_fromGatewayNonReportAuditToTaskPrint">
+        <omgdi:waypoint x="482.0" y="799.0"></omgdi:waypoint>
+        <omgdi:waypoint x="670.0" y="800.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="12.0" x="509.0" y="806.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayExperimentToTaskRegister" id="BPMNEdge_fromGatewayExperimentToTaskRegister">
+        <omgdi:waypoint x="460.0" y="540.0"></omgdi:waypoint>
+        <omgdi:waypoint x="595.0" y="491.0"></omgdi:waypoint>
+        <omgdi:waypoint x="595.0" y="115.0"></omgdi:waypoint>
+        <omgdi:waypoint x="510.0" y="115.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="24.0" x="470.0" y="540.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromGatewayNonReportAuditToTaskRegister" id="BPMNEdge_fromGatewayNonReportAuditToTaskRegister">
+        <omgdi:waypoint x="442.0" y="799.0"></omgdi:waypoint>
+        <omgdi:waypoint x="227.0" y="800.0"></omgdi:waypoint>
+        <omgdi:waypoint x="227.0" y="95.0"></omgdi:waypoint>
+        <omgdi:waypoint x="410.0" y="115.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="12.0" x="261.0" y="806.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fromTaskExperimentToTaskPrint" id="BPMNEdge_fromTaskExperimentToTaskPrint">
+        <omgdi:waypoint x="480.0" y="560.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="560.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="760.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="490.0" y="560.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="772.0" y="335.0"></omgdi:waypoint>
+        <omgdi:waypoint x="820.0" y="335.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="872.0" y="363.0"></omgdi:waypoint>
+        <omgdi:waypoint x="872.0" y="432.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="770.0" y="800.0"></omgdi:waypoint>
+        <omgdi:waypoint x="815.0" y="800.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="920.0" y="800.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1020.0" y="800.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="820.0" y="459.0"></omgdi:waypoint>
+        <omgdi:waypoint x="739.0" y="459.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="699.0" y="459.0"></omgdi:waypoint>
+        <omgdi:waypoint x="510.0" y="460.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="572.0" y="466.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow15" id="BPMNEdge_flow15">
+        <omgdi:waypoint x="719.0" y="439.0"></omgdi:waypoint>
+        <omgdi:waypoint x="719.0" y="363.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="60.0" x="716.0" y="408.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow16" id="BPMNEdge_flow16">
+        <omgdi:waypoint x="1072.0" y="828.0"></omgdi:waypoint>
+        <omgdi:waypoint x="882.0" y="899.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow17" id="BPMNEdge_flow17">
+        <omgdi:waypoint x="862.0" y="919.0"></omgdi:waypoint>
+        <omgdi:waypoint x="770.0" y="920.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="48.0" x="781.0" y="926.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow18" id="BPMNEdge_flow18">
+        <omgdi:waypoint x="882.0" y="899.0"></omgdi:waypoint>
+        <omgdi:waypoint x="867.0" y="828.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="60.0" x="829.0" y="851.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow19" id="BPMNEdge_flow19">
+        <omgdi:waypoint x="460.0" y="355.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="398.0"></omgdi:waypoint>
+        <omgdi:waypoint x="279.0" y="398.0"></omgdi:waypoint>
+        <omgdi:waypoint x="279.0" y="853.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="853.0"></omgdi:waypoint>
+        <omgdi:waypoint x="719.0" y="853.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="880.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow20" id="BPMNEdge_flow20">
+        <omgdi:waypoint x="460.0" y="155.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="195.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

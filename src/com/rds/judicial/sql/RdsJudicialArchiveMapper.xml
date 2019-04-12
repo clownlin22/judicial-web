@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialArchiveMapper">
+	<select id="queryAll" resultType="com.rds.judicial.model.RdsJudicialArchiveModel">
+		SELECT
+		t.`archive_address`,
+		t.`archive_code`,
+		t.`archive_date`,
+		t.`archive_id`,
+		t.`archive_path`,
+		ci.`case_code`,
+		tt.`username` AS
+		'archive_per',
+		t.sample_archive_address
+		FROM
+		`tb_judicial_case_archive`  t,`tb_upc_users` tt ,tb_judicial_case_info ci
+		WHERE  t.`archive_per` = tt.`userid` and t.case_id=ci.case_id
+		<if test="search != ''">
+			and ci.case_code LIKE '%${search}%'
+		</if>
+		LIMIT #{start},#{limit}
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT
+		count(*)
+		FROM
+		`tb_judicial_case_archive`  t,`tb_upc_users` tt ,tb_judicial_case_info ci
+		WHERE  t.`archive_per` = tt.`userid` and t.case_id=ci.case_id
+		<if test="search != ''">
+			and ci.case_code LIKE '%${search}%'
+		</if>
+		LIMIT #{start},#{limit}
+	</select>
+	<insert id="insert" parameterType="map">
+		INSERT INTO
+		`tb_judicial_case_archive` (`archive_id`, `archive_code`, `case_id`,
+		`archive_address`, `archive_date`, `archive_per`,`archive_path`,sample_archive_address)
+		VALUES
+		(#{archive_id},#{archive_code},#{case_id},#{archive_address},#{archive_date},#{archive_per},#{archive_path},#{sample_archive_address});
+	</insert>
+	<select id="queryMailCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM tb_judicial_mail_info WHERE case_id=#{case_id}
+		AND is_delete = 0
+	</select>
+
+	<select id="queryAllCase" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialVerifyCaseInfoModel">
+		SELECT 
+		  t.case_id,
+		  t.`case_code`,
+		  t.client,
+		  t.`receiver_area`,
+		  u.`username` AS 'case_receiver',
+		  t.`urgent_state`,
+		  t.`verify_state`,
+		  t.`accept_time`,
+		  t.consignment_time,
+		  u1.`username` AS 'case_in_pername'
+		FROM
+		  tb_judicial_case_info t 
+		  LEFT JOIN tb_upc_users u 
+		    ON t.`case_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1
+		  ON t.`case_in_per` = u1.`userid`
+			where 1=1 
+			<if test=" case_code != null and case_code != ''">
+				and (lower(t.case_code) LIKE '%${case_code}%' or
+				upper(t.case_code) LIKE '%${case_code}%')
+			</if>
+			<if test=" case_receiver != null and case_receiver != ''">
+				and u.`username` LIKE '%${case_receiver}%')
+			</if>
+			<if test=" starttime != null and  starttime != '' ">
+				and t.accept_time>=#{starttime}
+			</if>
+			<if test=" endtime != null and endtime != ''">
+				and #{endtime}>=t.accept_time
+			</if>
+			<if test=" consignment_starttime != null and  consignment_starttime != '' ">
+				and t.consignment_starttime>=#{consignment.starttime}
+			</if>
+			<if test=" consignment_endtime != null and consignment_endtime != ''">
+				and #{consignment.endtime}>=t.consignment_endtime
+			</if>
+			<if test=" verify_state != null and verify_state != ''">
+				and t.verify_state=#{verify_state}
+			</if>
+			<if test=" partner_name != null and partner_name != ''">
+				and t.parnter_name=#{partner_name}
+			</if>
+			<if test=" limit !=null and  limit != '' ">
+				LIMIT #{start},#{limit}
+			</if>
+		<!--  
+		SELECT ci.*,da.county,
+		da.city,
+		da.province FROM (SELECT
+		ci.`case_id`,
+		ci.`case_code`,
+		ci.`reagent_name`,
+		ci.case_areacode,
+		ci.`receiver_id`,
+		ci.`urgent_state`,
+		ci.`accept_time`,
+		ci.`print_count`,
+		ci.`client`,
+		DATE_FORMAT(
+		ci.`close_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS close_time,
+		ci.`is_delete`,
+		ci.`report_model`,
+		m.`text` AS `report_modelname`,
+		ci.`phone`,
+		ci.`remark`,
+		ci.`is_new`,
+		ci.verify_state,
+		ci.`case_in_per`,
+		DATE_FORMAT(
+		ci.`sample_in_time`,
+		'%Y-%m-%d %H:%i:%s'
+		) AS sample_in_time,
+		users.`username` AS case_receiver,
+		ai.`areaname` AS receiver_area,
+		u2.`username` AS case_in_pername,
+		ci.sample_in_per,
+		ci.unit_type,
+		ci.case_type,
+		ci.sample_relation,
+		users.`roletype`,
+		users.`userid`
+		FROM
+		(SELECT ci.* FROM tb_judicial_case_info ci,(select case_id from tb_judicial_mail_info group by case_id)mi  where ci.`is_archived` = 0
+		AND ci.is_delete = 0 AND ci.case_id=mi.case_id
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="check_state!=null and check_state!=-1">
+			and ci.verify_state=#{check_state}
+		</if>
+		<if test=" is_delete!=-1 ">
+			and ci.is_delete=#{is_delete}
+		</if>
+           ORDER BY 
+         ci.accept_time DESC,ci.is_delete) ci
+		LEFT JOIN tb_upc_area ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN
+		(SELECT
+		CODE,
+		TEXT,
+		TYPE
+		FROM
+		tb_dic_print_model
+		WHERE TYPE = 'dna'
+		GROUP BY CODE) m
+		ON ci.`report_model` = m.`code`
+		LEFT JOIN tb_upc_area_info ai
+		ON ar.areacode = ai.`areacode`
+		LEFT JOIN tb_upc_users users
+		ON ar.userid = users.`userid`
+		LEFT JOIN tb_upc_department dept
+		ON users.`deptcode` = dept.`deptcode`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE ci.`case_in_per` IS NOT NULL AND (
+		dept.delstatus = 0
+		OR dept.delstatus IS NULL
+		)
+		<if test=" receiver!=null and receiver != ''">
+			and users.`username` LIKE '%${receiver}%'
+		</if>
+		<if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if>
+		LIMIT
+		#{start},#{limit}
+		) ci LEFT JOIN tb_dic_area da ON da.`id`=ci.case_areacode
+		-->
+	</select>
+
+	<select id="queryAllCaseCount" parameterType="map" resultType="integer">
+		SELECT count(1)
+		FROM
+		  tb_judicial_case_info t 
+		  LEFT JOIN tb_upc_users u 
+		    ON t.`case_userid` = u.`userid` 
+		  LEFT JOIN tb_upc_users u1
+		  ON t.`case_in_per` = u1.`userid`
+			where 1=1 
+			<if test=" case_code != null and case_code != ''">
+				and (lower(t.case_code) LIKE '%${case_code}%' or
+				upper(t.case_code) LIKE '%${case_code}%')
+			</if>
+			<if test=" case_receiver != null and case_receiver != ''">
+				and u.`username` LIKE '%${case_receiver}%')
+			</if>
+			<if test=" starttime != null and  starttime != '' ">
+				and t.accept_time>=#{starttime}
+			</if>
+			<if test=" endtime != null and endtime != ''">
+				and #{endtime}>=t.accept_time
+			</if>
+			<if test=" consignment_starttime != null and  consignment_starttime != '' ">
+				and t.consignment_starttime>=#{consignment.starttime}
+			</if>
+			<if test=" consignment_endtime != null and consignment_endtime != ''">
+				and #{consignment.endtime}>=t.consignment_endtime
+			</if>
+			<if test=" verify_state != null and verify_state != ''">
+				and t.verify_state=#{verify_state}
+			</if>
+			<if test=" partner_name != null and partner_name != ''">
+				and t.parnter_name=#{partner_name}
+			</if>
+	<!-- 
+		SELECT
+		count(*)
+		FROM
+		(SELECT ci.* FROM tb_judicial_case_info ci,(select case_id from tb_judicial_mail_info group by case_id)mi  where ci.`is_archived` = 0
+		AND ci.is_delete = 0 AND ci.case_id=mi.case_id
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test="check_state!=null and check_state!=-1">
+			and ci.verify_state=#{check_state}
+		</if>
+		<if test=" is_delete!=-1 ">
+			and ci.is_delete=#{is_delete}
+		</if>
+           ORDER BY 
+         ci.accept_time DESC,ci.is_delete) ci
+		LEFT JOIN tb_upc_area ar
+		ON ci.`receiver_id` = ar.`area_id`
+		LEFT JOIN
+		(SELECT
+		CODE,
+		TEXT,
+		TYPE
+		FROM
+		tb_dic_print_model
+		WHERE TYPE = 'dna'
+		GROUP BY CODE) m
+		ON ci.`report_model` = m.`code`
+		LEFT JOIN tb_upc_area_info ai
+		ON ar.areacode = ai.`areacode`
+		LEFT JOIN tb_upc_users users
+		ON ar.userid = users.`userid`
+		LEFT JOIN tb_upc_department dept
+		ON users.`deptcode` = dept.`deptcode`
+		LEFT JOIN tb_upc_users u2
+		ON ci.case_in_per = u2.`userid`
+		WHERE ci.`case_in_per` IS NOT NULL AND (
+		dept.delstatus = 0
+		OR dept.delstatus IS NULL
+		)
+		<if test=" receiver!=null and receiver != ''">
+			and users.`username` LIKE '%${receiver}%'
+		</if>
+		<if test=" sql_str!=null and sql_str != ''">
+			AND ${sql_str}
+		</if>
+		 -->
+	</select>
+</mapper>

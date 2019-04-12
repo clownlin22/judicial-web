@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialDicValuesMapper">
+	<select id="getAreaInfo" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialAreaInfo">
+		SELECT 	  t.`id`,t.`initials`,
+		  IF(m.id IS NULL AND e.id IS NULL,t.`name`,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,e.`name`,m.name)) AS 'province',
+		  IF(m.id IS NULL AND e.id IS NULL,e.`name`,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,t.`name`,e.name)) AS 'city',
+		  IF(m.id IS NULL AND e.id IS NULL,m.`name`,IF(m.`id` IS NULL AND e.`id` IS NOT NULL ,m.`name`,t.name)) AS 'county'
+		FROM
+		  tb_dic_area_info t 
+		  LEFT JOIN tb_dic_area_info e 
+		    ON t.`parentID` = e.`id` 
+		  LEFT JOIN tb_dic_area_info m 
+		    ON e.`parentID` = m.`id`
+		 where 1=1
+		<if test="query != '' and query !=null ">
+			AND (t.initials LIKE '%${query}%' OR t.name LIKE
+			'%${query}%')
+		</if>
+		<if test="area_code != '' and area_code != null ">
+			AND t.id = #{area_code}
+		</if>
+	</select>
+	
+	<select id="getReportModels" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT pm.`code` AS 'key', pm.`text` AS VALUE,(SELECT CASE WHEN COUNT(*) >= 1 THEN
+	                  'true'
+	                 ELSE
+	                  'false'
+	               END
+	          FROM tb_partner_model_config c
+	          WHERE c.code = pm.code
+	          <if test="userid != null and userid != '' ">
+				 AND c.userid =#{userid}
+			  </if>) checkeds FROM tb_dic_print_model pm WHERE 1=1
+			   <if test="type != null and type != '' ">
+				 AND pm.type=#{type}
+			  </if>
+			    GROUP BY pm.code
+		<!-- 
+		SELECT
+		pm.`code` AS 'key',
+		pm.`text` AS VALUE
+		FROM
+		tb_upc_area ua,
+		tb_upc_area_info ai,
+		tb_dic_print_company pc,
+		tb_dic_print_company_area
+		pca,
+		tb_dic_print_model pm
+		WHERE ua.`areacode` = ai.`areacode`
+		AND
+		pc.`id`=pca.`print_company_id`
+		AND pm.`code` = pc.`pmodel_code`
+		AND
+		pca.`area_code`=ai.`code`
+		AND pc.`companyid`=#{companyid}
+		<if test="receiver_id != '' and receiver_id!=null ">
+			and ua.area_id=#{receiver_id}
+		</if>
+		AND
+		pm.type=#{type}
+		GROUP BY pm.`code` -->
+	</select>
+
+	<select id="getReportModelByPartner" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT 
+			  pm.`code` AS 'key',
+			  pm.`text` AS 'value' 
+			FROM tb_dic_print_model pm
+			LEFT JOIN
+			  tb_partner_model_config c 
+			    ON c.`code` = pm.`code` 
+			WHERE 1=1 
+			<if test="userid != null and userid != '' ">
+				AND c.`userid`= #{userid}
+			</if>
+			<if test="type != null and type != '' ">
+				 AND pm.type=#{type}
+			  </if>
+			GROUP BY pm.code 
+	</select>
+
+
+	<select id="getSampleType" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value from tb_dic_values where keycode='000000004' order by key1
+	</select>
+
+	<select id="getSampleCall" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value from tb_dic_values where keycode='call'
+		order by sort
+	</select>
+
+	<select id="getCustodyCall" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value from tb_dic_values where keycode='custody_call'
+		order by sort
+	</select>
+
+	<select id="getUnitTypes" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value
+		from tb_dic_values where keycode='unit_type'
+		order by sort
+	</select>
+
+	<select id="getCaseTypes" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value
+		from tb_dic_values where keycode='case_type'
+		order by sort
+	</select>
+
+	<select id="getCaseFeeTypes" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value
+		from tb_dic_values where keycode='fee_type'
+		order by sort
+	</select>
+
+	<select id="getReportType" parameterType="String"
+		resultType="com.rds.upc.model.RdsUpcPermitNodeModel">
+		SELECT ty.typeid AS id,ty.typename AS TEXT,ty.displaygrid
+		AS url FROM tb_upc_user_report rp,tb_judicial_report_type ty WHERE
+		rp.typeid=ty.typeid and rp.usercode=#{usercode}
+	</select>
+	
+	<select id="getUpcUsers" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialAreaInfo">
+		SELECT a.username,
+		d.areaname,a.initials,
+		a.area_id AS id,IF(
+	    a.`roletype` = 104,
+	    (SELECT 
+	      u3.username 
+	    FROM
+	      tb_judicial_agent ag,
+	      tb_upc_users u3 
+	    WHERE ag.userid = a.userid 
+	      AND u3.userid = ag.peruserid AND ag.delstatus=0 and u3.delstatus is null),
+	    ''
+	     ) AS agent  FROM (SELECT
+		a.*,u.username,u.initials,u.roletype
+		FROM
+		tb_upc_area a,
+		tb_upc_users u,
+		tb_upc_department de
+		WHERE u.`deptcode` = de.`deptcode`
+		AND
+		u.`userid` = a.`userid`
+		AND a.`is_delete` = 0
+		<if test="area_id != null and area_id != '' ">
+			AND a.`area_id`=#{area_id}
+		</if>
+		<if test="query != null and query != '' ">
+			and u.initials LIKE '%${query}%' 
+		</if>
+		<if test="companyid != null and companyid != '' ">
+			and de.companyid=#{companyid}
+		</if>
+		)a
+		LEFT JOIN
+		(SELECT i.areaname,i.`areacode`,d.initials,d.name FROM
+		tb_upc_area_info i,
+		tb_dic_area_info d WHERE i.code = d.id ) d
+		ON
+		d.`areacode` = a.`areacode`
+		ORDER BY d.areaname 
+	</select>
+
+	<select id="queryAllPage" parameterType="map" resultType="dicvalues">
+		select t.*,k.keyname from tb_upc_dic_values t,tb_upc_dic_keys k WHERE
+		1=1 AND t.keycode=k.keycode
+		<if test="search != null and search != ''">
+			and (t.keyvalue like '%${search}%' or t.keycode =
+			#{search})
+		</if>
+		order by t.keycode asc limit #{start},#{end}
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_dic_values t,tb_upc_dic_keys k WHERE 1=1
+		AND t.keycode=k.keycode
+		<if test="search != null and search != ''">
+			and (t.keyvalue like '%${search}%' or t.keycode =
+			#{search})
+		</if>
+	</select>
+	<insert id="insert" parameterType="map">
+		insert into
+		tb_upc_dic_values(id,keycode,keyid,keyvalue) values
+		(#{id},#{keycode},#{keyid},#{keyvalue})
+	</insert>
+	<update id="update" parameterType="map">
+		update tb_upc_dic_values set
+		keycode=#{keycode},keyid=#{keyid},keyvalue=#{keyvalue} where id=#{id}
+	</update>
+	<delete id="delete" parameterType="map">
+		delete from tb_upc_dic_values
+		where id=#{id}
+	</delete>
+
+	<select id="getAllUsers" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		SELECT username AS
+		VALUE,usercode AS 'key' FROM tb_upc_users WHERE usercode!='admin' AND
+		delstatus IS NULL
+	</select>
+
+	<select id="getUsersId" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel" parameterType="map">
+		<!-- SELECT username AS VALUE,userid AS 'key' FROM tb_upc_users WHERE usercode!='admin' 
+			AND delstatus IS NULL -->
+		SELECT CONCAT(u.username,"(",u.`usercode`,")") AS VALUE,u.userid AS 'key' FROM tb_upc_users u LEFT JOIN
+		tb_upc_department t
+		ON u.deptcode = t.deptcode
+		LEFT JOIN tb_upc_company
+		c
+		ON t.companyid = c.companyid
+		LEFT JOIN tb_upc_role r
+		ON u.roletype = r.roletype WHERE
+		u.usercode!='admin' AND u.delstatus IS
+		NULL AND t.delstatus = 0
+		<if test="query != null and query != ''">
+			AND u.initials like '%${query}%'
+		</if>
+		<if test="userid != null and userid != ''">
+			AND u.userid = #{userid}
+		</if>
+	</select>
+
+	<select id="getMailModels" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select key1 as 'key'
+		,value from tb_dic_values where keycode='000000002'
+		order by key1
+	</select>
+	<select id="getFeeType" resultType="map">
+		SELECT
+		v.`keyid`,
+		v.`keyvalue`
+		FROM
+		`tb_upc_dic_values` v
+		WHERE v.`keycode` = 'feetype'
+		ORDER BY
+		v.`sort`
+	</select>
+	<select id="getManager" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel" parameterType="map">
+		<!-- SELECT a.`area_id`, CONCAT( u.`username`,'-',i.`areaname`) AS username 
+			FROM `tb_upc_area` a LEFT JOIN `tb_upc_users` u ON a.`userid` = u.`userid` 
+			LEFT JOIN `tb_upc_area_info` i ON i.`areacode` = a.`areacode` WHERE a.`is_delete` 
+			= 0 AND u.`username` IS NOT NULL AND i.`areaname` IS NOT NULL ORDER BY u.username -->
+		SELECT
+		a.`area_id` as 'key',
+		CONCAT(u.`username`, '-', i.`areaname`) AS value 
+		FROM
+		`tb_upc_area` a
+		LEFT JOIN `tb_upc_users` u
+		ON a.`userid` = u.`userid`
+		LEFT JOIN `tb_upc_area_info` i
+		ON i.`areacode` = a.`areacode`
+		LEFT JOIN tb_judicial_feetype ft
+		ON ft.`area_id`=a.`area_id`
+		WHERE a.`is_delete` = 0
+		<if test="query != null and query != ''">
+			AND u.initials like '%${query}%'
+			AND (ft.`type_id` IS NULL OR ft.`is_delete`=1)
+		</if>
+		<if test="area_id != null and area_id != ''">
+			AND a.area_id = #{area_id}
+		</if>
+		AND u.`username` IS NOT NULL
+		AND i.`areaname` IS NOT NULL
+		<!-- if test="type == 0">
+			AND (ft.`type_id` IS NULL
+		    OR ft.`is_delete`=1)
+		</if-->
+		ORDER BY u.username
+		<if test="area_id != null and area_id != ''">
+			limit 1
+		</if>
+	</select>
+</mapper>

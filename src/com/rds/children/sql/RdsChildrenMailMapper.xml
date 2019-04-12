@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.children.mapper.RdsChildrenMailMapper">
+
+	<select id="getMailCaseInfo" parameterType="map"
+		resultType="com.rds.children.model.RdsChildrenMailCaseModel">
+		SELECT
+		ci.*,u.username as 'case_username',
+		IFNULL(mi.mail_count, 0) AS mail_count,
+  		mi.mail_time,cf.`status`,cf.type AS fee_type ,cf.`case_type`,
+		concat(ifnull(ci.`remark`,''),'|',ifnull(cf.finance_remark,'')) as 'remark'
+		FROM
+		tb_children_case_info ci
+		inner join tb_judicial_casefee cf
+		on ci.case_id = cf.case_id
+		LEFT JOIN `tb_judicial_remittance` re 
+   		ON re.remittance_id = cf.remittance_id
+		left join (SELECT case_id,COUNT(*) AS mail_count,group_concat(mail_time)  as mail_time
+			FROM tb_judicial_mail_info
+		WHERE is_delete=0 and case_type='children'
+		<if test=" mail_starttime!=null and  mail_starttime != '' ">
+			and DATE_FORMAT(mail_time,'%Y-%m-%d') >=#{mail_starttime}
+		</if>
+		<if test=" mail_endtime!=null and mail_endtime != ''">
+			and #{mail_endtime}>=DATE_FORMAT(mail_time,'%Y-%m-%d')
+		</if>
+		 GROUP BY case_id) mi
+		 on mi.case_id=ci.case_id
+		 LEFT JOIN tb_upc_users u 
+		 ON ci.`case_userid` = u.`userid` 
+		where ci.is_delete=0 and ci.verify_state >= 7
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code!=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" child_name!=null and child_name != ''">
+			and ci.child_name LIKE '%${child_name}%'
+		</if>
+		<if test="child_sex!=-1">
+			and ci.child_sex=#{child_sex}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test=" is_mail==1">
+			and mi.case_id is null
+		</if>
+		<if test=" is_paid == 2 ">
+			and re.confirm_state=1
+		</if>
+		<if test=" is_paid == 1 ">
+			and (re.confirm_state IS NULL OR re.`confirm_state` &lt;&gt; 1 )
+		</if>
+		<if test=" limit !=null and limit != ''">
+			LIMIT #{start},#{limit}
+		</if>
+	</select>
+
+	<select id="countMailCaseInfo" parameterType="map" resultType="int">
+		SELECT count(1)
+		FROM
+		tb_children_case_info ci
+		inner join tb_judicial_casefee cf
+		on ci.case_id = cf.case_id
+    	LEFT JOIN `tb_judicial_remittance` re 
+	    ON re.remittance_id = cf.remittance_id
+		left join (SELECT case_id,COUNT(*) AS mail_count 
+			FROM tb_judicial_mail_info
+		WHERE is_delete=0 and case_type='children'
+		<if test=" mail_starttime!=null and  mail_starttime != '' ">
+			and DATE_FORMAT(mail_time,'%Y-%m-%d')>=#{mail_starttime}
+		</if>
+		<if test=" mail_endtime!=null and mail_endtime != ''">
+			and #{mail_endtime}>=DATE_FORMAT(mail_time,'%Y-%m-%d')
+		</if>
+		 GROUP BY case_id) mi
+		 on mi.case_id=ci.case_id
+		where ci.is_delete=0 and ci.verify_state >= 7
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" sample_code!=null and sample_code != ''">
+			and ci.sample_code LIKE '%${sample_code}%'
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.gather_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.gather_time
+		</if>
+		<if test=" child_name!=null and child_name != ''">
+			and ci.child_name LIKE '%${child_name}%'
+		</if>
+		<if test="child_sex!=-1">
+			and ci.child_sex=#{child_sex}
+		</if>
+		<if test=" case_userid !=null and case_userid != ''">
+			and ci.case_userid=#{case_userid}
+		</if>
+		<if test=" case_areaname !=null and case_areaname != ''">
+			and ci.case_areaname like '%${case_areaname}%'
+		</if>
+		<if test=" is_mail==0">
+			and mi.case_id is not null
+		</if>
+		<if test=" is_mail==1">
+			and mi.case_id is null
+		</if>
+		<if test=" is_paid == 2 ">
+			and re.confirm_state=1
+		</if>
+		<if test=" is_paid == 1 ">
+			and (re.confirm_state IS NULL OR re.`confirm_state` &lt;&gt; 1 )
+		</if>
+	</select>
+</mapper>

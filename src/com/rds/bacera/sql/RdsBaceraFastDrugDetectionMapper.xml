@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraFastDrugDetectionMapper" >
+	
+	<resultMap id="drugDete" type="com.rds.bacera.model.RdsBaceraFastDrugDetectionModel">
+		
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		insert into tb_drug_fast_detector
+		(input,id,num,person,reagent_type,reagent_count,address,trial_type,date
+				<if test="remark != '' and remark != null">
+					,remark
+				</if>
+		)values(#{input},#{id},#{num},#{person},#{reagent_type},#{reagent_count},#{address},#{trial_type},#{date}
+				<if test="remark != '' and remark != null">
+					,#{remark}
+				</if>
+				
+				)
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_drug_fast_detector 
+		set 
+		    date = #{date}
+			<if test="person != null">
+				,person=#{person}
+			</if>
+			<if test="num != null">
+				,num=#{num}
+			</if>
+			<if test="input != null">
+				,input=#{input}
+			</if>
+			<if test="reagent_type != null">
+				,reagent_type=#{reagent_type}
+			</if>
+			<if test="reagent_count != null">
+				,reagent_count=#{reagent_count}
+			</if>	
+			<if test="address != null">
+				,address=#{address}
+			</if>	
+			<if test="trial_type != null">
+				,trial_type=#{trial_type}
+			</if>	
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_drug_fast_detector where id = #{id}
+	</delete>
+		<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_drug_fast_detector where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	<select id="queryAllPage" parameterType="map" resultMap="drugDete">
+		 SELECT 
+			  a.`id`,
+			  a.`person`,
+			  a.`date`,
+			  a.num,
+			  a.reagent_type,
+			  a.`reagent_count`,
+			  a.address,
+			  a.trial_type,
+			  a.`remark`,
+			  a.`cancelif`,
+			  u1.username as input
+			FROM
+			  tb_drug_fast_detector a 
+			  LEFT JOIN tb_upc_users u1 ON a.`input` = u1.`userid`
+			  WHERE 1=1
+			<if test="address != '' and address != null">
+				and a.address like '%${address}%'
+			</if>
+			<if test="num != '' and num != null">
+				and a.num like '%${num}%'
+			</if>
+			<if test="person != '' and person != null">
+				and a.person like '%${person}%'
+			</if>
+			<if test="reagent_type != '' and reagent_type != null">
+				and a.reagent_type like '%${reagent_type}%'
+			</if>	
+			<if test="trial_type !=0  ">
+				and a.trial_type = #{trial_type}
+			</if>
+			<if test="fastDetection_starttime != '' and fastDetection_starttime != null">
+				and a.date >= #{fastDetection_starttime}
+			</if>	
+			<if test="fastDetection_endtime != '' and fastDetection_endtime != null">
+				and #{fastDetection_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="input != '' and input != null">
+				and a.input = #{input}
+			</if>
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+			 count(1)
+			FROM
+			  tb_drug_fast_detector a 
+			  WHERE 1=1
+			<if test="address != '' and address != null">
+				and a.address like '%${address}%'
+			</if>
+			<if test="person != '' and person != null">
+				and a.person like '%${person}%'
+			</if>
+			<if test="num != '' and num != null">
+				and a.num like '%${num}%'
+			</if>
+			<if test="reagent_type != '' and reagent_type != null">
+				and a.reagent_type like '%${reagent_type}%'
+			</if>	
+			<if test="trial_type !=0  ">
+				and a.trial_type = #{trial_type}
+			</if>
+			<if test="fastDetection_starttime != '' and fastDetection_starttime != null">
+				and a.date >= #{fastDetection_starttime}
+			</if>	
+			<if test="fastDetection_endtime != '' and fastDetection_endtime != null">
+				and #{fastDetection_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="input != '' and input != null">
+				and a.input = #{input}
+			</if>
+	</select>
+	
+	
+
+</mapper>

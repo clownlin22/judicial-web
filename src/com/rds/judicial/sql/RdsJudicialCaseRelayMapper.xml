@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialCaseRelayMapper">
+
+	<select id="getCaseRelays" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseRelayModel">
+		select cc.*,DATE_FORMAT(ci.confirm_time,'%Y-%m-%d %H:%i:%s') as
+		confirm_time,ci.confirm_pername,ci.confirm_remark,
+		(
+		CASE
+		WHEN ci.relay_id='' OR ci.relay_id IS NULL
+		THEN 0
+		ELSE
+		1 END) as confirm_state
+		from (select DATE_FORMAT(c.relay_time,'%Y-%m-%d %H:%i:%s') as
+		relay_time,c.relay_id,c.relay_code,c.is_delete,c.relay_per,c.relay_remark,c.relay_check,c.relay_checktwo,c.relay_Gluing,c.relay_Seal,c.relay_split,u.username as relay_pername
+		from
+		tb_judicial_case_relay_info c,tb_upc_users u
+		where c.relay_per=u.userid
+		<!-- and c.relay_per=#{relay_per}  -->
+		<if test="relay_code!=null and relay_code != ''">
+			and (lower(c.relay_code) LIKE '%${relay_code}%' or
+			upper(c.relay_code) LIKE '%${relay_code}%')
+		</if>
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.relay_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.relay_time,'%Y-%m-%d')
+		</if>
+		<if test="partner_name !=null and partner_name != ''">
+			and u.parnter_name = #{partner_name}
+		</if>
+		) cc
+		left join (select c.*,u.username as confirm_pername
+		from
+		tb_judicial_case_confirm_info c,tb_upc_users u
+		where c.confirm_per=u.userid) ci on
+		cc.relay_id=ci.relay_id
+		where 1=1
+		<if test="confirm_state==0">
+			and (ci.confirm_id='' or ci.confirm_id is null)
+		</if>
+		<if test="confirm_state==1">
+			and (ci.confirm_id!='' and ci.confirm_id is not null)
+		</if>
+		order by cc.relay_time desc
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countCaseRelays" parameterType="map" resultType="int">
+		select count(*)
+		from (select DATE_FORMAT(c.relay_time,'%Y-%m-%d %H:%i:%s') as
+		relay_time,c.relay_id,c.relay_code,c.relay_per,c.relay_remark
+		from
+		tb_judicial_case_relay_info c,tb_upc_users u
+		where c.relay_per=u.userid
+		<!-- and c.relay_per=#{relay_per} -->
+		<if test="relay_code!=null and relay_code != ''">
+			and (lower(c.relay_code) LIKE '%${relay_code}%' or
+			upper(c.relay_code) LIKE '%${relay_code}%')
+		</if>
+		<if test=" is_delete!=-1">
+			and c.is_delete=#{is_delete}
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and DATE_FORMAT(c.relay_time,'%Y-%m-%d')>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=DATE_FORMAT(c.relay_time,'%Y-%m-%d')
+		</if>
+		<if test="partner_name !=null and partner_name != ''">
+			and u.parnter_name = #{partner_name}
+		</if>
+		) cc
+		left join tb_judicial_case_confirm_info ci on
+		cc.relay_id=ci.relay_id
+		where 1=1
+		<if test="confirm_state==0">
+			and (ci.confirm_id='' or ci.confirm_id is null)
+		</if>
+		<if test="confirm_state==1">
+			and (ci.confirm_id!='' and ci.confirm_id is not null)
+		</if>
+	</select>
+
+	<select id="getRelayCaseInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+		select ci.case_id,ci.case_code,cc.confirm_state from tb_judicial_confirm_case cc,tb_judicial_case_info ci where
+		relay_id=#{relay_id} and ci.case_id=cc.case_id
+	</select>
+
+
+	<select id="getPrintCaseCode" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+			SELECT t.`case_id`,t.`case_code`
+			<if test=" relay_id!='' and  relay_id != null">
+			,(
+			CASE
+			WHEN t.case_id='' OR t.case_id IS NULL
+			THEN 'false'
+			ELSE
+			'true' END) as selected
+			</if>
+			FROM
+			  tb_judicial_case_info t 
+			  LEFT JOIN 
+			  (SELECT MIN(a.`confirm_state`) AS confirm_state,a.`case_id`,a.`relay_id` FROM tb_judicial_confirm_case a GROUP BY a.`case_id`)  c 
+			    ON t.`case_id` = c.`case_id` 
+			    LEFT JOIN tb_judicial_case_relay_info cri 
+			    ON c.`relay_id`=cri.`relay_id`
+			WHERE t.`verify_state` = 7 
+			  AND t.`is_delete` = 0 
+			  AND (c.`relay_id` IS NULL OR c.`confirm_state` =2)
+		<if test=" relay_id!='' and  relay_id != null">
+			and cri.relay_id != #{ relay_id}
+		</if> 
+		<if test=" case_code !='' and  case_code != null">
+			and t.case_code like '%${case_code}%'
+		</if> 
+		<if test="partner_name !=null and partner_name != ''">
+			and t.parnter_name = #{partner_name}
+		</if>
+		GROUP BY t.case_id
+        order by
+        t.case_code desc
+	LIMIT
+		#{start},#{limit}
+	<!--  
+        SELECT
+		ci.case_code,ci.case_id
+		<if test=" relay_id!='' and  relay_id != null">
+		,(
+		CASE
+		WHEN tt.case_id='' OR tt.case_id IS NULL
+		THEN 'false'
+		ELSE
+		'true' END) as selected
+		</if>
+		FROM
+		(SELECT ci.case_id,ci.case_code FROM tb_judicial_case_info ci,tb_judicial_sub_case_info si WHERE 1=1
+		
+		
+			and ci.accept_time >= DATE_SUB(CURDATE(),INTERVAL 30 DAY)
+			
+			and curdate() >= ci.accept_time
+			
+		and ci.print_count>0
+		and ci.case_code=si.case_code
+		AND (si.result = 'passed' 
+		OR si.result = 'failed')
+		AND   ci.`case_in_per` IS NOT NULL
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state = 3) ci		
+		LEFT JOIN	
+		((SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code) UNION
+		(SELECT
+		DISTINCT(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1
+		)
+		UNION
+		(SELECT
+		DISTINCT(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N'
+		)
+		union
+		(
+		SELECT case_code FROM tb_judicial_mail_info mi,tb_judicial_case_info ci WHERE ci.case_id =mi.`case_id` GROUP BY ci.`case_code`
+		)
+		UNION (SELECT
+		DISTINCT(ci.case_code)
+		FROM
+		tb_judicial_confirm_case c,
+		tb_judicial_case_relay_info cri,
+		tb_judicial_case_info ci
+		WHERE cri.relay_id = c.relay_id
+		AND cri.is_delete = 0 AND c.confirm_state!=2 
+		<if test=" relay_id!='' and  relay_id != null">
+			and cri.relay_id != #{ relay_id}
+		</if> 
+		AND
+		ci.`case_id`=c.`case_id`
+		)) ss
+		ON ci.case_code=ss.case_code
+		<if test=" relay_id!='' and  relay_id != null">
+			left join (select case_id from tb_judicial_confirm_case where relay_id=#{relay_id}) tt
+			on tt.case_id=ci.case_id
+		</if>
+		GROUP BY ci.case_id
+        order by
+        ci.case_code desc
+		LIMIT
+		#{start},#{limit}
+		-->
+	</select>
+	
+	<select id="getRelayCaseCode" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+	   select ci.case_id,ci.case_code from tb_judicial_case_info ci,tb_judicial_confirm_case c 
+	   where c.case_id=ci.case_id and c.relay_id=#{relay_id}
+	</select>
+	
+	<select id="countPrintCaseCode" parameterType="map" resultType="int">
+	  select count(1) from (
+	  SELECT t.`case_id`,t.`case_code`
+			<if test=" relay_id!='' and  relay_id != null">
+			,(
+			CASE
+			WHEN t.case_id='' OR t.case_id IS NULL
+			THEN 'false'
+			ELSE
+			'true' END) as selected
+			</if>
+			FROM
+			  tb_judicial_case_info t 
+			  LEFT JOIN 
+			  (SELECT MIN(a.`confirm_state`) AS confirm_state,a.`case_id`,a.`relay_id` FROM tb_judicial_confirm_case a GROUP BY a.`case_id`)  c 
+			    ON t.`case_id` = c.`case_id` 
+			    LEFT JOIN tb_judicial_case_relay_info cri 
+			    ON c.`relay_id`=cri.`relay_id`
+			WHERE t.`verify_state` = 7 
+			  AND t.`is_delete` = 0 
+			  AND (c.`relay_id` IS NULL OR c.`confirm_state` =2)
+		<if test=" relay_id!='' and  relay_id != null">
+			and cri.relay_id != #{ relay_id}
+		</if> 
+		<if test=" case_code !='' and  case_code != null">
+			and t.case_code like '%${case_code}%'
+		</if> 
+		<if test="partner_name !=null and partner_name != ''">
+			and t.parnter_name = #{partner_name}
+		</if>
+		GROUP BY t.case_id
+		) t
+	   <!--  SELECT
+		COUNT(DISTINCT(ci.case_id))
+		FROM
+		(SELECT ci.case_id,ci.case_code FROM tb_judicial_case_info ci,tb_judicial_sub_case_info si WHERE 1=1
+		
+		
+			and ci.accept_time >= DATE_SUB(CURDATE(),INTERVAL 30 DAY)
+			and curdate() >= ci.accept_time
+			
+			
+		and ci.print_count>0
+		and ci.case_code=si.case_code
+		AND (si.result = 'passed' 
+		OR si.result = 'failed')
+		AND   ci.`case_in_per` IS NOT NULL
+		AND ci.`is_archived` = 0
+		AND ci.is_delete = 0
+		AND ci.verify_state = 3) ci		
+		LEFT JOIN	
+		((SELECT
+		case_code
+		FROM
+		tb_judicial_sub_case_info s
+		WHERE s.result IS NULL
+		OR s.result = ''
+		GROUP BY case_code) UNION
+		(SELECT
+		DISTINCT(case_code)
+		FROM
+		tb_judicial_exception
+		WHERE choose_flag = 1
+		)
+		UNION
+		(SELECT
+		DISTINCT(case_code)
+		FROM
+		tb_judicial_checknegreport
+		WHERE check_flag = 'N'
+		)
+		union
+		(
+		SELECT case_code FROM tb_judicial_mail_info mi,tb_judicial_case_info ci WHERE ci.case_id =mi.`case_id` GROUP BY ci.`case_code`
+		)
+		UNION (SELECT
+		DISTINCT(ci.case_code)
+		FROM
+		tb_judicial_confirm_case c,
+		tb_judicial_case_relay_info cri,
+		tb_judicial_case_info ci
+		WHERE cri.relay_id = c.relay_id
+		AND cri.is_delete = 0 AND c.confirm_state!=2
+		<if test=" relay_id!='' and  relay_id != null">
+			and cri.relay_id != #{ relay_id}
+		</if>  AND
+		ci.`case_id`=c.`case_id`
+		)) ss
+		ON ci.case_code=ss.case_code
+		WHERE ss.case_code IS NULL
+		 -->
+	</select>
+	<insert id="saveCaseRelayInfo" parameterType="com.rds.judicial.model.RdsJudicialCaseRelayModel">
+        insert into tb_judicial_case_relay_info(relay_id,relay_per,relay_time,relay_remark,relay_code,relay_check,relay_checktwo,relay_Gluing,relay_Seal,relay_split) values(#{relay_id},#{relay_per},now(),#{relay_remark},#{relay_code},#{relay_check},#{relay_checktwo},#{relay_Gluing},#{relay_Seal},#{relay_split})	
+	</insert>
+	
+	<insert id="addCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+	   insert into tb_judicial_confirm_case(case_id,relay_id) values(#{case_id},#{relay_id})
+	</insert>
+	
+	<update id="updateCaseRelayInfo" parameterType="com.rds.judicial.model.RdsJudicialCaseRelayModel">
+	   update tb_judicial_case_relay_info set relay_remark=#{relay_remark} where relay_id=#{relay_id}
+	</update>
+	
+	<delete id="deleteCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialCaseRelayModel">
+	  delete from tb_judicial_confirm_case where relay_id=#{relay_id}
+	</delete>
+	
+	<update id="deleteRelayCaseInfo" parameterType="map">
+	    update tb_judicial_case_relay_info set is_delete=1 where relay_id=#{relay_id}
+	</update>
+	
+	<select id="getCaseInfo" parameterType="String" resultType="com.rds.judicial.model.RdsJudicialSampleReciveModel">
+	    select ci.case_id as id,ci.case_code as text from tb_judicial_confirm_case cc,tb_judicial_case_info ci where
+		relay_id=#{relay_id} and ci.case_id=cc.case_id
+	</select>
+	
+	<select id="getCaseConfirmCode" parameterType="String" resultType="String">
+	    select ci.case_code from tb_judicial_confirm_case cc,tb_judicial_case_info ci where
+		relay_id=#{relay_id} and ci.case_id=cc.case_id
+	</select>
+	
+	<insert id="confirmCaseRelayInfo" parameterType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+	      insert into tb_judicial_case_confirm_info(confirm_id,confirm_time,confirm_per,confirm_remark,relay_id) 
+	      values(#{confirm_id},now(),#{confirm_per},#{confirm_remark},#{relay_id})
+	</insert>
+	
+	<update id="updateCaseInfo" parameterType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+	    update tb_judicial_confirm_case set confirm_state=1 where relay_id=#{relay_id} and case_id=#{case_id}
+	</update>
+	
+	<update id="updateCaseInfoToFalse" parameterType="map">
+	    update tb_judicial_confirm_case set confirm_state=2 where relay_id=#{relay_id}
+	</update>
+	
+	<select id="getPrintCaseCodeOnline" parameterType="String" resultType="com.rds.judicial.model.RdsJudicialConfirmCaseInfo">
+		SELECT 
+		  ci.`case_id`,ri.`relay_id`,ri.`relay_code`,ri.`relay_check`,ri.`relay_checktwo`,ri.`relay_Gluing`,ri.`relay_Seal`,ri.`relay_split`,ci.`case_code`,
+		  DATE_FORMAT( ri.`relay_time`,'%Y-%m-%d %H:%i:%s') as  relay_time,ri.`relay_remark`
+		FROM
+		  `tb_judicial_case_relay_info` ri 
+		  LEFT JOIN `tb_judicial_confirm_case` cc 
+		    ON ri.`relay_id` = cc.`relay_id` 
+		  LEFT JOIN `tb_judicial_case_info` ci 
+		    ON ci.`case_id` = cc.`case_id` 
+		WHERE cc.`relay_id` = #{relay_id}
+		order by ci.case_code asc
+	</select>
+</mapper>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialFeeTypeMapper">
+	<insert id="insertType" parameterType="com.rds.judicial.model.RdsJudicialFeeTypeModel">
+		INSERT INTO
+		`tb_judicial_feetype` (`type_id`, `area_id`, `feetype`)
+		VALUES (#{type_id},#{area_id},#{feetype});
+	</insert>
+</mapper>

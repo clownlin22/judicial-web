@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialOtherMapper" >
+	<insert id="updateCaseInfoVerifyState" parameterType="map">
+		<if test="case_id !=null and case_id !=''">
+			update tb_judicial_case_info 
+			set verify_state = #{verify_state}
+			where case_id = #{case_id}
+		</if>
+	</insert>
+	
+	<select id="queryExport" parameterType="map" resultType="com.rds.judicial.model.RdsJudicialCaseProcessModel">
+		SELECT 
+		  t.`case_code`,
+		  t.`accept_time`,
+  		  t.`sample_in_time`,
+		  t.`client`,
+ 		  t.`phone`,
+		  t.`consignment_time`,
+		  ti.`ASSIGNEE_`,
+		  ti.`NAME_`,
+		  ti.`START_TIME_`,
+		  ti.`END_TIME_`,
+		  hc.`MESSAGE_` 
+		FROM
+		  tb_judicial_case_info t 
+		  INNER JOIN ACT_HI_TASKINST ti 
+		    ON t.`process_instance_id` = ti.`PROC_INST_ID_` 
+		  LEFT JOIN ACT_HI_COMMENT hc 
+		    ON hc.`TASK_ID_` = ti.`ID_` 
+		WHERE 1 = 1 
+		<if test=" report_model !=null and  report_model != '' ">
+		  	AND t.`report_model` = #{report_model} 
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and t.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=t.accept_time
+		</if>
+		<if test=" verify_state !=null and verify_state != ''">
+			and t.verify_state=#{verify_state}
+		</if>
+		<if test=" case_code !=null and case_code != ''">
+			and t.case_code LIKE '%${case_code}%'
+		</if>
+		<if test=" client !=null and client != ''">
+			and t.client LIKE '%${client}%'
+		</if>
+		<if test=" phone !=null and phone != ''">
+			and t.phone LIKE '%${phone}%'
+		</if>
+		ORDER BY ti.`START_TIME_` ASC 
+	</select>
+</mapper>

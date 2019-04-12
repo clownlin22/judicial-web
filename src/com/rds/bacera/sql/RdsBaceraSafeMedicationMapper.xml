@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraSafeMedicationMapper" >
+	<resultMap id="safeMedication" type="com.rds.bacera.model.RdsBaceraSafeMedicationModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='type' property="type"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='testitems' property="testitems" />
+		
+		<result column='agentid' property="agentid" />
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+			
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	<!-- 插入安全用药信息-->
+	<insert id="insert" parameterType="map">
+			insert into tb_safe_medication
+				(id,num
+					<if test="date != '' and date != null">
+						,date
+					</if>
+				,name,testitems,type,ownperson,remark
+					<if test="inputperson != '' and inputperson != null">
+						,inputperson
+					</if>
+			)values(#{id},#{num}
+					<if test="date != '' and date != null">
+						,#{date}
+					</if>
+					,#{name},#{testitems},#{type},#{ownperson},#{remark}
+					<if test="inputperson != '' and inputperson != null">
+						,#{inputperson}
+					</if>
+					)
+	</insert>
+	<!-- 更新安全用药信息 -->
+	<update id="update" parameterType="map">
+		update tb_safe_medication 
+			set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>	
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>
+			<if test="testitems != null">
+				,testitems=#{testitems}
+			</if>
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>
+			<if test="agentid != null">
+				,agent=#{agentid}	
+			</if>
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>
+			<if test="cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			<if test="type != null">
+				,type=#{type}
+			</if>
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_safe_medication where id = #{id}
+	</delete>
+	<!-- 分页查询安全用药信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="safeMedication">
+		 SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`name`,
+			  a.`date`,
+			  a.`testitems`,
+			  a.`ownperson`,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  a.`cancelif`,
+			  i.expresstime,
+			  a.type,
+			  i.expressremark
+			FROM
+			  tb_safe_medication a 
+			LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi 
+			    ON a.`id` = fi.`id` 
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id` 
+			WHERE 1 = 1 
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="testitems != '' and testitems != null">
+				and a.testitems like concat('%', #{testitems}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="safeMed_starttime != '' and safeMed_starttime != null">
+				and a.date >= #{safeMed_starttime}
+			</if>	
+			<if test="safeMed_endtime != '' and safeMed_endtime != null">
+				and #{safeMed_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="oa_num != '' and oa_num != null">
+				AND fi.`oa_num` like concat('%', #{oa_num}, '%') 
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="type != '' and type != null">
+				AND a.`type`=#{type}
+			</if>	
+			order by a.num desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<!-- 查询安全用药信息总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+				count(1)
+			FROM
+			  tb_safe_medication a 
+			  LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi 
+			    ON a.`id` = fi.`id` 
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id` 
+			WHERE 1 = 1 
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="testitems != '' and testitems != null">
+				and a.testitems like concat('%', #{testitems}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="safeMed_starttime != '' and safeMed_starttime != null">
+				and a.date >= #{safeMed_starttime}
+			</if>	
+			<if test="safeMed_endtime != '' and safeMed_endtime != null">
+				and #{safeMed_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="oa_num != '' and oa_num != null">
+				AND fi.`oa_num` like concat('%', #{oa_num}, '%') 
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="type != '' and type != null">
+				AND a.`type`=#{type}
+			</if>	
+	</select>
+	
+	<select id="queryAudltMaxNum" parameterType="map" resultType="Integer">
+		SELECT count(1) FROM tb_safe_medication a WHERE 1=1 and type='audlt'
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	<select id="queryChildMaxNum" parameterType="map" resultType="Integer">
+		SELECT count(1) FROM tb_safe_medication a WHERE 1=1 and type='child'
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+</mapper>

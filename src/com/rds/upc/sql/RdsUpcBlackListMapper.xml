@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcBlackListMapper" >
+	<resultMap id="blackList" type="com.rds.upc.model.RdsUpcBlackListModel">
+		<id column="id" property="id"/>
+		<result column='cardId' property="cardId"/>
+		<result column='remark' property="remark"/>
+	</resultMap>
+	<!-- 插入黑名单信息 -->
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_black_list
+		(id,cardId,remark,createTime) 
+  		values(#{id},#{cardId},#{remark},sysdate())
+	</insert>
+	<!-- 更新黑名单信息 -->
+	<update id="update" parameterType="map">
+		update tb_upc_black_list 
+		set cardId=#{cardId},
+			remark = #{remark},
+			updateTime = sysdate()
+			where id = #{id}
+	</update>
+	<!-- 根据黑名单id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_upc_black_list where id = #{id}
+	</delete>
+	<!-- 分页查询黑名单信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="blackList">
+		 SELECT t.id,t.cardId,t.remark
+		 	from tb_upc_black_list t 
+		  <where>
+			<if test="cardId != '' or cardId != null">
+				t.cardId like concat('%', #{cardId}, '%') 
+			</if>		  
+		  </where>
+		  LIMIT #{start},#{end}
+	</select>
+	<!-- 所有黑名单信息 -->
+	<select id="queryAll" parameterType="map" resultMap="blackList">
+		select * from tb_upc_black_list
+	</select>
+	<!-- 查询黑名单总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_black_list t 
+		 <where>
+			<if test="cardId != '' or cardId != null">
+				cardId like concat('%', #{cardId}, '%') 
+			</if>		  
+		  </where>
+	</select>
+</mapper>

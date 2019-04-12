@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialExperimentMapper">
+
+    <select id="queryAll" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialExperimentModel">
+        SELECT * FROM tb_judicial_experiment
+        where enable_flag = 'Y'
+        and laboratory_no = #{laboratory_no}
+        <if test=" experimenter!=null and experimenter != ''">
+            and experimenter LIKE '%${experimenter}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and experiment_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} >= experiment_date
+        </if>
+        <if test=" experiment_no!=null and experiment_no != ''">
+            and experiment_no like '%${experiment_no}%'
+        </if>
+        <if test="datelimite != null and  datelimite!=''">
+            and experiment_no not in (select experiment_no from tb_judicial_sample_result)
+            order by experiment_date desc
+        </if>
+        <if test="start!=null and limit !=null and datelimite ==null">
+            order by experiment_date desc
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+<select id="queryAllBySample" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialExperimentModel">
+        SELECT * FROM tb_judicial_experiment
+        where enable_flag = 'Y'
+        and laboratory_no = #{laboratory_no}
+        and reagent_name IS NULL
+        <if test="datelimite != null and  datelimite!=''">
+            and experiment_no not in (select experiment_no from tb_judicial_sample_result)
+            order by experiment_date desc
+        </if>
+        <if test="start!=null and limit !=null and datelimite ==null">
+            order by experiment_date desc
+            limit #{start},#{limit}
+        </if>
+    </select>
+    
+    <select id="queryAllCountBySample" parameterType="map" resultType="int">
+        SELECT count(*) FROM tb_judicial_experiment
+        where enable_flag = 'Y'
+        and laboratory_no = #{laboratory_no}
+        and reagent_name IS NULL
+    </select>
+    <select id="queryAllCount" parameterType="map" resultType="int">
+        SELECT count(*) FROM tb_judicial_experiment
+        where enable_flag = 'Y'
+        and laboratory_no = #{laboratory_no}
+        <if test=" experimenter!=null and experimenter != ''">
+            and experimenter LIKE '%${experimenter}%'
+        </if>
+        <if test=" starttime!=null and  starttime != '' ">
+            and experiment_date >= #{starttime}
+        </if>
+        <if test=" endtime!=null and  endtime != '' ">
+            and  #{endtime} >= experiment_date
+        </if>
+        <if test=" experiment_no!=null and experiment_no != ''">
+            and experiment_no like '%${experiment_no}%'
+        </if>
+    </select>
+
+    <update id="update" parameterType="map">
+        update tb_judicial_experiment
+        set experiment_no = #{experiment_no},
+        experimenter = '${experimenter}',
+        experiment_date = #{experiment_date},
+        reagent_name = #{reagent_name}
+        where uuid=#{uuid}
+    </update>
+
+    <insert id="insert" parameterType="map">
+        INSERT INTO tb_judicial_experiment (uuid,
+        experiment_date, experimenter, experiment_no, enable_flag,laboratory_no,reagent_name)
+        VALUES (#{uuid},#{experiment_date},#{experimenter},lower(#{experiment_no}),'Y',#{laboratory_no},#{reagent_name})
+    </insert>
+
+    <update id="delete" parameterType="map">
+        update  tb_judicial_experiment set enable_flag = 'N'
+        where uuid=#{uuid}
+    </update>
+
+    <update id="updateReagentName" parameterType="map">
+        update tb_judicial_experiment
+        set reagent_name = #{reagent_name}
+        where laboratory_no = #{laboratory_no}
+        and experiment_no = #{experiment_no}
+    </update>
+
+    <update id="updatePlaces" parameterType="map">
+        update  tb_judicial_experiment set places = #{places}
+        where uuid=#{uuid}
+    </update>
+
+    <select id="isexperimented" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_sample_result
+        where experiment_no = #{experiment_no}
+        and laboratory_no = #{laboratory_no};
+    </select>
+
+    <select id="experimentCount" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_experiment where experiment_no = #{experiment_no}
+        and laboratory_no = #{laboratory_no};
+    </select>
+
+    <insert id="insertInstrumentProtocol" parameterType="map">
+        insert into tb_judicial_instrument_protocol (instrument_protocol, enable_flag,laboratory_no)
+        values(#{instrument_protocol},#{enable_flag},#{laboratory_no});
+    </insert>
+    
+    <select id="queryInstrumentProtocol" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialInstrumentProtocolModel">
+        select * from tb_judicial_instrument_protocol
+        where laboratory_no = #{laboratory_no}
+        <if test="instrument_protocol!=null and instrument_protocol!=''">
+            and instrument_protocol like '%${instrument_protocol}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountInstrumentProtocol" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_instrument_protocol
+        where laboratory_no = #{laboratory_no}
+        <if test="instrument_protocol!=null and instrument_protocol!=''">
+            and instrument_protocol like '%${instrument_protocol}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+    </select>
+
+    <update id="updateInstrumentProtocol" parameterType="map">
+        update tb_judicial_instrument_protocol set enable_flag = #{enable_flag}
+        where instrument_protocol = #{instrument_protocol}
+        and laboratory_no = #{laboratory_no}
+    </update>
+
+    <delete id="deleteInstrumentProtocol" parameterType="map">
+        delete from tb_judicial_instrument_protocol
+        where instrument_protocol = #{instrument_protocol}
+        and laboratory_no = #{laboratory_no}
+    </delete>
+
+    <insert id="insertResultsGroup" parameterType="map">
+        insert into tb_judicial_results_group (results_group, enable_flag,laboratory_no)
+        values(#{results_group},#{enable_flag},#{laboratory_no});
+    </insert>
+
+    <select id="queryResultsGroup" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialResultsGroupModel">
+        select * from tb_judicial_results_group
+        where laboratory_no = #{laboratory_no}
+        <if test="results_group!=null and results_group!=''">
+            and results_group like '%${results_group}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountResultsGroup" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_results_group
+        where laboratory_no = #{laboratory_no}
+        <if test="results_group!=null and results_group!=''">
+            and results_group like '%${results_group}%'
+        </if>
+        <if test="enable_flag!=null and enable_flag!=''">
+            and enable_flag = #{enable_flag}
+        </if>
+    </select>
+
+    <update id="updateResultsGroup" parameterType="map">
+        update tb_judicial_results_group set enable_flag = #{enable_flag}
+        where results_group = #{results_group}
+        and laboratory_no = #{laboratory_no}
+    </update>
+
+    <delete id="deleteResultsGroup" parameterType="map">
+        delete from tb_judicial_results_group
+        where results_group = #{results_group}
+        and laboratory_no = #{laboratory_no}
+    </delete>
+
+    <delete id="deleteSample" parameterType="map">
+        delete from tb_judicial_sample_result
+        where experiment_no = #{experiment_no}
+        and laboratory_no = #{laboratory_no}
+    </delete>
+
+    <delete id="deleteSampleData" parameterType="map">
+        delete from tb_judicial_sample_result_data
+        where experiment_no = #{experiment_no}
+        and laboratory_no = #{laboratory_no}
+    </delete>
+
+
+    <select id="queryPlaces" parameterType="map" resultType="string">
+        select places from tb_judicial_experiment
+        where uuid=#{uuid}
+    </select>
+    
+    
+    <select id="getExceptionCaseId" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialCaseExceptionModel">
+		select * from tb_judicial_case_exception
+		where case_id =#{case_id}
+	</select>
+</mapper>

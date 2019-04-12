@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<config>
+         
+         <case_code_num_d>1</case_code_num_d>
+         <case_code_date_d>20170201</case_code_date_d>
+         
+         <case_code_num_sd>1</case_code_num_sd>
+         <case_code_date_sd>20170201</case_code_date_sd>
+         
+         <case_code_num_qs>1</case_code_num_qs>
+         <case_code_date_qs>20170201</case_code_date_qs>
+         <case_code_num_ynqs>0</case_code_num_ynqs>  
+         <case_code_date_ynqs>2018</case_code_date_ynqs>  
+ 
+         <case_code_num_jz>1</case_code_num_jz>
+         <case_code_date_jz>20170201</case_code_date_jz>
+         
+         <case_code_num_jd>1</case_code_num_jd>
+         <case_code_date_jd>20170201</case_code_date_jd>
+         
+         <case_code_num_bj>1</case_code_num_bj>
+         <case_code_date_bj>20170201</case_code_date_bj>
+         
+          <case_code_num_bj_CMA>1</case_code_num_bj_CMA>
+         <case_code_date_bj_CMA>2018</case_code_date_bj_CMA>
+         
+         <case_code_num_dc>1</case_code_num_dc>
+         <case_code_date_dc>20170201</case_code_date_dc>
+         
+         <case_code_num_mz>1</case_code_num_mz>
+         <case_code_date_mz>20170201</case_code_date_mz>
+         
+         <case_code_num_sy>1</case_code_num_sy>
+         <case_code_date_sy>20170201</case_code_date_sy>
+</config>

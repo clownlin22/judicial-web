@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.appraisal.mapper.RdsAppraisalEntrustMapper">
+	<resultMap id="entrustModel" type="com.rds.appraisal.model.RdsAppraisalEntrustModel">
+	</resultMap>
+	<resultMap id="keyValueModel" type="com.rds.appraisal.model.RdsAppraisalKeyValueModel">
+	</resultMap>
+	<insert id="insert" parameterType="map">
+		insert into
+		tb_appraisal_entrust_key(id,name)
+		values
+		(#{id},#{name})
+	</insert>
+
+	<update id="update" parameterType="map">
+		update
+		tb_appraisal_entrust_key
+		set name = #{name}
+		where id
+		= #{id}
+	</update>
+
+	<delete id="delete" parameterType="map">
+		delete from
+		tb_appraisal_entrust_key where id = #{id}
+	</delete>
+
+	<select id="queryAllPage" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_entrust_key t
+		where 1=1
+		<if test="search != null and search != ''">
+			and t.name like '%${search}%'
+		</if>
+		ORDER BY t.name ASC LIMIT #{start},#{end}
+	</select>
+
+	<select id="queryAll" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_entrust_key t
+	</select>
+	
+	<select id="queryModel" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_entrust_key t where 1=1
+			and t.name = #{name}
+		LIMIT 1
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_appraisal_entrust_key t where 1=1
+		<if test="search != null and search != ''">
+			and t.name like '%${search}%'
+		</if>
+	</select>
+	
+	<insert id="insertJudge" parameterType="map">
+		insert into
+		tb_appraisal_judge(id,userid,case_id,flag)
+		values
+		(#{id},#{userid},#{case_id},#{flag})
+	</insert>
+
+	<select id="queryJudge" parameterType="map" resultMap="keyValueModel">
+		select userid as 'key',flag as 'value' from tb_appraisal_judge 
+		where 1=1 
+		<if test="case_id != null and case_id != ''">
+			and case_id=#{case_id}
+		</if>
+		order by flag desc
+	</select>
+	<delete id="deleteJudge"  parameterType="map">
+		delete from tb_appraisal_judge where case_id=#{case_id}
+	</delete>
+
+	<update id="updateMechanism" parameterType="map">
+		update
+		tb_appraisal_mechanism
+		set name = #{name}
+		where id
+		= #{id}
+	</update>
+
+	<delete id="deleteMechanism" parameterType="map">
+		delete from
+		tb_appraisal_mechanism where id = #{id}
+	</delete>
+
+	<select id="queryAllPageMechanism" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_mechanism t
+		where 1=1
+		<if test="search != null and search != ''">
+			and t.name like '%${search}%'
+		</if>
+		ORDER BY t.name ASC LIMIT #{start},#{end}
+	</select>
+
+	<select id="queryAllMechanism" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_mechanism t
+	</select>
+	
+	<select id="queryModelMechanism" parameterType="map" resultMap="entrustModel">
+		SELECT
+		t.id,t.name
+		FROM tb_appraisal_mechanism t where 1=1
+			and t.name = #{name}
+		LIMIT 1
+	</select>
+
+	<select id="queryAllCountMechanism" parameterType="map" resultType="Integer">
+		select count(1) from tb_appraisal_mechanism t where 1=1
+		<if test="search != null and search != ''">
+			and t.name like '%${search}%'
+		</if>
+	</select>
+</mapper>

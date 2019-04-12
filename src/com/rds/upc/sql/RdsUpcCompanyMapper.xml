@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcCompanyMapper" >
+	<resultMap id="company" type="com.rds.upc.model.RdsUpcCompanyModel">
+		<id column="companyid" property="companyid"/>
+		<result column='companyname' property="companyname"/>
+	</resultMap>
+	<!-- 插入企业信息 -->
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_company
+		(companyid,companyname,companycode,address,telphone,contact,cratetime,laboratory_no)
+  		values(#{companyid},#{companyname},#{companycode},#{address},#{telphone},#{contact},sysdate(),#{laboratory_no})
+	</insert>
+	<!-- 更新企业信息 -->
+	<update id="update" parameterType="map">
+		update tb_upc_company 
+		set companyname=#{companyname},
+			companycode = #{companycode},
+			address = #{address},
+			telphone = #{telphone},
+			contact = #{contact},
+			laboratory_no = #{laboratory_no}
+			 where companyid = #{companyid}
+	</update>
+	<!-- 根据企业id删除企业信息 -->
+	<delete id="delete" parameterType="map">
+		update tb_upc_company set status=0 where companyid = #{companyid}
+		<!-- delete from tb_upc_company where companyid = #{companyid} -->
+	</delete>
+	<!-- 分页查询企业信息 -->
+	<select id="queryAllPage" parameterType="map" resultType="company">
+		 SELECT t.companyid,t.companyname,t.companycode,t.address,
+        t.telphone,t.contact,t.status,d.deptname as
+        laboratory_name,t.laboratory_no
+		 	from tb_upc_company t
+            left join tb_upc_department d
+              on t.laboratory_no = d.deptcode
+            where 1=1 and t.status=1
+			<if test="companyname != '' and companyname != null ">
+				and companyname like concat('%', #{companyname}, '%') 
+			</if>	
+			<if test="companycode != '' and companycode != null ">
+				and companycode like concat('%', #{companycode}, '%') 
+			</if>	  
+		  LIMIT #{start},#{end}
+	</select>
+	<!-- 所有企业信息 -->
+	<select id="queryAll" parameterType="map" resultType="company">
+		select * from tb_upc_company where 1=1 and status=1
+	</select>
+	<!-- 查询企业总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_company t 
+		 where 1=1 and t.status=1
+			<if test="companyname != null and companyname != '' ">
+				and companyname like concat('%', #{companyname}, '%') 
+			</if>		
+			<if test="companycode != '' and companycode != null ">
+				and companycode like concat('%', #{companycode}, '%') 
+			</if>  
+	</select>
+
+    <select id="queryLaboratoryNo" parameterType="string" resultType="string">
+        select laboratory_no from tb_upc_company where companyid = #{companyid}
+    </select>
+    
+    <select id="verifyId_code" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_company t 
+		 where 1=1 and t.status=1
+			<if test="companycode != null and companycode != ''">
+				and companycode =#{companycode}
+			</if>	
+			<if test="companyid != null and companyid != ''">
+				and companyid =#{companyid}
+			</if>	  
+	</select>
+</mapper>

@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraBoneAgeMapper" >
+	<resultMap id="boneAgeAll" type="com.rds.bacera.model.RdsBaceraBoneAgeModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='name' property="name" />
+		<result column='agentname' property="agentname" />
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='oa_num' property="oa_num" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		<result column='discountPrice' property="discountPrice" />
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+	</resultMap>
+	<!-- 插入信息 骨龄检测信息-->
+	<insert id="insert" parameterType="map">
+	insert into tb_bone_age
+	(id,num
+			<if test="date != '' and date != null">
+				,date
+			</if>
+		,name,ownperson,remark
+			<if test="inputperson != '' and inputperson != null">
+				,inputperson
+			</if>
+	)values(#{id},#{num}
+			<if test="date != '' and date != null">
+				,#{date}
+			</if>
+			,#{name},#{ownperson},#{remark}
+			<if test="inputperson != '' and inputperson != null">
+				,#{inputperson}
+			</if>
+			)
+	</insert>
+	
+	<insert id="insertFinanceList" parameterType="java.util.List">
+		INSERT INTO `tb_finance_info` (id,num,receivables,payment,paid,paragraphtime,case_type,account_type,remarks,remittanceName,remittanceDate,discountPrice,input_person) VALUES
+		<foreach collection="list" index="index" item="item"
+			separator=",">
+			(#{item.id}, #{item.num},#{item.receivables},#{item.payment},#{item.paid},#{item.paragraphtime},#{item.case_type},#{item.account_type},#{item.remarks},#{item.remittanceName},
+			#{item.remittanceDate},#{item.discountPrice},#{item.input_person})
+		</foreach>
+	</insert>
+	
+	<update id="updateFinanceList" parameterType="map">
+		update tb_finance_info
+		set 
+				confirm_date=now()
+			<if test="num != null">
+				,num=#{num}
+			</if>
+			<if test="receivables != null">
+				,receivables=#{receivables}
+			</if>
+				,payment=receivables
+				,paid=receivables
+			<if test="discountPrice != null">
+				,discountPrice=#{discountPrice}
+			</if>
+			<if test="remittanceName != null">
+				,remittanceName=#{remittanceName}
+			</if>
+			<if test="remittanceDate != null">
+				,remittanceDate=#{remittanceDate}
+			</if>
+			<if test="paragraphtime != null">
+				,paragraphtime=#{paragraphtime}
+			</if>
+			<if test="remarks != null">
+				,remarks=#{remarks}
+			</if>
+			<if test="account_type != null">
+				,account_type=#{account_type}
+			</if>
+			<if test="confim_flag != null">
+				,confim_flag=#{confim_flag}
+			</if>
+			<if test="input_person != null">
+				,input_person=#{input_person}
+			</if>
+			<if test="case_type != null">
+				,case_type=#{case_type}
+			</if>
+			where id in 
+			<foreach item="item" index="index" collection="ids" open="("
+	            separator="," close=")">
+	            #{item}  
+	       	 </foreach>
+	</update>
+	
+	<update id="confirmFinanceList" parameterType="map">
+		update tb_finance_info
+		set confirm_date=now(),confirm_flag='2',confirm_per=#{confirm_per}
+		where id in 
+			 <foreach item="item" index="index" collection="ids" open="("
+	            separator="," close=")">
+	            #{item}  
+	       	 </foreach>
+	</update>
+	
+	<!-- 插入更新财务信息 -->
+	<insert id="insertFinance" parameterType="map">
+	insert into tb_finance_info
+	(id,num,receivables,payment,paid,paragraphtime,case_type,account_type,remarks,remittanceName,remittanceDate,discountPrice,input_person)
+	values
+	(#{id},#{num},#{receivables},#{payment},#{paid},#{paragraphtime},#{case_type},#{account_type},#{remarks},#{remittanceName},#{remittanceDate},#{discountPrice},#{input_person})
+	</insert>
+	<update id="updateFinance" parameterType="map">
+		update tb_finance_info 
+		set 
+			<if test="num != null">
+				num=#{num}
+			</if>
+			<if test="receivables != null">
+				,receivables=#{receivables}
+			</if>
+			<if test="payment != null">
+				,payment=#{payment}
+			</if>
+			<if test="paid != null">
+				,paid=#{paid}
+			</if>
+			<if test="discountPrice != null">
+				,discountPrice=#{discountPrice}
+			</if>
+			<if test="remittanceName != null">
+				,remittanceName=#{remittanceName}
+			</if>
+			<if test="remittanceDate != null">
+				,remittanceDate=#{remittanceDate}
+			</if>
+			<if test="paragraphtime != null">
+				,paragraphtime=#{paragraphtime}
+			</if>
+			<if test="remarks != null">
+				,remarks=#{remarks}
+			</if>
+			<if test="account_type != null">
+				,account_type=#{account_type}
+			</if>
+			<if test="confim_flag != null">
+				,confim_flag=#{confim_flag}
+			</if>
+			<if test="confirm_date != null">
+				,confirm_date=#{confirm_date}
+			</if>
+			<if test="input_person != null">
+				,input_person=#{input_person}
+			</if>
+			<if test="case_type != null">
+				,case_type=#{case_type}
+			</if>
+			where id = #{id}
+	</update>
+	<!-- 插入更新快递信息 -->
+	<insert id="insertExpress" parameterType="map">
+	insert into tb_express_info
+	(id,num,expresstype,expressnum,expresstime,recive,expressremark,input_person)
+	values
+	(#{id},#{num},#{expresstype},#{expressnum},#{expresstime},#{recive},#{expressremark},#{input_person})
+	</insert>
+	<update id="updateExpress" parameterType="map">
+		update tb_express_info 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>
+			,expresstype=#{expresstype}
+			,expressnum=#{expressnum}
+			,expresstime=#{expresstime}
+			,recive=#{recive}
+			,expressremark=#{expressremark}
+			,input_person=#{input_person}
+			where id = #{id}
+	</update>
+	<!-- 更新骨龄检测信息 -->
+	<update id="update" parameterType="map">
+		update tb_bone_age 
+		set 
+			<if test="num != '' and num != null">
+				num=#{num}
+			</if>	
+			<if test="date != '' and date != null">
+				,date=#{date}
+			</if>	
+			<if test="name != null">
+				,name=#{name}
+			</if>
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_bone_age where id = #{id}
+	</delete>
+		<delete id="deleteFinance" parameterType="map">
+		delete from tb_finance_info where id = #{id}
+	</delete>
+		<delete id="deleteExpress" parameterType="map">
+		delete from tb_express_info where id = #{id}
+	</delete>
+	<!-- 查询归属人对应的代理商 -->
+	<select id="queryAgentByRece" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraAgentByReceModel">
+		SELECT ag.`userid` AS 'agentid',u.username AS 'agentname' FROM tb_upc_area ar,tb_upc_users u,tb_judicial_agent ag 
+		WHERE ar.`userid`=ag.`peruserid` AND ag.`userid`=u.`userid`
+		<if test="area_id != '' and area_id != null">
+			and ar.area_id =#{area_id}
+		</if>
+		 GROUP BY ag.`userid`
+	</select>
+	<!-- 骨龄检测查询 -->
+	<select id="queryAllPage" parameterType="map" resultMap="boneAgeAll">
+		SELECT   a.`id`,
+			  a.`num`,
+			  a.`name`,
+			  a.`date`,
+			  a.`ownperson`,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.discountPrice,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  a.`cancelif`,
+			  i.expresstime,
+			  i.expressremark
+			FROM
+			  tb_bone_age a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="bone_starttime != '' and bone_starttime != null">
+				and a.date >= #{bone_starttime}
+			</if>	
+			<if test="bone_endtime != '' and bone_endtime != null">
+				and #{bone_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			order by a.num desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<!-- 查询骨龄检测信息总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) 
+			FROM
+			  tb_bone_age a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  where 1=1
+		 	<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="name != '' and name != null">
+				and a.name like concat('%', #{name}, '%') 
+			</if>	
+			<if test="reportif == '1' ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == '2' ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="bone_starttime != '' and bone_starttime != null">
+				and a.date >= #{bone_starttime}
+			</if>	
+			<if test="bone_endtime != '' and bone_endtime != null">
+				and #{bone_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="oa_num != '' and oa_num != null">
+				AND fi.`oa_num` like concat('%', #{oa_num}, '%') 
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>	
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="expresstime_endtime != '' and expresstime_endtime != null">
+				AND #{expresstime_endtime} >= i.`expresstime`
+			</if>
+			<if test="expresstime_starttime != '' and expresstime_starttime != null">
+				AND i.`expresstime` >= #{expresstime_starttime}
+			</if>	
+	</select>
+	<!-- 查询财务是否已存在 -->
+	<select id="queryFinanceExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_finance_info where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	<!-- 查询快递是否存在 -->
+	<select id="queryExpressExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_express_info where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	<!-- 查询案例编号是否存在 -->
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_bone_age where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+	<update id="insertOAnum" parameterType="map">
+		UPDATE tb_finance_info  SET oa_num = #{oa_num} WHERE id IN (${ids});
+	</update>
+	
+	<select id="queryBoneFee" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`userid`,u.`username`,b.`fees`,b.`remark` FROM tb_finance_boneage b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 LIMIT #{start},#{end}
+	</select>
+	
+	<select id="queryBoneFeeCount" parameterType="map" resultType="Integer">
+		select count(b.userid) FROM tb_finance_boneage b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null 
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 <if test="id != '' and id != null">
+		 	and b.`id`=#{id} 
+		 </if>
+	</select>
+	
+	<insert id="saveBoneFee" parameterType="map" >
+		insert into tb_finance_boneage
+		(id,userid,fees,inputperson,remark) 
+		values
+		 (#{id},#{userid},#{fees},#{inputperson},#{remark})
+	</insert>
+	
+	<insert id="updateBoneFee" parameterType="map" >
+		update tb_finance_boneage set
+		userid = #{userid},
+		fees = #{fees},
+		inputperson = #{inputperson},
+		remark = #{remark}
+		where 
+		id=#{id}
+	</insert>
+	
+	<insert id="deleteBoneFee" parameterType="map" >
+		update tb_finance_boneage t set
+		t.delete = '1'
+		where t.id=#{id}
+	</insert>
+	
+	<select id="queryBoneFeeByRec" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`fees` FROM tb_finance_boneage b LEFT JOIN  tb_upc_area a  ON b.`userid`=a.`userid` 
+		WHERE 1=1 and b.delete = 0 and a.`is_delete`=0
+		<if test="ownperson != '' and ownperson != null">
+		 	and a.`area_id` = #{ownperson} 
+		 </if>
+		 <if test="agentid != '' and agentid != null">
+		 	and a.`userid` = #{agentid} 
+		 </if>
+		 LIMIT 1
+	</select>
+	
+	<update id="caseFeeConfirm" parameterType="map">
+		update tb_finance_statement set update_user=#{update_user}, status=#{status},confirm_date = now() where case_id IN (${ids})
+	</update>
+</mapper>

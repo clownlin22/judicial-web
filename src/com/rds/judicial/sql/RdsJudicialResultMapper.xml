@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialResultMapper" >
+    <select id="queryAllResult" parameterType="map"
+            resultType="com.rds.judicial.model.RdsJudicialCompareResultModel">
+      select case_code,parent1,parent2,child,sample_code1,sample_code2,
+      sample_code3,record_count,ext_flag,unmatched_count,unmatched_node,final_result_flag
+      from tb_judicial_compare_result where 1
+      <if test="case_code!=null and case_code!=''">
+        and case_code = #{case_code}
+      </if> ;
+    </select>
+    
+    <insert id="addResult" parameterType="map">
+        insert into tb_judicial_compare_result (uuid,case_code, parent1, parent2,
+        child, sample_code1, sample_code2, sample_code3, record_count, ext_flag, unmatched_count,
+         final_result_flag,unmatched_node,compare_date,need_ext,laboratory_no,reagent_name)
+        values(#{uuid},#{case_code},#{parent1},#{parent2},#{child},#{sample_code1},
+        #{sample_code2},#{sample_code3},#{record_count},#{ext_flag},#{unmatched_count},
+        #{final_result_flag},#{unmatched_node},#{compare_date},#{need_ext},#{laboratory_no},#{reagent_name})
+    </insert>
+
+    <insert id="addTongbaoResult" parameterType="com.rds.judicial.model.RdsJudicialCompareResultTongBaoModel">
+        insert into tb_judicial_compare_result_tongbao (uuid, case_code, username_1,
+        username_2, sample_code1, sample_code2, ibs_count, unmatched_ystr_count,
+        unmatched_ystr_node, compare_date, final_result_flag, laboratory_no, reagent_name)
+        values(uuid(),#{case_code},#{username_1},#{username_2},#{sample_code1},#{sample_code2},
+        #{ibs_count},#{unmatched_ystr_count},#{unmatched_ystr_node},now(),
+        #{final_result_flag},#{laboratory_no},#{reagent_name})
+    </insert>
+
+    <update id="updateResult" parameterType="map">
+        update tb_judicial_compare_result set final_result_flag = #{result}
+        where case_code = #{sub_case_code}
+    </update>
+
+    <select id="isSecondeTimeFor2" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_compare_result where
+        case_code = #{case_code}
+        and sample_code1 = #{sample_code1}
+        and sample_code2 is null
+        and sample_code3 = #{sample_code3}
+        and ext_flag = #{ext_flag}
+    </select>
+
+    <select id="isSecondeTimeFor3" parameterType="map" resultType="int">
+        select count(*) from tb_judicial_compare_result where
+        case_code = #{case_code}
+        and sample_code3 = #{sample_code3}
+        and ((sample_code1 = #{sample_code1}
+        and sample_code2 = #{sample_code2})
+        or (sample_code1 = #{sample_code2}
+        and sample_code2 = #{sample_code1}))
+        and ext_flag = #{ext_flag}
+    </select>
+</mapper>

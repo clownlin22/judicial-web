@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.trace.mapper.RdsTraceAttachmentMapper">
+    <insert id="insertAttachment" parameterType="map">
+        insert into tb_trace_case_attachment (uuid, case_id,
+        attachment_path, attachment_date, attachment_type)
+        values(#{uuid},#{case_id},#{attachment_path},#{attachment_date},
+        #{attachment_type})
+    </insert>
+
+    <insert id="deleteJpg" parameterType="map">
+        delete from tb_trace_case_attachment where case_id = #{case_id}
+        and attachment_type = 1;
+    </insert>
+
+    <select id="queryAttachment" parameterType="map"
+            resultType="com.rds.trace.model.RdsTraceAttachmentModelExt">
+        select a.*,b.case_no,b.year,b.receive_time from tb_trace_case_attachment a
+        left join tb_trace_case_info b
+        on a.case_id = b.case_id where
+        attachment_type != 6
+        <if test="uuid!=null and uuid!=''">
+            and a.uuid = #{uuid}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and a.case_id = #{case_id}
+        </if>
+        <if test="case_no!=null and case_no!=''">
+            and b.case_no = #{case_no}
+        </if>
+        <if test="year!=null and year!=''">
+            and b.year = #{year}
+        </if>
+        <if test="start_time!=null and start_time!=''">
+            and a.attachment_date>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=a.attachment_date
+        </if>
+        <if test="start!=null and limit!=null">
+            order by receive_time
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="queryCountAttachment" parameterType="map"
+            resultType="int">
+        select count(*) from (select a.*,b.case_no,b.year,b.receive_time
+        from tb_trace_case_attachment a
+        left join tb_trace_case_info b
+        on a.case_id = b.case_id where
+        attachment_type != 6
+        <if test="uuid!=null and uuid!=''">
+            and a.uuid = #{uuid}
+        </if>
+        <if test="case_id!=null and case_id!=''">
+            and a.case_id = #{case_id}
+        </if>
+        <if test="case_no!=null and case_no!=''">
+            and b.case_no = #{case_no}
+        </if>
+        <if test="year!=null and year!=''">
+            and b.year = #{year}
+        </if>
+        <if test="start_time!=null and start_time!=''">
+            and a.attachment_date>=#{start_time}
+        </if>
+        <if test="end_time!=null and end_time!=''">
+            and #{end_time}>=a.attachment_date
+        </if>) z
+    </select>
+</mapper>

@@ -1,0 +1,1221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialFinanceDailyMapper">
+	<insert id="insertDaily" parameterType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		INSERT INTO
+		`tb_judicial_financedaily` (`id`, `userid`, `sum`, `type`,
+		`daily_time`)
+		VALUES
+		(#{id},#{userid},#{sum},#{type},#{daily_time})
+	</insert>
+	
+	<select id="getChildrenManagerList" resultType="String">
+		SELECT t.`case_userid`FROM tb_judicial_casefee c INNER JOIN `tb_children_case_info` t ON c.`case_id`=t.`case_id`
+		WHERE NOW() >= c.`update_date` AND c.`dailyid` IS NULL GROUP BY t.`case_userid`
+	</select>
+	
+	<select id="getChildrenCase4Daily" parameterType="String" resultType="map">
+		SELECT 
+		  f.id AS 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_children_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`is_delete` = 0 
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_userid` = #{userid} 
+	</select>
+	
+	<select id="getInversiveManagerList" resultType="String">
+		SELECT t.ownperson AS case_userid FROM tb_judicial_casefee c LEFT JOIN `tb_invasive_prenatal` t ON c.`case_id`=t.`id`
+		WHERE NOW() >= c.`update_date` AND c.`dailyid` IS NULL GROUP BY t.`ownperson`
+	</select>
+	
+	<select id="getInversiveCase4Daily" parameterType="String" resultType="map">
+		SELECT 
+		  f.id AS 'fee_id',
+		  i.`id` AS case_id,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_invasive_prenatal i 
+		WHERE f.`case_id` = i.`id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`cancelif` = 2 
+		  AND f.`dailyid` IS NULL
+		  AND i.`ownperson` = #{userid} 
+	</select>
+	
+	<select id="getManagerList" resultType="String">
+		SELECT t.case_userid FROM tb_judicial_casefee c LEFT JOIN tb_judicial_case_info t ON c.`case_id`=t.`case_id`
+		WHERE NOW() >= c.`update_date` AND c.`type` &lt;&gt; 4 AND c.`dailyid` IS NULL GROUP BY t.`case_userid`
+	<!-- 
+		SELECT t.`case_userid` FROM tb_judicial_case_info t 
+		WHERE t.`sample_in_time` LIKE CONCAT('%',CURDATE(),'%')
+		and t.case_state &lt;&gt; 4
+		GROUP BY t.`case_userid` 
+		-->
+		<!-- 
+		SELECT
+		a.`userid`
+		FROM
+		`tb_upc_area` a
+		WHERE a.`userid` IS NOT NULL
+		AND a.`is_delete` = 0
+		GROUP
+		BY a.`userid`
+		 -->
+	</select>
+	<select id="getCase4Daily" parameterType="String" resultType="map">
+		SELECT 
+		  f.id as 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_judicial_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`is_delete` = 0 
+		 <!--  AND f.`status`=3 -->
+		  AND f.type &lt;&gt; 4
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_userid` = #{userid} 
+		<!-- SELECT
+		i.`case_id`,
+		f.`return_sum`
+		FROM
+		`tb_judicial_casefee`
+		f
+		LEFT JOIN
+		`tb_judicial_case_info` i
+		ON f.`case_id` = i.`case_id`
+		LEFT
+		JOIN
+		`tb_upc_area` ar
+		ON ar.`area_id` =i.`receiver_id`
+		WHERE f.`status`=
+		0 AND
+		f.`type` = 0
+		AND ar.`userid` = #{userid}
+		 -->
+	</select>
+
+	<select id="getCase4DailyById" parameterType="String" resultType="map">
+		SELECT 
+		  f.id as 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`,
+		  i.case_userid
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_judicial_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`is_delete` = 0 
+		  <!-- 
+		  AND f.type &lt;&gt; 4 
+		  -->
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_id` = #{case_id} 
+	</select>
+	
+	<select id="getChildrenCase4DailyById" parameterType="String" resultType="map">
+		SELECT 
+		  f.id as 'fee_id',
+		  i.`case_id`,
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`,
+		  i.case_userid
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_children_case_info i 
+		WHERE f.`case_id` = i.`case_id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`is_delete` = 0 
+		  <!-- AND f.type &lt;&gt; 4 -->
+		  AND f.`dailyid` IS NULL
+		  AND i.`case_id` = #{case_id} 
+	</select>
+	<select id="getPreCase4DailyById" parameterType="String" resultType="map">
+		SELECT 
+		  f.id as 'fee_id',
+		  i.id as 'case_id',
+		  f.`stand_sum`,
+		  f.real_sum,
+		  f.`type`,
+		  i.ownperson
+		FROM
+		  `tb_judicial_casefee` f,
+		  tb_invasive_prenatal i 
+		WHERE f.`case_id` = i.`id` 
+		  AND NOW() >= f.`update_date`
+		  AND i.`cancelif` = 2 
+		  AND f.type &lt;&gt; 4
+		  AND f.`dailyid` IS NULL
+		  AND i.`id` = #{case_id} 
+		
+	</select>
+
+	<update id="updateFeeStatus" parameterType="map">
+		UPDATE
+		`tb_judicial_casefee` f
+		SET
+		f.`status` = #{status},
+		f.`dailyid`=#{id}
+		WHERE
+		f.`id` = #{fee_id}
+	</update>
+	<select id="getAllSum" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceReturnModel">
+		SELECT
+		u.`userid`,
+		u.`username`,
+		IF(
+		t.`return_all_sum` IS NULL,
+		0,
+		t.`return_all_sum`
+		) AS `return_all_sum`,
+		IF(
+		tt.`all_sum` IS NULL,
+		0,
+		tt.`all_sum`
+		) AS `all_sum`,
+		IF(
+		tt.`all_sum` IS NULL,
+		0,
+		tt.`all_sum`
+		) -
+		IF(
+		t.`return_all_sum` IS NULL,
+		0,
+		t.`return_all_sum`
+		) AS `balance`
+		FROM
+		`tb_upc_area` ar
+		LEFT JOIN `tb_upc_users` u
+		ON u.userid = ar.userid
+		LEFT
+		JOIN
+		(SELECT
+		userid,
+		SUM(`sum`) AS `return_all_sum`
+		FROM
+		`tb_judicial_financedaily` f
+		GROUP BY userid) t
+		ON u.`userid` =
+		t.`userid`
+		LEFT JOIN
+		(SELECT
+		SUM(r.`sum`) AS `all_sum`,
+		r.`userid`
+		FROM
+		`tb_judicial_returnfee` r
+		GROUP BY r.`userid`) tt
+		ON u.`userid` =
+		tt.`userid`
+		WHERE u.`roletype` != 100
+		AND u.`roletype` != 101
+		<if test="userid != null and userid != ''">
+			AND u.`userid` = #{userid}
+		</if>
+		<if test="username !=null and username!=''">
+			AND u.`username` like '%${username}%'
+		</if>
+		GROUP BY ar.userid
+		ORDER BY return_all_sum DESC
+	</select>
+	<select id="getDetailByUser" parameterType="map" resultType="map">
+		SELECT
+		f.`confirm_time` AS `date`,
+		f.`sum` AS `return_sum`,
+		'' AS `sum`
+		FROM
+		`tb_judicial_financedaily` f
+		WHERE f.`userid` = #{userid} AND
+		f.status = 1
+		UNION
+		ALL
+		SELECT
+		r.`return_time` AS `date`,
+		'' AS
+		`return_sum`,
+		r.`sum`
+		FROM
+		`tb_judicial_returnfee` r
+		WHERE r.`userid` =
+		#{userid}
+		ORDER BY `date`
+		ASC
+	</select>
+	<select id="getDaily" parameterType="String"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		SELECT
+		*
+		FROM
+		`tb_judicial_financedaily` d
+		WHERE d.`userid` =
+		#{userid} AND d.balancetype = 0
+		ORDER BY d.`daily_time` DESC
+		LIMIT 0,15
+	</select>
+
+	<update id="updateFee" parameterType="map">
+		UPDATE
+		`tb_judicial_financedaily` d SET d.`status`= -1 WHERE
+		d.`status`!=-1 AND d.`userid`=#{userid}
+		<if test="id!=null and id!=''">
+			AND d.`id`=#{id}
+		</if>
+	</update>
+	<select id="getUnPay" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		SELECT
+		f.`id`,
+		f.`daily_time`,
+		f.`sum`
+		FROM
+		`tb_judicial_financedaily` f
+		WHERE f.`status` = 1
+		AND f.`userid` =
+		#{userid}
+		ORDER BY f.`daily_time`
+	</select>
+	<update id="updateStatus" parameterType="map">
+		UPDATE
+		`tb_judicial_financedaily` d SET d.`status`=
+		1,d.confirm_time=#{confirm_time} WHERE d.`id`=#{id}
+	</update>
+	<!-- 
+	<update id="updateCaseGatherid" parameterType="map">
+		UPDATE
+		`tb_judicial_case_info` c
+		SET
+		c.`gather_id` = #{id}
+		WHERE c.`case_id` IN
+		(SELECT
+		f.`case_id`
+		FROM
+		`tb_judicial_casefee` f
+		WHERE f.`dailyid` =#{id})
+	</update>
+	 -->
+	<select id="getFinanceDaily" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialFinanceDailyModel">
+		SELECT fi.id as `daily_id`,fi.*,ur.`username` FROM
+		tb_judicial_financedaily
+		fi,tb_upc_users ur WHERE
+		ur.`userid`=fi.`userid` and fi.balancetype = 0
+		<if test="username!=null and username!=''">
+			AND ur.username like '%${username}%'
+		</if>
+		<if test="userid !=null and userid !=''">
+			AND fi.userid =#{userid}
+		</if>
+		<if test="starttime !=null and starttime !=''">
+			and fi.daily_time>=#{starttime}
+		</if>
+		<if test="endtime !=null and endtime !=''">
+			and #{endtime}>= fi.daily_time
+		</if>
+		<if test="status !=null and status !=''">
+			AND fi.status =#{status}
+		</if>
+		<if test="balancetype !=null and balancetype !=''">
+			AND fi.balancetype =#{balancetype}
+		</if>
+		<if test="type !=null and type !=''">
+			AND fi.type =#{type}
+		</if>
+		order by fi.daily_time desc
+		LIMIT
+		#{start},#{limit}
+	</select>
+
+	<select id="countFinanceDaily" parameterType="map" resultType="int">
+		SELECT count(*) FROM tb_judicial_financedaily fi,tb_upc_users ur WHERE
+		ur.`userid`=fi.`userid` and fi.balancetype = 0
+		<if test="username!=null and username!=''">
+			AND ur.username like '%${username}%'
+		</if>
+		<if test="userid !=null and userid !=''">
+			AND fi.userid =#{userid}
+		</if>
+		<if test="starttime !=null and starttime !=''">
+			and fi.daily_time>=#{starttime}
+		</if>
+		<if test="endtime !=null and endtime !=''">
+			and #{endtime}>= fi.daily_time
+		</if>
+		<if test="status !=null and status !=''">
+			AND fi.status =#{status}
+		</if>
+		<if test="balancetype !=null and balancetype !=''">
+			AND fi.balancetype =#{balancetype}
+		</if>
+		<if test="type !=null and type !=''">
+			AND fi.type =#{type}
+		</if>
+	</select>
+
+	<update id="confirmFinanceDaily" parameterType="map">
+		update
+		tb_judicial_financedaily set confirm_time=now(),status = 1 where
+		id=#{id}
+	</update>
+	<select id="getBalance" parameterType="map" resultType="Double">
+		<!-- SELECT SUM(rf.`sum`) - SUM(f.`sum`) AS balance FROM `tb_upc_users` 
+			u LEFT JOIN `tb_judicial_returnfee` rf ON u.userid = rf.userid LEFT JOIN 
+			`tb_judicial_financedaily` f ON u.`userid` = f.`userid` WHERE f.`status` 
+			= - 1 AND (f.`userid` = #{userid} OR rf.`userid` = #{userid}) -->
+
+		SELECT
+		(
+		(SELECT
+		IFNULL(SUM(rf.`sum`), 0)
+		FROM
+		tb_judicial_returnfee rf
+		WHERE rf.userid = #{userid}) -
+		(SELECT
+		IFNULL(SUM(f.`sum`), 0)
+		FROM
+		tb_judicial_financedaily f
+		WHERE f.status = '-1'
+		AND f.userid = #{userid})
+		) balance
+	</select>
+	
+	<select id="queryDailyDetail" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialDailyDetailModel">
+		<if test="daily_type == 1 ">
+			SELECT 
+			  c.id as 'fee_id',
+			  c.`case_id`,
+			  ci.`case_code`,
+			  ci.`client`,
+			  ci.`urgent_state`,
+			  u.`username`,
+			  c.`stand_sum`,
+			  c.`real_sum`,
+			  re.confirm_date,
+			  c.`return_sum`,
+			  ci.`accept_time` AS `date`,
+			  ci.`receiver_area`,
+			  u2.`username` AS `case_receiver`,
+			  d.`daily_time` ,
+			  CONCAT(s.`fandm`, ';', s.`child`) AS sample_str ,
+			  c.`discountPrice`,
+			  c.status,
+			  c.type,
+			  d.`daily_time`,
+			  r.`remittance_num`,
+			  r.confirm_state,
+			  d.`type` AS 'daily_type',
+			  ci.case_state,
+			  r.remittance_id,
+			  c.finance_remark,
+			  c.confirm_code,
+			  r.remittance_att
+			FROM
+			  `tb_judicial_casefee` c 
+			  INNER JOIN `tb_judicial_financedaily` d 
+			    ON d.`id` = c.`dailyid` 
+			  INNER JOIN `tb_judicial_case_info` ci 
+			    ON ci.`case_id` = c.`case_id` 
+			    LEFT JOIN `tb_judicial_remittance` r 
+			    ON c.`remittance_id` = r.`remittance_id`
+			     LEFT JOIN `tb_judicial_remittance` re 
+    			ON re.remittance_id = r.remittance_id
+			      INNER JOIN tb_judicial_case_sample s 
+			        ON ci.`case_id` = s.`case_id` 
+			  LEFT JOIN `tb_upc_users` u 
+			    ON ci.`case_in_per` = u.`userid` 
+			  LEFT JOIN `tb_upc_users` u2 
+			    ON u2.`userid` = ci.`case_userid` 
+			WHERE 1=1 and ci.is_delete =0
+			<if test="userid !=null and userid !=''">
+				AND (ci.`case_userid` = #{userid} OR ci.`case_in_per` = #{userid}) 
+			</if>
+			<if test="starttime !=null and starttime !=''">
+				AND d.`daily_time` >= #{starttime}
+			</if>
+			<if test="endtime !=null and endtime !=''">
+				AND #{endtime} >= d.`daily_time`
+			</if>
+			<if test="starttime_accept !=null and starttime_accept !=''">
+				AND ci.accept_time >= #{starttime_accept}
+			</if>
+			<if test="endtime_accept !=null and endtime_accept !=''">
+				AND #{endtime_accept} >= ci.accept_time
+			</if>
+			<if test="confirm_date_start !=null and confirm_date_start !=''">
+				AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+			</if>
+			<if test="confirm_date_end !=null and confirm_date_end !=''">
+				AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+			</if>
+			<if test="starttime_client !=null and starttime_client !=''">
+				AND ci.consignment_time >= #{starttime_client}
+			</if>
+			<if test="endtime_client !=null and endtime_client !=''">
+				AND #{endtime_client} >= ci.consignment_time
+			</if>
+			<if test="balancetype !=null and balancetype !=''">
+				AND d.`balancetype` = #{balancetype}
+			</if>
+			<if test="status==0 ">
+				and c.status = 0
+			</if>
+			<if test="status==1 ">
+				and c.status &lt;&gt; 0
+			</if>
+			<if test="remittance_type == 0 ">
+				and c.remittance_id is not null
+			</if>
+			<if test="remittance_type==1 ">
+				and c.remittance_id is null
+			</if>
+			<if test="settlement_type==1 ">
+				and c.type = 4
+			</if>
+			<if test="settlement_type==0 ">
+				and c.type &lt;&gt; 4
+			</if>
+			<if test="dailyid !=null and dailyid !=''">
+				AND c.`dailyid` = #{dailyid}
+			</if>
+			<if test="case_areacode !=null and case_areacode !=''">
+				AND  ci.`case_areacode`=#{case_areacode}
+			</if>
+			<if test="remittance_id !=null and remittance_id !=''">
+				AND c.`remittance_id` = #{remittance_id}
+			</if>
+			<if test="remittance_num !=null and remittance_num !=''">
+				AND r.`remittance_num` like '%${remittance_num}%'
+			</if>
+			<if test="confirm_state !=null and confirm_state !=''">
+				AND r.`confirm_state` =#{confirm_state}
+			</if>
+			<if test="case_code !=null and case_code !=''">
+				AND ci.`case_code` like '%${case_code}%'
+			</if>
+			<if test="receiver_area !=null and receiver_area !=''">
+				AND ci.`receiver_area` like '%${receiver_area}%'
+			</if>
+			<if test="client !=null and client !=''">
+				AND (ci.`client` like '%${client}%' or s.`fandm`  like '%${client}%' or s.`child` like '%${client}%' )
+			</if>
+			<if test="case_receiver !=null and case_receiver !=''">
+				AND u2.username like '%${case_receiver}%'
+			</if>
+			<if test="case_state !=null and case_state !=''">
+				AND ci.`case_state` = #{case_state}
+			</if>
+			order by ci.`case_code` asc
+		</if>
+		
+			<if test="daily_type == 2 ">
+				SELECT 
+				  cp.`contract_num` AS  case_code,
+				  cp.contract_unit as client,
+				  cp.contract_program as sample_str,
+				  rp.`contract_remittance_planid` AS 'fee_id',
+				  rp.`contract_remittance_planid` AS 'case_id',
+				  u.`username` AS 'case_receiver',
+				  u1.username,
+			  	  re.confirm_date,
+				  f.`daily_time`,
+				  rp.`remittance` AS 'stand_sum',
+				  rp.`remittance` AS 'real_sum',
+				  IF(
+				    rp.`status` = 3 || rp.`status` = 4,
+				    rp.`remittance`,
+				    0
+				  ) AS 'return_sum',
+				  rp.`remittance_date` AS 'date',
+				  cp.`contract_areaname` AS 'receiver_area' ,
+				  f.`type` AS 'daily_type',
+				  rp.`status`,
+				  r.`remittance_num`,
+				  r.confirm_state,
+				  '' as case_state,
+				  r.remittance_id,
+				  '' as 'finance_remark',
+			 	  r.remittance_att
+				FROM
+				  tb_finance_remittance_plan rp 
+				  INNER JOIN tb_judicial_financedaily f 
+				    ON rp.`dailyid` = f.`id` 
+				    left join tb_judicial_remittance r
+				    on rp.remittance_id = r.remittance_id
+				     LEFT JOIN `tb_judicial_remittance` re 
+    			ON re.remittance_id = r.remittance_id
+				  LEFT JOIN tb_finance_contract_plan cp 
+				    ON cp.`contract_id` = rp.`contract_id` 
+				  LEFT JOIN tb_upc_users u 
+				    ON cp.`contract_userid` = u.`userid` 
+				    left join tb_upc_users u1 
+				    on cp.create_per = u1.userid
+				    WHERE 1=1 
+				    <if test="userid !=null and userid !=''">
+						AND (cp.`create_per` = #{userid} OR cp.`contract_userid` = #{userid}) 
+					</if>
+				    <if test="remittance_num !=null and remittance_num !=''">
+						AND r.`remittance_num` like '%${remittance_num}%'
+					</if>
+					<if test="confirm_state !=null and confirm_state !=''">
+						AND r.`confirm_state` =#{confirm_state}
+					</if>
+					<if test="contract_unit !=null and contract_unit !=''">
+						AND d.`contract_unit` like '%${contract_unit}%'
+					</if>
+					<if test="status==0 ">
+						and rp.status = 4
+					</if>
+					<if test="status==1 ">
+						and rp.status &lt;&gt; 4
+					</if>
+					<if test="remittance_type==0 ">
+						and (rp.status = 4 or rp.status = 3 )
+					</if>
+					<if test="remittance_type==1 ">
+						and (rp.status &lt;&gt; 4 and rp.status &lt;&gt; 3 )
+					</if>
+					<if test="dailyid !=null and dailyid !=''">
+						AND rp.`dailyid` = #{dailyid}
+					</if>
+					<if test="remittance_id !=null and remittance_id !=''">
+						AND rp.`remittance_id` = #{remittance_id}
+					</if>
+					<if test="case_code !=null and case_code !=''">
+						AND cp.`contract_num` like '%${case_code}%'
+					</if>
+					<if test="case_receiver !=null and case_receiver !=''">
+						AND u.username like '%${case_receiver}%'
+					</if>
+					<if test="confirm_date_start !=null and confirm_date_start !=''">
+						AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+					</if>
+					<if test="confirm_date_end !=null and confirm_date_end !=''">
+						AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+					</if>
+				    ORDER BY rp.`remittance_date`
+			</if>
+			
+			<if test="daily_type == 3 ">
+				SELECT 
+				  c.id as 'fee_id',
+				  c.`case_id`,
+				  ci.`num` as case_code,
+				  ci.`name` as client,
+				  u.`username`,
+				  c.`stand_sum`,
+				  c.`real_sum`,
+				  c.`return_sum`,
+				  ci.`date`,
+				  ci.`areaname` as 'receiver_area',
+				  u2.`username` AS `case_receiver`,
+				  d.`daily_time` ,
+				  c.`discountPrice`,
+				  c.status,
+				  c.type,
+				  c.type as case_state,
+				  d.`daily_time`,
+				  r.`remittance_num`,
+				  r.confirm_state,
+				  d.`type` AS 'daily_type',
+				  r.remittance_id,
+				  c.finance_remark,
+			  	  re.confirm_date,
+				  c.confirm_code,
+			      r.remittance_att
+				FROM
+				  `tb_judicial_casefee` c 
+				  INNER JOIN `tb_judicial_financedaily` d 
+				    ON d.`id` = c.`dailyid` 
+				  LEFT JOIN `tb_invasive_prenatal` ci 
+				    ON ci.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+				     LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  LEFT JOIN `tb_upc_users` u 
+				    ON ci.`inputperson` = u.`userid` 
+				  LEFT JOIN `tb_upc_users` u2 
+				    ON u2.`userid` = ci.`ownperson` 
+				WHERE 1=1 and ci.cancelif =2
+				<if test="userid !=null and userid !=''">
+					AND (ci.`ownperson` = #{userid} OR ci.`inputperson` = #{userid}) 
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					AND d.`daily_time` >= #{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					AND #{endtime} >= d.`daily_time`
+				</if>
+				<if test="starttime_accept !=null and starttime_accept !=''">
+					AND ci.date >= #{starttime_accept}
+				</if>
+				<if test="endtime_accept !=null and endtime_accept !=''">
+					AND #{endtime_accept} >= ci.date
+				</if>
+				<if test="confirm_date_start !=null and confirm_date_start !=''">
+					AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+				</if>
+				<if test="confirm_date_end !=null and confirm_date_end !=''">
+					AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+				</if>
+				<if test="balancetype !=null and balancetype !=''">
+					AND d.`balancetype` = #{balancetype}
+				</if>
+				<if test="status==0 ">
+					and c.status = 0
+				</if>
+				<if test="status==1 ">
+					and c.status &lt;&gt; 0
+				</if>
+				<if test="remittance_type == 0 ">
+					and c.remittance_id is not null
+				</if>
+				<if test="remittance_type==1 ">
+					and c.remittance_id is null
+				</if>
+				<if test="settlement_type==1 ">
+					and c.type = 4
+				</if>
+				<if test="settlement_type==0 ">
+					and c.type &lt;&gt; 4
+				</if>
+				<if test="dailyid !=null and dailyid !=''">
+					AND c.`dailyid` = #{dailyid}
+				</if>
+				<if test="case_areacode !=null and case_areacode !=''">
+					AND  ci.`areacode`=#{areacode}
+				</if>
+				<if test="remittance_id !=null and remittance_id !=''">
+					AND c.`remittance_id` = #{remittance_id}
+				</if>
+				<if test="remittance_num !=null and remittance_num !=''">
+					AND r.`remittance_num` like '%${remittance_num}%'
+				</if>
+				<if test="confirm_state !=null and confirm_state !=''">
+					AND r.`confirm_state` =#{confirm_state}
+				</if>
+				<if test="case_code !=null and case_code !=''">
+					AND ci.`num` like '%${case_code}%'
+				</if>
+				<if test="receiver_area !=null and receiver_area !=''">
+					AND ci.`areaname` like '%${receiver_area}%'
+				</if>
+				<if test="client !=null and client !=''">
+					AND ci.`name` like '%${client}%'
+				</if>
+				<if test="case_receiver !=null and case_receiver !=''">
+					AND u2.username like '%${case_receiver}%'
+				</if>
+				<if test="case_state !=null and case_state !=''">
+					AND c.`type` = #{case_state}
+				</if>
+				order by ci.`num` asc
+		</if>
+			<if test="daily_type == 4 ">
+				SELECT 
+				  c.id as 'fee_id',
+				  c.`case_id`,
+				  ci.`case_code`,
+				  ci.`child_name` as client,
+				  u.`username`,
+				  c.`stand_sum`,
+				  c.`real_sum`,
+				  c.`return_sum`,
+				  ci.`gather_time` as 'date',
+				  ci.`case_areaname` as 'receiver_area',
+				  u2.`username` AS `case_receiver`,
+				  d.`daily_time` ,
+				  c.`discountPrice`,
+				  c.status,
+				  c.type,
+				  d.`daily_time`,
+			  	  re.confirm_date,
+				  r.`remittance_num`,
+				  r.confirm_state,
+				  d.`type` AS 'daily_type',
+				  r.remittance_id,
+				  c.finance_remark,
+				  c.confirm_code,
+				  CONCAT(ci.`sample_code`,',',ci.`child_name`,',',ci.`id_number`) AS sample_str,
+			  	  r.remittance_att
+				FROM
+				  `tb_judicial_casefee` c 
+				  INNER JOIN `tb_judicial_financedaily` d 
+				    ON d.`id` = c.`dailyid` 
+				  LEFT JOIN `tb_children_case_info` ci 
+				    ON ci.`case_id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+				    LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  LEFT JOIN `tb_upc_users` u 
+				    ON ci.`case_in_per` = u.`userid` 
+				  LEFT JOIN `tb_upc_users` u2 
+				    ON u2.`userid` = ci.`case_userid` 
+				WHERE 1=1 and ci.is_delete =0
+				<if test="userid !=null and userid !=''">
+					AND (ci.`case_userid` = #{userid} OR ci.`case_in_per` = #{userid}) 
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					AND d.`daily_time` >= #{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					AND #{endtime} >= d.`daily_time`
+				</if>
+				<if test="starttime_accept !=null and starttime_accept !=''">
+					AND ci.gather_time >= #{starttime_accept}
+				</if>
+				<if test="endtime_accept !=null and endtime_accept !=''">
+					AND #{endtime_accept} >= ci.gather_time
+				</if>
+				<if test="confirm_date_start !=null and confirm_date_start !=''">
+					AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+				</if>
+				<if test="confirm_date_end !=null and confirm_date_end !=''">
+					AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+				</if>
+				<if test="balancetype !=null and balancetype !=''">
+					AND d.`balancetype` = #{balancetype}
+				</if>
+				<if test="status==0 ">
+					and c.status = 0
+				</if>
+				<if test="status==1 ">
+					and c.status &lt;&gt; 0
+				</if>
+				<if test="remittance_type == 0 ">
+					and c.remittance_id is not null
+				</if>
+				<if test="remittance_type==1 ">
+					and c.remittance_id is null
+				</if>
+				<if test="settlement_type==1 ">
+					and c.type = 4
+				</if>
+				<if test="settlement_type==0 ">
+					and c.type &lt;&gt; 4
+				</if>
+				<if test="dailyid !=null and dailyid !=''">
+					AND c.`dailyid` = #{dailyid}
+				</if>
+				<if test="remittance_id !=null and remittance_id !=''">
+					AND c.`remittance_id` = #{remittance_id}
+				</if>
+				<if test="remittance_num !=null and remittance_num !=''">
+					AND r.`remittance_num` like '%${remittance_num}%'
+				</if>
+				<if test="confirm_state !=null and confirm_state !=''">
+					AND r.`confirm_state` =#{confirm_state}
+				</if>
+				<if test="case_code !=null and case_code !=''">
+					AND ci.`case_code` like '%${case_code}%'
+				</if>
+				<if test="receiver_area !=null and receiver_area !=''">
+					AND ci.`case_areaname` like '%${receiver_area}%'
+				</if>
+				<if test="client !=null and client !=''">
+					AND ci.`child_name` like '%${client}%'
+				</if>
+				<if test="case_receiver !=null and case_receiver !=''">
+					AND u2.username like '%${case_receiver}%'
+				</if>
+				<if test="case_state !=null and case_state !=''">
+					AND c.`type` = #{case_state}
+				</if>
+				order by ci.`case_code` asc
+		</if>
+			<if test="limit !=null and limit !=''">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<select id="queryDailyDetailCount" parameterType="map"
+		resultType="Integer">
+		<if test="daily_type == 1 ">
+			SELECT count(1)
+				FROM
+				  `tb_judicial_casefee` c 
+				  INNER JOIN `tb_judicial_financedaily` d 
+				    ON d.`id` = c.`dailyid` 
+				     LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+				    LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  INNER JOIN `tb_judicial_case_info` ci 
+				    ON ci.`case_id` = c.`case_id` 
+				    LEFT JOIN `tb_upc_users` u 
+			   	 ON ci.`case_userid` = u.`userid` 
+				     INNER JOIN tb_judicial_case_sample s 
+				        ON ci.`case_id` = s.`case_id`
+				WHERE 1=1 and ci.is_delete =0
+				<if test="userid !=null and userid !=''">
+					AND (ci.`case_userid` = #{userid} OR ci.`case_in_per` = #{userid}) 
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					AND d.`daily_time` >= #{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					AND #{endtime} >= d.`daily_time`
+				</if>
+				<if test="starttime_accept !=null and starttime_accept !=''">
+					AND ci.accept_time >= #{starttime_accept}
+				</if>
+				<if test="endtime_accept !=null and endtime_accept !=''">
+					AND #{endtime_accept} >= ci.accept_time
+				</if>
+				<if test="confirm_date_start !=null and confirm_date_start !=''">
+					AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+				</if>
+				<if test="confirm_date_end !=null and confirm_date_end !=''">
+					AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+				</if>
+				<if test="starttime_client !=null and starttime_client !=''">
+					AND ci.consignment_time >= #{starttime_client}
+				</if>
+				<if test="endtime_client !=null and endtime_client !=''">
+					AND #{endtime_client} >= ci.consignment_time
+				</if>
+				<if test="balancetype !=null and balancetype !=''">
+					AND d.`balancetype` = #{balancetype}
+				</if>
+				<if test="status==0 ">
+					and c.status = 0
+				</if>
+				<if test="status==1 ">
+					and c.status &lt;&gt; 0
+				</if>
+				<if test="remittance_type==0 ">
+					and c.remittance_id is not null
+				</if>
+				<if test="remittance_type==1 ">
+					and c.remittance_id is null
+				</if>
+				<if test="settlement_type==1 ">
+					and c.type = 4
+				</if>
+				<if test="settlement_type==0 ">
+					and c.type &lt;&gt; 4
+				</if>
+				<if test="dailyid !=null and dailyid !=''">
+					AND c.`dailyid` = #{dailyid}
+				</if>
+				<if test="case_areacode !=null and case_areacode !=''">
+					AND ci.`case_areacode`=#{case_areacode}
+				</if>
+				<if test="remittance_id !=null and remittance_id !=''">
+					AND c.`remittance_id` = #{remittance_id}
+				</if>
+				<if test="remittance_num !=null and remittance_num !=''">
+					AND r.`remittance_num` like '%${remittance_num}%'
+				</if>
+				<if test="confirm_state !=null and confirm_state !=''">
+					AND r.`confirm_state` =#{confirm_state}
+				</if>
+				<if test="case_code !=null and case_code !=''">
+					AND ci.`case_code` like '%${case_code}%'
+				</if>
+				<if test="receiver_area !=null and receiver_area !=''">
+					AND ci.`receiver_area` like '%${receiver_area}%'
+				</if>
+				<if test="client !=null and client !=''">
+					AND (ci.`client` like '%${client}%' or s.`fandm`  like '%${client}%' or s.`child` like '%${client}%' )
+				</if>
+				<if test="case_receiver !=null and case_receiver !=''">
+					AND u.username like '%${case_receiver}%'
+				</if>
+				<if test="case_state !=null and case_state !=''">
+					AND ci.`case_state` = #{case_state}
+				</if>
+			</if>
+			
+			<if test="daily_type == 2 ">
+				SELECT 
+				  count(1)
+				FROM
+				  tb_finance_remittance_plan rp 
+				  INNER JOIN tb_judicial_financedaily f 
+				    ON rp.`dailyid` = f.`id` 
+				    left join tb_judicial_remittance r
+				    on rp.remittance_id = r.remittance_id
+				    LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  LEFT JOIN tb_finance_contract_plan cp 
+				    ON cp.`contract_id` = rp.`contract_id` 
+				  LEFT JOIN tb_upc_users u 
+				    ON cp.`contract_userid` = u.`userid` 
+				    WHERE 1=1 
+				    <if test="userid !=null and userid !=''">
+						AND (cp.`create_per` = #{userid} OR cp.`contract_userid` = #{userid}) 
+					</if>
+				    <if test="remittance_num !=null and remittance_num !=''">
+						AND r.`remittance_num` like '%${remittance_num}%'
+					</if>
+					<if test="confirm_state !=null and confirm_state !=''">
+						AND r.`confirm_state` =#{confirm_state}
+					</if>
+					<if test="contract_unit !=null and contract_unit !=''">
+						AND d.`contract_unit` like '%${contract_unit}%'
+					</if>
+					<if test="confirm_date_start !=null and confirm_date_start !=''">
+						AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+					</if>
+					<if test="confirm_date_end !=null and confirm_date_end !=''">
+						AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+					</if>
+					<if test="status==0 ">
+						and rp.status = 4
+					</if>
+					<if test="status==1 ">
+						and rp.status &lt;&gt; 4
+					</if>
+					<if test="remittance_type==0 ">
+						and (rp.status = 4 or rp.status = 3 )
+					</if>
+					<if test="remittance_type==1 ">
+						and (rp.status &lt;&gt; 4 and rp.status &lt;&gt; 3 )
+					</if>
+					<if test="dailyid !=null and dailyid !=''">
+						AND rp.`dailyid` = #{dailyid}
+					</if>
+					<if test="remittance_id !=null and remittance_id !=''">
+						AND rp.`remittance_id` = #{remittance_id}
+					</if>
+					<if test="case_code !=null and case_code !=''">
+						AND cp.`contract_num` like '%${case_code}%'
+					</if>
+					<if test="case_receiver !=null and case_receiver !=''">
+						AND u.username like '%${case_receiver}%'
+					</if>
+			</if>
+			<if test="daily_type == 3 ">
+				SELECT 
+				  count(1)
+				FROM
+				  `tb_judicial_casefee` c 
+				  INNER JOIN `tb_judicial_financedaily` d 
+				    ON d.`id` = c.`dailyid` 
+				  LEFT JOIN `tb_invasive_prenatal` ci 
+				    ON ci.`id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+				    LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  LEFT JOIN `tb_upc_users` u2 
+				    ON u2.`userid` = ci.`ownperson` 
+				WHERE 1=1 and ci.cancelif =2
+				<if test="userid !=null and userid !=''">
+					AND (ci.`ownperson` = #{userid} OR ci.`inputperson` = #{userid}) 
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					AND d.`daily_time` >= #{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					AND #{endtime} >= d.`daily_time`
+				</if>
+				<if test="starttime_accept !=null and starttime_accept !=''">
+					AND ci.date >= #{starttime_accept}
+				</if>
+				<if test="endtime_accept !=null and endtime_accept !=''">
+					AND #{endtime_accept} >= ci.date
+				</if>
+				<if test="confirm_date_start !=null and confirm_date_start !=''">
+					AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+				</if>
+				<if test="confirm_date_end !=null and confirm_date_end !=''">
+					AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+				</if>
+				<if test="balancetype !=null and balancetype !=''">
+					AND d.`balancetype` = #{balancetype}
+				</if>
+				<if test="status==0 ">
+					and c.status = 0
+				</if>
+				<if test="status==1 ">
+					and c.status &lt;&gt; 0
+				</if>
+				<if test="remittance_type == 0 ">
+					and c.remittance_id is not null
+				</if>
+				<if test="remittance_type==1 ">
+					and c.remittance_id is null
+				</if>
+				<if test="settlement_type==1 ">
+					and c.type = 4
+				</if>
+				<if test="settlement_type==0 ">
+					and c.type &lt;&gt; 4
+				</if>
+				<if test="dailyid !=null and dailyid !=''">
+					AND c.`dailyid` = #{dailyid}
+				</if>
+				<if test="case_areacode !=null and case_areacode !=''">
+					AND  ci.`areacode`=#{areacode}
+				</if>
+				<if test="remittance_id !=null and remittance_id !=''">
+					AND c.`remittance_id` = #{remittance_id}
+				</if>
+				<if test="remittance_num !=null and remittance_num !=''">
+					AND r.`remittance_num` like '%${remittance_num}%'
+				</if>
+				<if test="confirm_state !=null and confirm_state !=''">
+					AND r.`confirm_state` =#{confirm_state}
+				</if>
+				<if test="case_code !=null and case_code !=''">
+					AND ci.`num` like '%${case_code}%'
+				</if>
+				<if test="receiver_area !=null and receiver_area !=''">
+					AND ci.`areaname` like '%${receiver_area}%'
+				</if>
+				<if test="client !=null and client !=''">
+					AND ci.`name` like '%${client}%'
+				</if>
+				<if test="case_receiver !=null and case_receiver !=''">
+					AND u2.username like '%${case_receiver}%'
+				</if>
+				<if test="case_state !=null and case_state !=''">
+					AND c.`type` = #{case_state}
+				</if>
+		</if>
+		<if test="daily_type == 4 ">
+				SELECT count(1)
+				FROM
+				  `tb_judicial_casefee` c 
+				  INNER JOIN `tb_judicial_financedaily` d 
+				    ON d.`id` = c.`dailyid` 
+				  LEFT JOIN `tb_children_case_info` ci 
+				    ON ci.`case_id` = c.`case_id` 
+				    LEFT JOIN `tb_judicial_remittance` r 
+				    ON c.`remittance_id` = r.`remittance_id`
+				  LEFT JOIN `tb_judicial_remittance` re 
+    				ON re.remittance_id = r.remittance_id
+				  LEFT JOIN `tb_upc_users` u2 
+				    ON u2.`userid` = ci.`case_userid` 
+				WHERE 1=1 and ci.is_delete =0
+				<if test="userid !=null and userid !=''">
+					AND (ci.`case_userid` = #{userid} OR ci.`case_in_per` = #{userid}) 
+				</if>
+				<if test="starttime !=null and starttime !=''">
+					AND d.`daily_time` >= #{starttime}
+				</if>
+				<if test="endtime !=null and endtime !=''">
+					AND #{endtime} >= d.`daily_time`
+				</if>
+				<if test="starttime_accept !=null and starttime_accept !=''">
+					AND ci.gather_time >= #{starttime_accept}
+				</if>
+				<if test="endtime_accept !=null and endtime_accept !=''">
+					AND #{endtime_accept} >= ci.gather_time
+				</if>
+				<if test="confirm_date_start !=null and confirm_date_start !=''">
+					AND DATE_FORMAT(re.confirm_date, '%Y-%m-%d') >= #{confirm_date_start}
+				</if>
+				<if test="confirm_date_end !=null and confirm_date_end !=''">
+					AND #{confirm_date_end} >= DATE_FORMAT(re.confirm_date, '%Y-%m-%d')
+				</if>
+				<if test="balancetype !=null and balancetype !=''">
+					AND d.`balancetype` = #{balancetype}
+				</if>
+				<if test="status==0 ">
+					and c.status = 0
+				</if>
+				<if test="status==1 ">
+					and c.status &lt;&gt; 0
+				</if>
+				<if test="remittance_type == 0 ">
+					and c.remittance_id is not null
+				</if>
+				<if test="remittance_type==1 ">
+					and c.remittance_id is null
+				</if>
+				<if test="settlement_type==1 ">
+					and c.type = 4
+				</if>
+				<if test="settlement_type==0 ">
+					and c.type &lt;&gt; 4
+				</if>
+				<if test="dailyid !=null and dailyid !=''">
+					AND c.`dailyid` = #{dailyid}
+				</if>
+				<if test="remittance_id !=null and remittance_id !=''">
+					AND c.`remittance_id` = #{remittance_id}
+				</if>
+				<if test="remittance_num !=null and remittance_num !=''">
+					AND r.`remittance_num` like '%${remittance_num}%'
+				</if>
+				<if test="confirm_state !=null and confirm_state !=''">
+					AND r.`confirm_state` =#{confirm_state}
+				</if>
+				<if test="case_code !=null and case_code !=''">
+					AND ci.`case_code` like '%${case_code}%'
+				</if>
+				<if test="receiver_area !=null and receiver_area !=''">
+					AND ci.`case_areaname` like '%${receiver_area}%'
+				</if>
+				<if test="client !=null and client !=''">
+					AND ci.`child_name` like '%${client}%'
+				</if>
+				<if test="case_receiver !=null and case_receiver !=''">
+					AND u2.username like '%${case_receiver}%'
+				</if>
+				<if test="case_state !=null and case_state !=''">
+					AND c.`type` = #{case_state}
+				</if>
+		</if>
+	</select>
+	
+	<select id="queryContractUser" resultType="String">
+		SELECT cp.`contract_userid` FROM `tb_finance_remittance_plan` rp 
+		LEFT JOIN `tb_finance_contract_plan` cp ON rp.`contract_id`=cp.`contract_id`
+			WHERE NOW() >= rp.create_date AND rp.status=1 
+			group by cp.`contract_userid`
+	</select>
+	
+	<select id="queryContractDaily" parameterType="String" resultType="map">
+		SELECT rp.contract_remittance_planid,rp.`remittance` FROM `tb_finance_remittance_plan` rp
+		 LEFT JOIN `tb_finance_contract_plan` cp ON rp.`contract_id`=cp.`contract_id`
+			WHERE NOW() >= rp.create_date AND rp.status=1 
+			AND cp.`contract_userid` = #{contract_userid}
+	</select>
+	
+	<select id="queryContractDailyById" parameterType="String" resultType="map">
+		SELECT rp.contract_remittance_planid,rp.`remittance`,cp.`contract_userid`
+		FROM `tb_finance_remittance_plan` rp
+		 LEFT JOIN `tb_finance_contract_plan` cp ON rp.`contract_id`=cp.`contract_id`
+			WHERE NOW() >= rp.create_date AND rp.status=1 
+			AND cp.`contract_id` = #{contract_id}
+	</select>
+	
+	<update id="updateContractStatus" parameterType="map">
+		UPDATE
+		`tb_finance_remittance_plan` r
+		SET
+		r.`status` = #{status},
+		r.`dailyid`=#{id}
+		WHERE
+		r.`contract_remittance_planid` = #{contract_remittance_planid}
+	</update>
+	
+	
+	<update id="updateUserState">
+		UPDATE tb_judicial_casefee_special t SET t.user_state = 3  
+		WHERE CURDATE() >= STR_TO_DATE(t.`estimate_date`,'%Y-%m-%d') AND t.`estimate_date` &lt;&gt; ''  AND t.`user_state` &lt;&gt; 3;
+	</update>
+</mapper>

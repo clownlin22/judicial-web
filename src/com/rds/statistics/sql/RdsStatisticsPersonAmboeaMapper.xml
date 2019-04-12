@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.statistics.mapper.RdsStatisticsPersonAmboeaMapper">
+	<select id="queryAllPage" parameterType="map" resultType="com.rds.statistics.model.RdsFinancePersonAmboeaModel">
+	SELECT 
+		  u.`username`,
+		  u.telphone,
+		  u.usertype,
+		  u.webchart,
+		  (SELECT  SUM(return_sum) FROM  tb_finance_case_detail WHERE 1 = 1 
+		  AND case_user = u.`username`
+			<if test="confirm_date_start !=null and confirm_date_start !=''">
+				and confirm_date>=#{confirm_date_start}
+			</if>
+			<if test="confirm_date_end !=null and confirm_date_end !=''">
+				and #{confirm_date_end} >=confirm_date
+			</if>
+			 GROUP BY case_user) AS 'return_sum',
+		  (SELECT SUM(mx1bxje) FROM `tb_finance_oa1` WHERE  1=1 AND kmmc='差旅费' AND tdrxm = u.`username` 
+		  	<if test="sqrq_start !=null and sqrq_start !=''">
+				and sqrq>=#{sqrq_start}
+			</if>
+			<if test="sqrq_end !=null and sqrq_end !=''">
+				and #{sqrq_end} >=sqrq
+			</if>
+			<if test="operatedate_start !=null and operatedate_start !=''">
+				and operatedate>=#{operatedate_start}
+			</if>
+			<if test="operatedate_end !=null and operatedate_end !=''">
+				and #{operatedate_end} >=operatedate
+			</if>
+		  GROUP BY tdrxm) AS 'mx1bxje',
+		  (SELECT SUM(wages) FROM `tb_finance_wages` WHERE 1=1 AND wages_name = u.`username`
+		    <if test="wages_month_start !=null and wages_month_start !=''">
+				and wages_month>=#{wages_month_start}
+			</if>
+			<if test="wages_month_end !=null and wages_month_end !=''">
+				and #{wages_month_end} >=wages_month
+			</if>
+		   GROUP BY wages_name ) AS 'wages',
+		  d.dept1,
+		  d.dept2,
+		  d.dept3,
+		  d.dept4,
+		  d.dept5
+		FROM  tb_upc_users u 
+		LEFT JOIN (
+		SELECT 
+		  IF(
+		    ISNULL(t4.`deptname`) &amp;&amp; ! ISNULL(t3.`deptname`),
+		    t3.`deptname`,
+		    IF(
+		      ISNULL(t3.`deptname`) &amp;&amp; ! t2.`deptname`,
+		      t2.`deptname`,
+		      IF(
+		        ISNULL(t2.`deptname`) &amp;&amp; ! ISNULL(t1.`deptname`),
+		        t1.`deptname`,
+		        IF(
+		          ISNULL(t1.`deptname`) &amp;&amp; ! ISNULL(t.`deptname`),
+		          t.`deptname`,
+		          t4.`deptname`
+		        )
+		      )
+		    )
+		  ) AS dept1,
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t3.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t2.`deptname`,
+		      IF(
+		        ! ISNULL(t2.`deptname`),
+		        t1.`deptname`,
+		        IF(
+		          ! ISNULL(t1.`deptname`),
+		          t.`deptname`,
+		          t4.`deptname`
+		        )
+		      )
+		    )
+		  ) AS dept2,
+		   IF(
+		    ! ISNULL(t4.`deptname`),
+		    t2.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t1.`deptname`,
+		      IF(
+		        ! ISNULL(t2.`deptname`),
+		        t.`deptname`,
+		        NULL
+		      )
+		    )
+		  ) AS dept3, 
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t1.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t.`deptname`,
+		      NULL
+		    )
+		  ) AS dept4,
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t.`deptname`,
+		    NULL
+		  ) AS dept5,
+		  t.deptcode 
+		FROM
+		  tb_upc_department t 
+		  LEFT JOIN tb_upc_department t1 
+		    ON t1.`deptcode` = t.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t2 
+		    ON t2.`deptcode` = t1.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t3 
+		    ON t3.`deptcode` = t2.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t4 
+		    ON t4.`deptcode` = t3.`parentdeptcode` ) d
+		    ON d.deptcode=u.`deptcode`
+		WHERE u.`delstatus` IS NULL and u.type=1
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and d.`dept1` like '%${user_dept_level1}%' 
+		</if> 
+		<if test="user_dept_level2 !=null and user_dept_level2 !=''">
+			and d.`dept2` like '%${user_dept_level2}%' 
+		</if> 
+		<if test="user_dept_level3 !=null and user_dept_level3 !=''">
+			and d.`dept3` like '%${user_dept_level3}%' 
+		</if>  
+		<if test="user_dept_level4 !=null and user_dept_level4 !=''">
+			and d.`dept4` like '%${user_dept_level4}%' 
+		</if> 
+		<if test="user_dept_level5 !=null and user_dept_level5 !=''">
+			and d.`dept5` like '%${user_dept_level5}%' 
+		</if> 
+		<if test="username !=null and username !=''">
+			and u.`username` like '%${username}%' 
+		</if> 
+		<if test="webchart !=null and webchart !=''">
+			and u.`webchart` like '%${webchart}%' 
+		</if> 
+		<if test="usertype !=null and usertype !=''">
+			and u.`usertype` like '%${usertype}%' 
+		</if> 
+		<if test="telphone !=null and telphone !=''">
+			and u.`telphone` like '%${telphone}%' 
+		</if> 
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM tb_upc_users u 
+			LEFT JOIN (
+		SELECT 
+		  IF(
+		    ISNULL(t4.`deptname`) &amp;&amp; ! ISNULL(t3.`deptname`),
+		    t3.`deptname`,
+		    IF(
+		      ISNULL(t3.`deptname`) &amp;&amp; ! t2.`deptname`,
+		      t2.`deptname`,
+		      IF(
+		        ISNULL(t2.`deptname`) &amp;&amp; ! ISNULL(t1.`deptname`),
+		        t1.`deptname`,
+		        IF(
+		          ISNULL(t1.`deptname`) &amp;&amp; ! ISNULL(t.`deptname`),
+		          t.`deptname`,
+		          t4.`deptname`
+		        )
+		      )
+		    )
+		  ) AS dept1,
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t3.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t2.`deptname`,
+		      IF(
+		        ! ISNULL(t2.`deptname`),
+		        t1.`deptname`,
+		        IF(
+		          ! ISNULL(t1.`deptname`),
+		          t.`deptname`,
+		          t4.`deptname`
+		        )
+		      )
+		    )
+		  ) AS dept2,
+		   IF(
+		    ! ISNULL(t4.`deptname`),
+		    t2.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t1.`deptname`,
+		      IF(
+		        ! ISNULL(t2.`deptname`),
+		        t.`deptname`,
+		        NULL
+		      )
+		    )
+		  ) AS dept3, 
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t1.`deptname`,
+		    IF(
+		      ! ISNULL(t3.`deptname`),
+		      t.`deptname`,
+		      NULL
+		    )
+		  ) AS dept4,
+		  IF(
+		    ! ISNULL(t4.`deptname`),
+		    t.`deptname`,
+		    NULL
+		  ) AS dept5,
+		  t.deptcode 
+		FROM
+		  tb_upc_department t 
+		  LEFT JOIN tb_upc_department t1 
+		    ON t1.`deptcode` = t.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t2 
+		    ON t2.`deptcode` = t1.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t3 
+		    ON t3.`deptcode` = t2.`parentdeptcode` 
+		  LEFT JOIN tb_upc_department t4 
+		    ON t4.`deptcode` = t3.`parentdeptcode` ) d
+		    ON d.deptcode=u.`deptcode`
+		WHERE u.`delstatus` IS NULL and u.type=1
+		<if test="user_dept_level1 !=null and user_dept_level1 !=''">
+			and d.`dept1` like '%${user_dept_level1}%' 
+		</if> 
+		<if test="user_dept_level2 !=null and user_dept_level2 !=''">
+			and d.`dept2` like '%${user_dept_level2}%' 
+		</if> 
+		<if test="user_dept_level3 !=null and user_dept_level3 !=''">
+			and d.`dept3` like '%${user_dept_level3}%' 
+		</if>  
+		<if test="user_dept_level4 !=null and user_dept_level4 !=''">
+			and d.`dept4` like '%${user_dept_level4}%' 
+		</if> 
+		<if test="user_dept_level5 !=null and user_dept_level5 !=''">
+			and d.`dept5` like '%${user_dept_level5}%' 
+		</if> 
+		<if test="username !=null and username !=''">
+			and u.`username` like '%${username}%' 
+		</if> 
+		<if test="webchart !=null and webchart !=''">
+			and u.`webchart` like '%${webchart}%' 
+		</if> 
+		<if test="usertype !=null and usertype !=''">
+			and u.`usertype` like '%${usertype}%' 
+		</if> 
+		<if test="telphone !=null and telphone !=''">
+			and u.`telphone` like '%${telphone}%' 
+		</if> 
+	</select>
+	<select id="queryCaseAll" parameterType="map" resultType="com.rds.statistics.model.RdsFinanceCaseDetailStatisticsModel">
+		SELECT t.* FROM `tb_finance_case_detail_all` t 
+		WHERE 1=1
+		<if test="queryFlag == null">
+			<if test="user_dept_level1 != null and user_dept_level1 != ''">
+				and t.`user_dept_level1` LIKE '%${user_dept_level1}%'
+			</if>
+		</if>
+		<if test="user_dept_level2 != null and user_dept_level2 != ''">
+			and t.`user_dept_level2` LIKE '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 != null and user_dept_level3 != ''">
+			and t.`user_dept_level3` LIKE '%${user_dept_level3}%'
+		</if>
+		<if test="case_user != null and case_user != ''">
+			and t.`case_user` LIKE '%${case_user}%'
+		</if>
+		<if test="case_area != null and case_area != ''">
+			and t.`case_area` LIKE '%${case_area}%'
+		</if>
+		<if test="case_code != null and case_code != ''">
+			and t.`case_code` LIKE '%${case_code}%'
+		</if>
+		<if test="case_subtype != null and case_subtype != ''">
+			and t.`case_subtype` LIKE '%${case_subtype}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d') >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d')
+		</if>
+		<if test="accept_time_start != null and accept_time_end != ''">
+			and DATE_FORMAT(t.`accept_time`,'%Y-%m-%d') >= #{accept_time_start}
+		</if>
+		<if test="accept_time_end != null and accept_time_end != ''">
+			and #{accept_time_end} >= DATE_FORMAT(t.`accept_time`,'%Y-%m-%d')
+		</if>
+		<if test="insideCostUnit != null and insideCostUnit != '' and manageCostUnit != null and manageCostUnit != ''">
+			and (t.`insideCostUnit` LIKE '%${insideCostUnit}%' or t.`manageCostUnit` LIKE '%${manageCostUnit}%')
+		</if>
+		<if test=" insideCostUnit != null and insideCostUnit != '' and manageCostUnit == ''">
+			and t.`insideCostUnit` LIKE '%${insideCostUnit}%'
+		</if>
+		<if test=" manageCostUnit != null and manageCostUnit != '' and insideCostUnit == ''">
+			and t.`manageCostUnit` LIKE '%${manageCostUnit}%'
+		</if>
+		<if test="case_type != null and case_type != ''">
+			and t.`case_type` LIKE '%${case_type}%'
+		</if>
+		<if test="type != null and type != ''">
+			and t.`type` LIKE '%${type}%'
+		</if>
+		<if test="client != null and client != ''">
+			and t.`client` LIKE '%${client}%'
+		</if>
+		<if test="aptitude_flag != null and aptitude_flag != ''">
+			and t.aptitudeCost >0
+		</if>
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryCaseAllCount" parameterType="map" resultType="int">
+		SELECT count(1) FROM `tb_finance_case_detail_all` t WHERE 1=1
+		<if test="queryFlag == null">
+			<if test="user_dept_level1 != null and user_dept_level1 != ''">
+				and t.`user_dept_level1` LIKE '%${user_dept_level1}%'
+			</if>
+		</if>
+		<if test="user_dept_level2 != null and user_dept_level2 != ''">
+			and t.`user_dept_level2` LIKE '%${user_dept_level2}%'
+		</if>
+		<if test="user_dept_level3 != null and user_dept_level3 != ''">
+			and t.`user_dept_level3` LIKE '%${user_dept_level3}%'
+		</if>
+		<if test="accept_time_start != null and confirm_date_start != ''">
+			and DATE_FORMAT(t.`accept_time`,'%Y-%m-%d') >= #{accept_time_start}
+		</if>
+		<if test="accept_time_end != null and accept_time_end != ''">
+			and #{accept_time_end} >= DATE_FORMAT(t.`accept_time`,'%Y-%m-%d')
+		</if>
+		<if test="client != null and client != ''">
+			and t.`client` LIKE '%${client}%'
+		</if>
+		<if test="case_user != null and case_user != ''">
+			and t.`case_user` LIKE '%${case_user}%'
+		</if>
+		<if test="case_area != null and case_area != ''">
+			and t.`case_area` LIKE '%${case_area}%'
+		</if>
+		<if test="case_code != null and case_code != ''">
+			and t.`case_code` LIKE '%${case_code}%'
+		</if>
+		<if test="case_id != null and case_id != ''">
+			and t.`case_id` = #{case_id}
+		</if>
+		<if test="case_subtype != null and case_subtype != ''">
+			and t.`case_subtype` LIKE '%${case_subtype}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_end != ''">
+			and DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d') >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >= DATE_FORMAT(t.`confirm_date`,'%Y-%m-%d')
+		</if>
+		<if test="insideCostUnit != null and insideCostUnit != '' and manageCostUnit != null and manageCostUnit != ''">
+			and (t.`insideCostUnit` LIKE '%${insideCostUnit}%' or t.`manageCostUnit` LIKE '%${manageCostUnit}%')
+		</if>
+		<if test=" insideCostUnit != null and insideCostUnit != '' and manageCostUnit == ''">
+			and t.`insideCostUnit` LIKE '%${insideCostUnit}%'
+		</if>
+		<if test=" manageCostUnit != null and manageCostUnit != '' and insideCostUnit == ''">
+			and t.`manageCostUnit` LIKE '%${manageCostUnit}%'
+		</if>
+		<if test="case_type != null and case_type != ''">
+			and t.`case_type` LIKE '%${case_type}%'
+		</if>
+		<if test="type != null and type != ''">
+			and t.`type` LIKE '%${type}%'
+		</if>
+		<if test="aptitude_flag != null and aptitude_flag != ''">
+			and t.aptitudeCost >0
+		</if>
+	</select>
+	
+	<select id="queryAmboeaPerson" parameterType="map" resultType="com.rds.statistics.model.RdsAmboeaPersonModel">
+		SELECT 
+		  a.`username`,
+		  u.`webchart`,
+		  u.`usertype`,
+  		  a.confirm_date,
+		  l.*,
+		  IFNULL(SUM(a.`serviceIncome`), 0) AS serviceIncome,
+		  IFNULL(SUM(a.`sellIncome`), 0) AS sellIncome,
+		  IFNULL(SUM(a.`partnerIncome`), 0) AS partnerIncome,
+		  SUM(
+		    IFNULL(a.`serviceIncome`, 0) + IFNULL(a.`sellIncome`, 0) + IFNULL(a.`partnerIncome`, 0)
+		  ) AS totalIncome,
+		  FORMAT(
+		    SUM(
+		      (
+		        IFNULL(a.`serviceIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`sellIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`partnerIncome`, 0) / 1.16 * 0.06
+		      )
+		    ),
+		    2
+		  ) AS totalTax,
+		  FORMAT(
+		    SUM(
+		      IFNULL(a.`serviceIncome`, 0) + IFNULL(a.`sellIncome`, 0) + IFNULL(a.`partnerIncome`, 0)
+		    ) - SUM(
+		      (
+		        IFNULL(a.`serviceIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`sellIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`partnerIncome`, 0) / 1.16 * 0.06
+		      )
+		    ),
+		    2
+		  ) AS totalIncomeOutTax,
+		  IFNULL(w.wages,0) AS laborCost,
+		  IFNULL(w.wages_fixed,0) AS laborCost_fixed,
+		  IFNULL(w.wages_float,0) AS laborCost_float,
+		  SUM(
+		    a.`purchasingMaterials` + a.consumables
+		  ) AS materials,
+		  SUM(a.`purchasingMaterials`) AS purchasingMaterials,
+		  SUM(a.`consumables`) AS consumables,
+		  SUM(a.`externalInspection` + a.agent) AS externam,
+		  SUM(a.`externalInspection`) AS externalInspection,
+		  SUM(a.`agent`) AS agent,
+		  SUM(
+		    a.`office` + a.`spareGold` + a.`travelExpenses` + a.`welfareFunds` + a.`advertisement` + a.`business` + a.`lease` + a.`other` + a.`otherPay` + a.`otherProcurement`
+		  ) AS manage,
+		  SUM(a.`office`) AS office,
+		  SUM(a.`spareGold`) AS spareGold,
+		  SUM(a.`travelExpenses`) AS travelExpenses,
+		  SUM(a.`welfareFunds`) AS welfareFunds,
+		  SUM(a.`advertisement`) AS advertisement,
+		  SUM(a.`business`) AS business,
+		  SUM(a.`lease`) AS lease,
+		  SUM(a.`other`) AS other,
+		  SUM(a.`otherPay`) AS otherPay,
+		  SUM(a.`otherProcurement`) AS otherProcurement,
+		  SUM(
+		    a.`instrumentBuy` + a.`engine` + a.`instrumentEquipment` + a.`outboundInvestment` + a.`renovation`
+		  ) AS otherPayAll,
+		  SUM(a.`instrumentBuy`) AS instrumentBuy,
+		  SUM(a.`engine`) AS 'engine',
+		  SUM(a.`instrumentEquipment`) AS instrumentEquipment,
+		  SUM(a.`outboundInvestment`) AS outboundInvestment,
+		  SUM(a.`renovation`) AS renovation,
+		  format(ifnull(w.wages,0)+SUM(
+		    a.`purchasingMaterials` + a.consumables + a.`externalInspection` + a.agent + a.`office` + a.`spareGold` + a.`travelExpenses` + a.`welfareFunds` + a.`advertisement` + a.`business` + a.`lease` + a.`other` + a.`otherPay` + a.`otherProcurement` + a.`instrumentBuy` + a.`engine` + a.`instrumentEquipment` + a.`outboundInvestment` + a.`renovation`
+		  ),2) AS paySum,
+		  SUM(a.`internalSettlement`) AS internalSettlement,
+		  format(SUM(
+		    IFNULL(a.`serviceIncome`, 0) + IFNULL(a.`sellIncome`, 0) + IFNULL(a.`partnerIncome`, 0) - - (
+		      a.`purchasingMaterials` + a.consumables + a.`externalInspection` + a.agent + a.`office` + a.`spareGold` + a.`travelExpenses` + a.`welfareFunds` + a.`advertisement` + a.`business` + a.`lease` + a.`other` + a.`otherPay` + a.`otherProcurement` + a.`instrumentBuy` + a.`engine` + a.`instrumentEquipment` + a.`outboundInvestment` + a.`renovation`
+		    ) - a.`internalSettlement`
+		  )  - SUM(
+		      (
+		        IFNULL(a.`serviceIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`sellIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`partnerIncome`, 0) / 1.16 * 0.06
+		      )
+		    ) - ifnull(w.wages,0),2) AS operatingProfit,
+		  format((SUM(
+		    IFNULL(a.`serviceIncome`, 0) + IFNULL(a.`sellIncome`, 0) + IFNULL(a.`partnerIncome`, 0) - (
+		      a.`purchasingMaterials` + a.consumables + a.`externalInspection` + a.agent + a.`office` + a.`spareGold` + a.`travelExpenses` + a.`welfareFunds` + a.`advertisement` + a.`business` + a.`lease` + a.`other` + a.`otherPay` + a.`otherProcurement` + a.`instrumentBuy` + a.`engine` + a.`instrumentEquipment` + a.`outboundInvestment` + a.`renovation`
+		    )  - a.`internalSettlement`
+		  )  - SUM(
+		      (
+		        IFNULL(a.`serviceIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`sellIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`partnerIncome`, 0) / 1.16 * 0.06
+		      )
+		    ) - ifnull(w.wages,0))* 0.2,2) AS taxIncome,
+		  format((SUM(
+		    IFNULL(a.`serviceIncome`, 0) + IFNULL(a.`sellIncome`, 0) + IFNULL(a.`partnerIncome`, 0) - (
+		      a.`purchasingMaterials` + a.consumables + a.`externalInspection` + a.agent + a.`office` + a.`spareGold` + a.`travelExpenses` + a.`welfareFunds` + a.`advertisement` + a.`business` + a.`lease` + a.`other` + a.`otherPay` + a.`otherProcurement` + a.`instrumentBuy` + a.`engine` + a.`instrumentEquipment` + a.`outboundInvestment` + a.`renovation`
+		    )  - a.`internalSettlement`
+		  )  - SUM(
+		      (
+		        IFNULL(a.`serviceIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`sellIncome`, 0) / 1.06 * 0.06
+		      ) + (
+		        IFNULL(a.`partnerIncome`, 0) / 1.16 * 0.06
+		      )
+		    ) -ifnull(w.wages,0) )* 0.8,2) AS virtualProfit 
+		FROM
+		  `tb_amboea_person` a 
+		  INNER JOIN tb_upc_users u 
+		    ON a.webchart = u.`webchart` 
+		  INNER JOIN `tb_department_level` l 
+		    ON u.`deptcode` = l.deptcode 
+		   LEFT JOIN 
+		(SELECT w.workcode,SUM(IFNULL(w.`wages`,0)) AS wages,SUM(IFNULL(w.`wages_social`,0)+IFNULL(w.`wages_accumulation`,0)+IFNULL(w.`wages_middle`,0)) AS wages_fixed,SUM(IFNULL(w.`wages_end`,0)+IFNULL(w.`wages_other`,0)) AS wages_float FROM tb_finance_wages w WHERE 1=1
+		<if test="username != null and username != ''">
+			and w.wages_name LIKE '%${username}%'
+		</if>
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and w.wages_month >= DATE_FORMAT(#{confirm_date_start},'%Y-%m')
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and DATE_FORMAT(#{confirm_date_end},'%Y-%m') >= w.wages_month
+		</if>
+		 GROUP BY w.workcode) w
+    ON w.workcode = u.`webchart`
+		    where 1=1 AND u.`type`=1
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and a.`confirm_date` >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >= a.`confirm_date`
+		</if>
+		<if test="username != null and username != ''">
+			and a.`username` LIKE '%${username}%'
+		</if>
+		<if test="webchart != null and webchart != ''">
+			and  u.`webchart` LIKE '%${webchart}%'
+		</if>
+		<if test="usertype != null and usertype != ''">
+			and u.`usertype` LIKE '%${usertype}%'
+		</if>
+		<if test="user_dept_level != null and user_dept_level != ''">
+			and (l.user_dept_level1 LIKE '%${user_dept_level}%' or l.user_dept_level2 LIKE '%${user_dept_level}%' or l.user_dept_level3 LIKE '%${user_dept_level}%' or
+			l.user_dept_level4 LIKE '%${user_dept_level}%' or l.user_dept_level5 LIKE '%${user_dept_level}%')
+		</if>
+		GROUP BY a.`webchart`  
+		<if test="start!=null and limit!=null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="queryAmboeaPersonCount" parameterType="map" resultType="int">
+		select count(1) from (
+		SELECT 
+		 a.`webchart`
+		FROM
+		  `tb_amboea_person` a 
+		 INNER JOIN tb_upc_users u 
+		    ON a.`username` = u.`username` 
+		 INNER JOIN `tb_department_level` l 
+		    ON u.`deptcode` = l.deptcode 
+		    where 1=1 AND u.`type`=1
+		<if test="confirm_date_start != null and confirm_date_start != ''">
+			and a.`confirm_date` >= #{confirm_date_start}
+		</if>
+		<if test="confirm_date_end != null and confirm_date_end != ''">
+			and #{confirm_date_end} >= a.`confirm_date`
+		</if>
+		<if test="username != null and username != ''">
+			and a.`username` LIKE '%${username}%'
+		</if>
+		<if test="webchart != null and webchart != ''">
+			and  u.`webchart` LIKE '%${webchart}%'
+		</if>
+		<if test="usertype != null and usertype != ''">
+			and u.`usertype` LIKE '%${usertype}%'
+		</if>
+		<if test="user_dept_level != null and user_dept_level != ''">
+			and (l.user_dept_level1 LIKE '%${user_dept_level}%' or l.user_dept_level2 LIKE '%${user_dept_level}%' or l.user_dept_level3 LIKE '%${user_dept_level}%' or
+			l.user_dept_level4 LIKE '%${user_dept_level}%' or l.user_dept_level5 LIKE '%${user_dept_level}%')
+		</if>
+		GROUP BY a.`webchart`) a  
+	</select>
+</mapper>

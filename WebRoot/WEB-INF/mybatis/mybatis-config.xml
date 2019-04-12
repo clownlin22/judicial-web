@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE configuration     
+  PUBLIC "-//ibatis.apache.org//DTD Config 3.0//EN" "http://ibatis.apache.org/dtd/ibatis-3-config.dtd">
+
+<configuration>
+	<settings>
+		<setting name="cacheEnabled" value="false" />
+		<setting name="useGeneratedKeys" value="true" />
+		<setting name="defaultExecutorType" value="REUSE" />
+		<setting name="lazyLoadingEnabled" value="false" />
+		<setting name="aggressiveLazyLoading" value="true" />
+		<setting name="logImpl" value="LOG4J"/> 
+	</settings>
+	<typeAliases>
+		<typeAlias type="com.rds.upc.model.RdsUpcDictModel" alias="upcdict"/>
+		<typeAlias type="com.rds.upc.model.RdsUpcUserModel" alias="user"/>
+		
+		<typeAlias type="com.rds.upc.model.RdsUpcDepartmentModel" alias="department"/>
+		<typeAlias type="com.rds.upc.model.RdsUpcTreeNodeModel" alias="upctreenode"/>
+		
+		<typeAlias type="com.rds.upc.model.RdsUpcCompanyModel" alias="company"/>
+		<typeAlias type="com.rds.upc.model.RdsUpcModuleModel" alias="module"/>  
+		<typeAlias type="com.rds.upc.model.RdsUpcPermitModel" alias="permit"/>
+		<typeAlias type="com.rds.upc.model.RdsUpcUserPermitModel" alias="userpermit"/>
+		<typeAlias type="com.rds.judicial.model.RdsJudicialDicKeysModel" alias="dickeys"/>
+		<typeAlias type="com.rds.judicial.model.RdsJudicialDicValuesModel" alias="dicvalues"/>
+		<typeAlias type="com.rds.judicial.model.RdsJudicialReportTypeModel" alias="reporttype"/>
+	</typeAliases>
+	<typeHandlers>  
+    	<typeHandler javaType="Boolean" jdbcType="VARCHAR"  
+        handler="com.rds.code.mybatis.handler.BooleanTypeHandler" />
+    </typeHandlers>
+</configuration> 

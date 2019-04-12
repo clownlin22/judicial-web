@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcRoleMapper" >
+	<resultMap id="roleModel" type="com.rds.upc.model.RdsUpcRoleModel">
+		<result column="roleid" property="roleid"/>
+		<result column='roletype' property="roletype"/>
+		<result column='rolename' property="rolename"/>
+		<result column='permitname' property="permitname"/>
+		<result column='modulecode' property="modulecode"/>
+		<result column='checked' property="checked"/>
+	</resultMap>
+	<!-- 插入角色信息 -->
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_role
+		(roleid,roletype,rolename,rolepermit,cratetime) 
+  		values(#{roleid},#{roletype},#{rolename},#{rolepermit},sysdate())
+	</insert>
+	<!-- 插入角色信息 -->
+	<insert id="insertPermit" parameterType="map">
+		insert into tb_upc_permit
+		(permittype,modulecode) 
+  		values(#{roletype},#{modulecode})
+	</insert>
+	<!-- 更新角色信息 -->
+	<update id="update" parameterType="map">
+		update tb_upc_role set roleid=#{roleid},roletype=#{roletype},rolename=#{rolename},cratetime=sysdate() where roleid=#{roleid}
+	</update>
+	<!-- 根据角色id删除企业信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_upc_role where roleid in (${roleid})
+	</delete>
+	<!-- 根据角色id删除企业信息 -->
+	<delete id="deletePermit" parameterType="map">
+		delete from tb_upc_permit where permittype in (${roletype})
+	</delete>
+	<!-- 分页查询角色信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="roleModel">
+		SELECT gro.rolename,gro.roleid,gro.roletype,GROUP_CONCAT(gro.modulename SEPARATOR ',') AS permitname, 
+		       GROUP_CONCAT(gro.modulecode SEPARATOR ',') AS modulecode FROM 
+ 			  (SELECT r.roleid,r.rolename,r.roletype,m.modulename,m.modulecode FROM  
+ 			      tb_upc_role r LEFT JOIN tb_upc_permit  t ON r.roletype=t.permittype 
+ 			      LEFT JOIN tb_upc_module m ON t.modulecode = m.modulecode 
+					<if test="rolename != '' and rolename !=null and rolename != 'null' ">
+						where  r.rolename like concat('%', #{rolename}, '%') 
+					</if>  ) 
+ 			      AS gro GROUP BY gro.roletype 
+		LIMIT #{start},#{end}
+	</select>
+	<!-- 所有角色信息 -->
+	<select id="queryAll" parameterType="map" resultMap="roleModel">
+	SELECT gro.rolename,gro.roleid,gro.roletype,GROUP_CONCAT(gro.modulename SEPARATOR ',') AS permitname, 
+		       GROUP_CONCAT(gro.modulecode SEPARATOR ',') AS modulecode
+		       <if test="userid != '' and userid !=null and userid != 'null' ">
+		       ,(SELECT CASE WHEN COUNT(*) >= 1 THEN
+	                  'true'
+	                 ELSE
+	                  'false'
+	               END
+	          FROM tb_upc_users u
+	          WHERE u.roletype = gro.roletype AND u.userid=#{userid}) checked
+	          </if>  
+		        FROM 
+ 			  (SELECT r.roleid,r.rolename,r.roletype,m.modulename,m.modulecode FROM  
+ 			      tb_upc_role r LEFT JOIN tb_upc_permit  t ON r.roletype=t.permittype 
+ 			      LEFT JOIN tb_upc_module m ON t.modulecode = m.modulecode ) 
+ 			      AS gro GROUP BY gro.roletype 
+	</select>
+	<!-- 查询角色总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT COUNT(1) FROM tb_upc_role where 1=1
+		<if test="rolename != '' and rolename !=null and rolename != 'null' ">
+			and  rolename like concat('%', #{rolename}, '%') 
+		</if> 
+		<if test="roletype != '' and roletype !=null and roletype != 'null' ">
+			and  roletype =#{roletype} 
+		</if> 
+		<if test="roleid != '' and roleid !=null and roleid != 'null' ">
+			and  roleid =#{roleid} 
+		</if> 
+	</select>
+</mapper>

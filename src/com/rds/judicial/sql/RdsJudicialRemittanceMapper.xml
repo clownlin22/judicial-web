@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialRemittanceMapper">
+	
+	<select id="queryAll" resultType="com.rds.judicial.model.RdsJudicialRemittanceModel">
+		select * from tb_dic_remittance_info where is_delete='1'
+	</select>
+	
+	<insert id="insert" parameterType="map">
+		INSERT INTO `tb_dic_remittance_info`
+		(`id`, `remittanceAccount`, `accountName`, `remark`,`create_time`)
+		VALUES
+		(#{id},#{remittanceAccount},#{accountName},#{remark},sysdate());
+	</insert>
+
+	<update id="update" parameterType="map">
+		UPDATE `tb_dic_remittance_info` SET
+		`remittanceAccount` = #{remittanceAccount} ,
+		 `accountName` = #{accountName} , 
+		 `remark` = #{remark} 
+		 WHERE `id` = #{id}
+	</update>
+
+	<delete id="delete" parameterType="map">
+		update  `tb_dic_remittance_info` set is_delete = '2' WHERE `id` = #{id};
+	</delete>
+
+	<select id="queryAllPage" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialRemittanceModel">
+		SELECT i.* FROM tb_dic_remittance_info i 
+		where 1=1
+		<if test="accountName != ''">
+			and i.accountName like '%${accountName}%'
+		</if>
+		<if test="remittanceAccount != ''">
+			and i.remittanceAccount like '%${remittanceAccount}%'
+		</if>
+		and i.is_delete='1'
+		limit #{start},#{limit}
+	</select>
+
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_dic_remittance_info
+		where 1=1
+		<if test="accountName != ''">
+			and accountName like '%${accountName}%'
+		</if>
+		<if test="remittanceAccount != ''">
+			and remittanceAccount like '%${remittanceAccount}%'
+		</if>
+		<if test="remark != ''">
+			and remark like '%${remark}%'
+		</if>
+		and is_delete = '1'
+	</select>
+	
+	<select id="queryExistCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_dic_remittance_info
+		where 1=1
+		<if test="accountName != '' ">
+			and (accountName = #{accountName} or remittanceAccount = #{remittanceAccount} )
+		</if>
+		<if test="id != null or id != '' ">
+			and id &lt;&gt; #{id}
+		</if>
+		and is_delete = '1'
+	</select>
+
+</mapper>

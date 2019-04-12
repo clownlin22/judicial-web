@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraMedExamineMapper" >
+	<resultMap id="medExamine" type="com.rds.bacera.model.RdsBaceraMedExamineModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='name' property="name" />
+		<result column='program' property="program" />
+		<result column='barcode' property="barcode" />
+		<result column='diagnosis' property="diagnosis" />
+		<result column='hospital' property="hospital" />
+		<result column='age' property="age" />
+		<result column='sex' property="sex" />
+		<result column='sampletype' property="sampletype" />
+		<result column='samplecount' property="samplecount" />
+		<result column='date' property="date" />
+		<result column='report_date' property="report_date" />
+		<result column='entrustment_date' property="entrustment_date" />
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		<result column='cancelif' property="cancelif" />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='expressremark' property="expressremark" />
+		<result column='recive' property="recive" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="map">
+		insert into tb_medical_examination
+		(id,num,program,name,barcode,diagnosis,age,sex,sampletype,samplecount,hospital
+				<if test="date != '' and date != null">
+					,date
+				</if>
+			,ownperson,remark,create_time,report_date,entrustment_date
+				<if test="inputperson != '' and inputperson != null">
+					,inputperson
+				</if>
+		)values(#{id},#{num},#{program},#{name},#{barcode},#{diagnosis},#{age},#{sex},#{sampletype},#{samplecount},#{hospital}
+				<if test="date != '' and date != null">
+					,#{date}
+				</if>
+				,#{ownperson},#{remark},now(),#{report_date},#{entrustment_date}
+				<if test="inputperson != '' and inputperson != null">
+					,#{inputperson}
+				</if>
+		)
+	</insert>
+	
+	<update id="update" parameterType="map">
+		update tb_medical_examination 
+		set 
+		    create_time = now()
+			<if test="num != null">
+				,num=#{num}
+			</if>
+			<if test="name != null">
+				,name=#{name}
+			</if>	
+			<if test="barcode != null">
+				,barcode=#{barcode}
+			</if>
+			<if test="diagnosis != null">
+				,diagnosis=#{diagnosis}
+			</if>
+			<if test="age != null">
+				,age=#{age}
+			</if>
+			<if test="sex != null">
+				,sex=#{sex}
+			</if>
+			<if test="sampletype != null">
+				,sampletype=#{sampletype}
+			</if>
+			<if test="samplecount != null">
+				,samplecount=#{samplecount}
+			</if>
+			<if test="hospital != null">
+				,hospital=#{hospital}
+			</if>
+			<if test="date != null">
+				,date=#{date}
+			</if>	
+			<if test="program != null">
+				,program=#{program}
+			</if>	
+			<if test="ownperson != null">
+				,ownperson=#{ownperson}
+			</if>		
+			<if test="remark != null">
+				,remark=#{remark}
+			</if>		
+			<if test="inputperson != null">
+				,inputperson=#{inputperson}
+			</if>	
+			<if test="report_date != null">
+				,report_date=#{report_date}
+			</if>
+			<if test="entrustment_date != null">
+				,entrustment_date=#{entrustment_date}
+			</if>
+			<if test="cancelif != '' and cancelif != null">
+				,cancelif=#{cancelif}
+			</if>	
+			where id = #{id}
+	</update>
+	
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_medical_examination where id = #{id}
+	</delete>
+	
+	<select id="queryAllPage" parameterType="map" resultMap="medExamine">
+		 SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.barcode,
+			  a.diagnosis,
+			  a.age,
+			  a.sex,
+			  a.sampletype,
+			  a.samplecount,
+			  a.hospital,
+			  a.`date`,
+			  a.report_date,
+			  a.entrustment_date,
+			  a.`ownperson` AS ownperson,
+			  s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`program`,
+			  a.`name`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  i.expresstime,
+			  a.`cancelif` , 
+			  i.expressremark
+			FROM
+			  tb_medical_examination a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id` 
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>
+			<if test="program != '' and program != null">
+				and a.program like concat('%', #{program}, '%') 
+			</if>	
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="medExamine_starttime != '' and medExamine_starttime != null">
+				and a.date >= #{medExamine_starttime}
+			</if>	
+			<if test="medExamine_endtime != '' and medExamine_endtime != null">
+				and #{medExamine_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="name != '' and name != null">
+				AND a.`name` like concat('%', #{name}, '%') 
+			</if>
+			<if test="barcode != '' and barcode != null">
+				AND a.`barcode` like concat('%', #{barcode}, '%') 
+			</if>
+			<if test="diagnosis != '' and diagnosis != null">
+				AND a.`diagnosis` like concat('%', #{diagnosis}, '%') 
+			</if>
+			<if test="age != '' and age != null">
+				AND a.`age`= #{age}
+			</if>
+			<if test="sex != '' and sex != null">
+				AND a.`sex`= #{sex}
+			</if>
+			<if test="sampletype != '' and sampletype != null">
+				AND a.`sampletype` like concat('%', #{sampletype}, '%') 
+			</if>
+			<if test="hospital != '' and hospital != null">
+				AND a.`hospital` like concat('%', #{hospital}, '%') 
+			</if>
+			<if test="samplecount != '' and samplecount != null">
+				AND a.`samplecount`= #{samplecount}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			order by a.num desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		SELECT 
+			 count(1)
+			FROM
+			  tb_medical_examination a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id` 
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="program != '' and program != null">
+				and a.program like concat('%', #{program}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="medExamine_starttime != '' and medExamine_starttime != null">
+				and a.date >= #{medExamine_starttime}
+			</if>	
+			<if test="medExamine_endtime != '' and medExamine_endtime != null">
+				and #{medExamine_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="name != '' and name != null">
+				AND a.`name` like concat('%', #{name}, '%') 
+			</if>
+			<if test="barcode != '' and barcode != null">
+				AND a.`barcode` like concat('%', #{barcode}, '%') 
+			</if>
+			<if test="diagnosis != '' and diagnosis != null">
+				AND a.`diagnosis` like concat('%', #{diagnosis}, '%') 
+			</if>
+			<if test="hospital != '' and hospital != null">
+				AND a.`hospital` like concat('%', #{hospital}, '%') 
+			</if>
+			<if test="age != '' and age != null">
+				AND a.`age`= #{age}
+			</if>
+			<if test="sex != '' and sex != null">
+				AND a.`sex`= #{sex}
+			</if>
+			<if test="sampletype != '' and sampletype != null">
+				AND a.`sampletype` like concat('%', #{sampletype}, '%') 
+			</if>
+			<if test="samplecount != '' and samplecount != null">
+				AND a.`samplecount`= #{samplecount}
+			</if>
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_medical_examination where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+	<select id="queryProgram" resultType="com.rds.judicial.model.RdsJudicialKeyValueModel">
+		select t.program_name as "key", t.program_name as "value" from tb_medical_examination_program t
+	</select>
+	
+	<insert id="insertProgram" parameterType="map">
+		insert into tb_medical_examination_program(id,program_name)
+		values(#{id},#{program_name})
+	</insert>
+	
+	<select id="queryProgramCount" parameterType="map" resultType="Integer">
+		select count(1) from tb_medical_examination_program t where t.program_name = #{program_name}
+	</select>
+	
+	<select id="queryNotify" resultType="map">
+		SELECT GROUP_CONCAT(t.`num`)  AS num,DATE_FORMAT(t.`report_date`,'%Y-%m-%d') as report_date FROM tb_medical_examination t 
+		WHERE DATE_FORMAT(t.`report_date`,'%Y-%m-%d') =  DATE_ADD(CURDATE(),INTERVAL 1 DAY)
+	</select>
+</mapper>

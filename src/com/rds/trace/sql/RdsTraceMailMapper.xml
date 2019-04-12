@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+    <mapper namespace="com.rds.trace.mapper.RdsTraceMailMapper">
+    <update id="delMailInfo" parameterType="map">
+        update tb_trace_mail_info set is_delete =1 where mail_id=#{mail_id}
+    </update>
+
+    <insert id="addMailInfo" parameterType="map">
+    insert into
+    tb_trace_mail_info(mail_id,mail_code,mail_type,mail_per,mail_time,case_id)
+    values(#{mail_id},#{mail_code},#{mail_type},#{mail_per},now(),#{case_id})
+    </insert>
+
+    <update id="updateMailInfo" parameterType="map">
+        update tb_trace_mail_info set
+        mail_code=#{mail_code},mail_per=#{mail_per},mail_type=#{mail_type}
+        where mail_id=#{mail_id}
+    </update>
+
+    <select id="getMailInfo" parameterType="map"
+            resultType="com.rds.trace.model.RdsTraceMailModelExt">
+        select m.*,v.value as mail_typename from tb_trace_mail_info m,(SELECT
+        key1,VALUE FROM
+        tb_dic_values
+        WHERE
+        keycode='000000002') v where
+        m.case_id=#{case_id} and m.is_delete=0 and v.key1=m.mail_type
+    </select>
+
+    <select id="getCountMailInfo" parameterType="map"
+            resultType="int">
+        select count(*) from (select m.*,v.value as mail_typename from tb_trace_mail_info m,(SELECT
+        key1,VALUE FROM
+        tb_dic_values
+        WHERE
+        keycode='000000002') v where
+        m.case_id=#{case_id} and m.is_delete=0 and v.key1=m.mail_type) z
+    </select>
+</mapper>

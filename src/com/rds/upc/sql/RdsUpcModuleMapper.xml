@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.upc.mapper.RdsUpcModuleMapper" >
+	<insert id="insert" parameterType="map">
+		insert into tb_upc_module(modulecode,modulename,moduleico,moduleurl,moduletype,modulesqe,moduleparentcode,moduledesc)
+			values(#{modulecode},#{modulename},#{moduleico},#{moduleurl},#{moduletype},#{modulesqe},#{moduleparentcode},#{moduledesc})
+	</insert>
+	
+	<resultMap type="module" id="module">
+		<result column="modulecode" property="id"/>  
+		<result column="modulecode" property="modulecode"/>  
+        <result column="modulename" property="modulename"/>  
+        <result column="moduleico" property="moduleico"/>  
+        <result column="moduleurl" property="moduleurl"/>
+        <result column="moduletype" property="moduletype"/> 
+        <result column="modulesqe" property="modulesqe"/> 
+        <result column="checked" property="checked"/> 
+        <result column="moduleparentcode" property="moduleparentcode"/>
+        <result column="moduledesc" property="moduledesc"/>
+        <result column="leaf" property="leaf"  javaType="Boolean" jdbcType="VARCHAR"/>  
+	</resultMap>
+	
+	<select id="queryAllByParent" parameterType="Map" resultMap="module">
+		select t.modulecode,
+	       t.modulename,
+	       t.moduleico,
+	       t.moduleurl,
+	       t.moduletype,
+	       t.modulesqe,
+	       t.moduleparentcode,
+	       t.moduledesc,
+	       (select case
+	                 when count(*) >= 1 then
+	                  'false'
+	                 else
+	                  'true'
+	               end
+	          from tb_upc_module m
+	          WHERE m.moduleparentcode = t.modulecode
+	       <!--  start with modulecode = t.modulecode
+	        connect by prior modulecode = moduleparentcode-->  ) leaf
+	        <if test="module == null">  
+	         ,
+	        (SELECT CASE
+	                 WHEN COUNT(*) >= 1 THEN
+	                  'true'
+	                 ELSE
+	                  'false'
+	               END
+	          FROM tb_upc_permit p
+	          WHERE p.modulecode = t.modulecode AND p.permittype=#{roletypes}) checked
+	        </if> 
+	       
+	  from tb_upc_module t
+	 where moduleparentcode  = #{parentcode,jdbcType=VARCHAR}
+	 ORDER BY t.modulesqe ASC
+	</select>
+	
+	<update id="update"  parameterType="Map">
+		update tb_upc_module set modulename= #{modulename},
+			moduleico= #{moduleico},
+			moduleurl= #{moduleurl},
+			moduletype= #{moduletype},
+			modulesqe= #{modulesqe},
+			moduledesc= #{moduledesc}
+			 where modulecode = #{modulecode}
+	</update>
+	
+	<delete id="delete" parameterType="Map">
+		delete from tb_upc_module where modulecode in (${moduelCodes})
+		<!-- delete from tb_upc_module where modulecode in (
+		select t.modulecode
+		  from tb_upc_module t
+		 start with modulecode = #{modulecode}
+		connect by prior modulecode = moduleparentcode) -->
+	</delete>
+	<select id="queryChildInfo" parameterType="map" resultType="string">
+		select queryChildrenModuleInfo('${modulecode}')
+	</select>
+</mapper>

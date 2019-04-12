@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.judicial.mapper.RdsJudicialAreaMapper">
+
+	<select id="getUpcUserInfo" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialUpcUserModel">
+		select
+		a.area_id,u.usercode,a.areacode,i.areaname,i.address,a.remark,u.username,a.attach_need,i.achieve,u.userid,a.charge_amount
+		from
+		tb_upc_area a
+		LEFT JOIN
+		tb_upc_users u
+		ON u.userid = a.userid
+		LEFT JOIN
+		tb_upc_area_info i
+		ON i.areacode = a.areacode
+		WHERE a.is_delete = 0
+		<if test="userid!=null and userid != ''">
+			and (a.userid =#{userid} or u.username like '%${userid}%')
+		</if>
+		<if test="usercode != null and usercode != ''">
+			and u.usercode like '%${usercode}%'
+		</if>
+		<if test="areaname != null and areaname != ''">
+			and i.areaname like '%${areaname}%'
+		</if>
+		limit #{start},#{limit}
+	</select>
+
+	<select id="getUpcUserInfoById" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialUpcUserModel">
+		SELECT a.area_id,'' AS usercode,a.areacode,'' AS areaname,'' AS
+		address,a.remark,'' AS username,a.attach_need,'' AS
+		achieve,a.userid,a.charge_amount
+		FROM tb_upc_area a
+		WHERE 1=1 AND a.is_delete=0
+		<if test="area_id !=null and area_id != ''">
+			and a.area_id =#{area_id}
+		</if>
+	</select>
+
+	<select id="countUpcUserInfo" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_area a,tb_upc_users u,tb_upc_area_info i
+		where u.userid=a.userid
+		and i.areacode=a.areacode and a.is_delete=0
+		<if test="userid!=null and userid != ''">
+			and (a.userid =#{userid} or u.username like '%${userid}%')
+		</if>
+	</select>
+
+	<select id="queryUpcUserModel" parameterType="map" resultType="Integer">
+		select count(*) from tb_upc_area a
+		where 1=1 and a.is_delete=0
+		<!-- <if test="area_id != null and area_id != ''"> and area_id =#{area_id} 
+			</if> -->
+		<if test="userid != null and userid != ''">
+			and userid=#{userid}
+		</if>
+		<if test="areacode !=null and areacode != ''">
+			and areacode=#{areacode}
+		</if>
+		<if test="charge_amount !=null and charge_amount != ''">
+			and charge_amount=#{charge_amount}
+		</if>
+		<if test="attach_need !=null and attach_need != ''">
+			and attach_need=#{attach_need}
+		</if>
+		<if test="remark !=null and remark != ''">
+			and remark=#{remark}
+		</if>
+	</select>
+
+	<insert id="insertUpcUserInfo" parameterType="map">
+		insert into
+		tb_upc_area(area_id,userid,areacode,remark,attach_need,charge_amount)
+		values(#{area_id},#{userid},#{areacode},#{remark},#{attach_need},#{charge_amount})
+	</insert>
+
+	<update id="delUpcUserInfo" parameterType="map">
+		update
+		tb_upc_area
+		set
+		is_delete=1 where
+		area_id=#{area_id}
+	</update>
+
+	<update id="updateUpcUserInfo" parameterType="map">
+		update
+		tb_upc_area
+		set
+		userid=#{userid},areacode=#{areacode},remark=#{remark},attach_need=#{attach_need},charge_amount=#{charge_amount}
+		where
+		area_id
+		=#{area_id}
+	</update>
+
+	<select id="getDicArea" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+		SELECT tt.*,GROUP_CONCAT(s.type) AS type FROM (
+			SELECT 
+			  t.id,
+			  t.name AS TEXT,
+			  t.parentID AS parentId,
+			  (SELECT 
+			    CASE
+			      WHEN COUNT(*) > 0 
+			      THEN 'false' 
+			      ELSE 'true' 
+			    END 
+			  FROM
+			    tb_dic_area_info a 
+			  WHERE a.parentID = t.id) leaf 
+			FROM
+			  tb_dic_area_info t 
+			WHERE t.parentID = #{parentID}
+			) tt LEFT JOIN `tb_charge_standard` s ON tt.id=s.`areacode`
+			GROUP BY tt.id
+	</select>
+	
+	<select id="getAllProvince" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+		SELECT id ,NAME AS TEXT,parentID AS parentId FROM
+		tb_dic_area_info WHERE parentID =0
+	</select>
+
+	<select id="getAllCity" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+		SELECT id ,NAME AS TEXT,parentID AS parentId FROM
+		tb_dic_area_info WHERE parentID IN (SELECT id FROM
+		tb_dic_area_info
+		WHERE parentID =0)
+	</select>
+
+	<select id="getAllCounty" parameterType="map"
+		resultType="com.rds.judicial.model.RdsJudicialDicAreaModel">
+		SELECT id ,NAME AS TEXT,parentID AS parentId FROM
+		tb_dic_area_info WHERE
+		parentID IN (SELECT id FROM
+		tb_dic_area_info WHERE parentID IN (SELECT
+		id FROM
+		tb_dic_area_info WHERE parentID =0))
+	</select>
+
+	<select id="exsitDicAreaCode" parameterType="map" resultType="Integer">
+		select count(*) from tb_dic_area_info where id=#{areacode}
+	</select>
+
+	<insert id="saveDicAreaInfo" parameterType="map">
+		insert into
+		tb_dic_area_info(id,name,parentID,initials)
+		values(#{areacode},#{areaname},#{parentId},#{initials})
+	</insert>
+	<update id="updateDicAreaInfo" parameterType="map">
+		update
+		tb_dic_area_info
+		set name= #{name},parentID = #{parentID},initials=#{initials} where id =
+		#{id}
+	</update>
+
+	<delete id="delDicAreaInfo" parameterType="map">
+		DELETE FROM
+		tb_dic_area_info where id=#{areacode}
+	</delete>
+
+	<select id="exsitDicAreaInfo" parameterType="String" resultType="Integer">
+		select count(*) from tb_dic_area_info where parentID=#{areacode}
+	</select>
+
+
+	<select id="getUpcAreaInfo" resultType="com.rds.judicial.model.RdsJudicialUpcAreaModel">
+		select areacode,areaname,address,print_copies,code,achieve,phone from
+		tb_upc_area_info
+		LEFT JOIN tb_dic_area_info i ON i.id=CODE
+		where is_delete=0
+		<if test="initials != '' and initials != null ">
+			and i.initials like '%${initials}%'
+		</if>
+		<if test="areaname != '' and areaname != null">
+			and areaname like '%${areaname}%'
+		</if>
+		<if test="achieve != '' and achieve != null ">
+			and achieve like '%${achieve}%'
+		</if>
+		<if test="address != '' and address != null">
+			and address like '%${address}%'
+		</if>
+		<if test="areacode != '' and areacode != null">
+			and areacode =#{areacode}
+		</if>
+		ORDER BY CODE ASC
+		<if test="start != null and limit != null">
+			limit #{start},#{limit}
+		</if>
+	</select>
+	
+	<select id="countAreaInfo" parameterType="map" resultType="Integer">
+		select count(1) from tb_upc_area_info
+		 where 1=1
+		<if test="areaname != '' and areaname != null">
+			and areaname like '%${areaname}%'
+		</if>
+		<if test="achieve != '' and achieve != null">
+			and achieve like '%${achieve}%'
+		</if>
+		<if test="address != '' and address != null ">
+			and address like '%${address}%'
+		</if>
+		<if test="code != '' and code != null ">
+			and code =#{code}
+		</if>
+		<if test="print_copies != '' and print_copies != null ">
+			and print_copies =#{print_copies}
+		</if>
+		and is_delete=0
+	</select>
+	<update id="delUpcAreaInfo" parameterType="map">
+		update
+		tb_upc_area_info
+		set is_delete=1 where
+		areacode
+		=#{areacode}
+	</update>
+
+	<insert id="saveUpcAreaInfo" parameterType="map">
+		insert into
+		tb_upc_area_info(areacode,areaname,address,print_copies,code,achieve,phone)
+		values(#{areacode},#{areaname},#{address},#{print_copies},#{code},#{achieve},#{phone})
+	</insert>
+
+	<update id="updateUpcAreaInfo" parameterType="map">
+		update
+		tb_upc_area_info
+		set
+		areaname=#{areaname},address=#{address},print_copies=#{print_copies},achieve=#{achieve},phone=#{phone}
+		where
+		areacode
+		=#{areacode}
+	</update>
+</mapper>

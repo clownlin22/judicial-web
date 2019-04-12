@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<config>
+         <case_code_num_scxz>1</case_code_num_scxz>
+         <case_code_date_scxz>20170201</case_code_date_scxz>
+         
+         <case_code_num_cxsh>1</case_code_num_cxsh>
+         <case_code_date_cxsh>20170201</case_code_date_cxsh>
+         
+         <case_code_num_cxsh_CMA>1</case_code_num_cxsh_CMA>
+         <case_code_date_cxsh_CMA>2018</case_code_date_cxsh_CMA>
+</config>

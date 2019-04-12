@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraInvasivePreEmailMapper" >
+<insert id="insert" parameterType="map">
+	insert into tb_invasive_pre_email
+	(id,emailFrom,emailUserName,toEmails,attachFileNames,content,subject
+		,emaildate
+	)values(#{id},#{emailFrom}
+			,#{emailUserName},#{receiveAddress},#{attachment_path},#{content},#{num},now()	)
+	</insert>
+	
+	
+         <select id="queryEmail" parameterType="map"
+            resultType="com.rds.bacera.model.RdsBaceraInvasaivePreEmailModel">
+            select emailFrom ,emailUserName,toEmails,attachFileNames, subject,emaildate from tb_invasive_pre_email 
+                     where id=#{id} 
+          </select>
+</mapper>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.alcohol.mapper.RdsAlcoholArchiveMapper">
+
+	<select id="getCaseInfo" parameterType="map"
+		resultType="com.rds.alcohol.model.RdsAlcoholCaseInfoModel">
+		SELECT
+		ci.*,
+		da.county,
+		da.city,
+		da.province
+		FROM
+		(
+		SELECT
+		ci.case_id,
+	    ci.case_code,
+	    ci.client,
+	    ci.checkper,
+	    ci.checkper_phone,
+	    ci.area_code,
+	    ci.event_desc,
+	    ci.remark,
+	    ci.address,
+	    ci.sample_id,
+	    ci.receiver_id,
+	    ci.client_time,
+	    ci.close_time,
+	    ci.sample_remark,
+	    ci.sample_result,
+	    ci.isDoubleTube,
+	    ci.sample_remark2,
+	    ci.is_detection,
+	    ci.accept_time,
+	    ci.mail_address,
+	    ci.mail_per,
+	    ci.mail_phone,
+	    ci.attachment,
+	    ci.report_model,
+	    ci.state,
+	    ci.bloodnumA,
+	    ci.bloodnumB,
+	    si.`sample_time`,
+	    pr.text AS report_modelname,
+	    ai.`username` AS receiver,
+	    ai.`areaname` AS receiver_area,
+	    u.username AS case_in_pername 
+	    FROM
+		tb_alcohol_case_info ci
+		LEFT JOIN tb_alcohol_sample_info si ON ci.`sample_id`=si.`sample_id`
+		LEFT JOIN `tb_charge_standard` ai ON ci.`receiver_id` = ai.id 
+		LEFT JOIN tb_dic_print_model pr ON ci.report_model=pr.code
+		LEFT JOIN tb_upc_users u on u.userid=ci.case_in_per
+		WHERE ci.state=5
+		AND
+		pr.type='alcohol' and
+		ci.case_in_per is not null
+		<if test=" case_code!=null and case_code != ''">
+			and (lower( ci.case_code) LIKE '%${case_code}%' or
+			upper(
+			ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>= ci.accept_time
+		</if>
+		<if test=" case_in_per !=null and case_in_per != ''">
+			AND ci.case_in_per=#{case_in_per}
+		</if>
+		ORDER BY ci.state,ci.accept_time
+		LIMIT
+		#{start},#{limit}
+		) ci
+		LEFT JOIN
+		(SELECT
+		da.id,
+		da.name AS
+		county,
+		da2.name AS city,
+		da3.name AS
+		province
+		FROM
+		`tb_dic_area_info` da,
+		`tb_dic_area_info` da2,
+		`tb_dic_area_info`
+		da3
+		WHERE da2.`id` =
+		da.`parentID`
+		AND da3.`id` =
+		da2.`parentID`) da
+		ON
+		da.id =
+		ci.`area_code`
+	</select>
+
+	<select id="countCaseInfo" parameterType="map" resultType="int">
+		SELECT
+		count(*)
+		FROM
+		tb_alcohol_case_info ci
+		LEFT JOIN tb_alcohol_sample_info si ON ci.`sample_id`=si.`sample_id`
+		LEFT JOIN `tb_charge_standard` ai  ON ci.`receiver_id` = ai.id 
+		LEFT JOIN tb_dic_print_model pr ON ci.report_model=pr.code
+		left join tb_upc_users u on u.userid=ci.case_in_per
+		WHERE ci.state=5
+		AND
+		pr.type='alcohol' and
+		ci.case_in_per is not null
+		<if test=" case_code!=null and case_code != ''">
+			and (lower(ci.case_code) LIKE '%${case_code}%' or
+			upper(ci.case_code) LIKE '%${case_code}%')
+		</if>
+		<if test=" starttime!=null and  starttime != '' ">
+			and ci.accept_time>=#{starttime}
+		</if>
+		<if test=" endtime!=null and endtime != ''">
+			and #{endtime}>=ci.accept_time
+		</if>
+		<if test=" case_in_per !=null and case_in_per != ''">
+			AND ci.case_in_per=#{case_in_per}
+		</if>
+	</select>
+
+	<insert id="addArchiveInfo" parameterType="map">
+		insert into
+		tb_alcohol_case_archive(archive_id,archive_code,case_id,archive_address,archive_date,archive_per,archive_path)
+		values(#{archive_id},#{archive_code},#{case_id},#{archive_address},#{archive_date},#{archive_per},#{archive_path})
+	</insert>
+
+	<update id="updateCaseState" parameterType="map">
+		update
+		tb_alcohol_case_info set state=6 where case_code=#{case_code}
+	</update>
+
+	<select id="getArchiveInfo" resultType="com.rds.alcohol.model.RdsAlcoholArchiveModel">
+		select
+		ar.archive_id,ar.archive_code,ci.case_code,ar.archive_address,ar.archive_date,ar.archive_per,ar.archive_path,u.username
+		as archive_pername
+		from tb_upc_users u,tb_alcohol_case_archive
+		ar,tb_alcohol_case_info ci where
+		u.userid=ar.archive_per and
+		ar.case_id=ci.case_id
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+		order by ar.archive_date
+		limit
+		#{start},#{limit}
+	</select>
+
+	<select id="countArchiveInfo" resultType="int" parameterType="map">
+		select count(*)
+		from tb_upc_users u,tb_alcohol_case_archive
+		ar,tb_alcohol_case_info ci where
+		u.userid=ar.archive_per and
+		ar.case_id=ci.case_id
+		<if test=" case_code!=null and case_code != ''">
+			and ci.case_code LIKE '%${case_code}%'
+		</if>
+	</select>
+
+	<select id="getReadInfo" resultType="com.rds.alcohol.model.RdsAlcoholArchiveReadModel">
+		select * from
+		tb_alcohol_archive_read where archive_id=#{archive_id}
+	</select>
+
+
+	<insert id="addReadInfo" parameterType="map">
+		insert into
+		tb_alcohol_archive_read(id,archive_id,read_per,read_date)
+		values(#{id},#{archive_id},#{read_per},#{read_date})
+	</insert>
+</mapper>

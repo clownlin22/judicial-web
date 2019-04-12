@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.bacera.mapper.RdsBaceraInvasiveDNAMapper" >
+	<resultMap id="invasiveDNA" type="com.rds.bacera.model.RdsBaceraInvasiveDNAModel">
+		<id column="id" property="id"/>
+		<result column='num' property="num"/>
+		<result column='date' property="date" />
+		<result column='consigningDate' property="consigningDate" />
+		<result column='fatherName' property="fatherName" />
+		<result column='motherName' property="motherName" />
+		<result column='fatherType' property="fatherType" />
+		<result column='gestational' property="gestational" />
+		<result column='client' property="client" />
+
+		<result column='agentname' property="agentname" />
+		<result column='ownperson' property="ownperson" />
+		<result column='ownpersonname' property="ownpersonname" />
+		
+		<result column='receivables' property="receivables" />
+		<result column='payment' property="payment" />
+		<result column='paid' property="paid" />
+		<result column='paragraphtime' property="paragraphtime" />
+		<result column='account_type' property="account_type" />
+		
+		<result column='expresstype' property="expresstype" />
+		<result column='expressnum' property="expressnum" />
+		<result column='recive' property="recive" />
+		<result column='expressremark' property="expressremark" />
+		
+		<result column='remark' property="remark" />
+		<result column='remarks' property="remarks" />
+		<result column='cancelif' property="cancelif" />
+		<result column='expresstime' property="expresstime" />
+		<result column='areaname' property="areaname" />
+		<result column='remittanceName' property="remittanceName" />
+		<result column='remittanceDate' property="remittanceDate" />
+		
+		<result column='confirm_flag' property="confirm_flag" />
+		<result column='confirm_date' property="confirm_date" />
+		<result column='discountPrice' property="discountPrice" />
+	</resultMap>
+	<!-- 插入无创亲子鉴定信息-->
+	<insert id="insert" parameterType="map">
+	insert into tb_invasive_dna
+	(id,num,date,consigningDate,fatherName,motherName,fatherType,gestational,client,ownperson,remark
+			<if test="inputperson != '' and inputperson != null">
+				,inputperson
+			</if>
+	)values(#{id},#{num},#{date},#{consigningDate},#{fatherName},#{motherName},#{fatherType},#{gestational},#{client},#{ownperson},#{remark}
+			<if test="inputperson != '' and inputperson != null">
+				,#{inputperson}
+			</if>
+			)
+	</insert>
+	<!-- 更新无创亲子鉴定信息 -->
+	<update id="update" parameterType="map">
+		update tb_invasive_dna 
+		set 
+				 <if test="num != null">
+					num=#{num}
+				</if>
+				<if test="date != null">
+					,date=#{date}
+				</if>
+				<if test="consigningDate != null">
+					,consigningDate=#{consigningDate}
+				</if>
+				<if test="fatherName != null">
+					,fatherName=#{fatherName}
+				</if>
+				<if test="motherName != null">
+					,motherName=#{motherName}
+				</if>
+				<if test="fatherType != null">
+					,fatherType=#{fatherType}
+				</if>
+				<if test="gestational != null">
+					,gestational=#{gestational}
+				</if>
+				<if test="client != null">
+					,client=#{client}
+				</if>
+				<if test="ownperson != null">
+					,ownperson=#{ownperson}
+				</if>
+				<if test="remark != null">
+					,remark=#{remark}
+				</if>
+				<if test="cancelif != null">
+					,cancelif=#{cancelif}
+				</if>
+			where id = #{id}
+	</update>
+	<!-- 根据id删除信息 -->
+	<delete id="delete" parameterType="map">
+		delete from tb_invasive_dna where id = #{id}
+	</delete>
+	<!-- 查询无创亲子鉴定信息 -->
+	<select id="queryAllPage" parameterType="map" resultMap="invasiveDNA">
+		 SELECT 
+			  a.`id`,
+			  a.`num`,
+			  a.`date`,
+			  a.`consigningDate`,
+			  a.`fatherName`,
+			  a.`motherName`,
+			  a.`fatherType`,
+			  a.gestational,
+			  a.client,
+			  a.`ownperson` AS ownperson,
+			 s.`username` AS ownpersonname,
+			  s.`agentname`,
+			  s.`areaname`,
+			  a.`remark`,
+			  fi.`receivables`,
+			  fi.`payment`,
+			  fi.`paid`,
+			  fi.`paragraphtime`,
+			  fi.discountPrice,
+			  fi.`account_type`,
+			  fi.remarks,
+			  fi.remittanceDate,
+			  fi.remittanceName,
+			  fi.confirm_flag,
+			  fi.confirm_date,
+			  i.`expressnum`,
+			  i.`expresstype`,
+			  i.`recive`,
+			  a.`cancelif` ,
+			  i.expresstime,
+			   i.expressremark
+			FROM
+			  tb_invasive_dna a 
+			   LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+			<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="fatherName != '' and fatherName != null">
+				and a.fatherName like concat('%', #{fatherName}, '%') 
+			</if>	
+			<if test="motherName != '' and motherName != null">
+				and a.motherName like concat('%', #{motherName}, '%') 
+			</if>
+			<if test="fatherType != '' and fatherType != null">
+				and a.fatherType like concat('%', #{fatherType}, '%') 
+			</if>
+			<if test="client != '' and client != null">
+				and a.client like concat('%', #{client}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="invasive_starttime != '' and invasive_starttime != null">
+				and a.date >= #{invasive_starttime}
+			</if>	
+			<if test="invasive_endtime != '' and invasive_endtime != null">
+				and #{invasive_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="consigning_starttime != '' and consigning_starttime != null">
+				and a.consigningDate >= #{consigning_starttime}
+			</if>	
+			<if test="consigning_endtime != '' and consigning_endtime != null">
+				and #{consigning_endtime} >= a.consigningDate
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+			order by a.num desc
+			<if test="limit != null and limit != null ">
+				LIMIT #{start},#{limit}
+			</if>
+	</select>
+	<!-- 查询法医病理信息总数 -->
+	<select id="queryAllCount" parameterType="map" resultType="Integer">
+		select count(1) 
+			FROM
+			  tb_invasive_dna a 
+			 LEFT JOIN `tb_charge_standard` s 
+			 ON a.`ownperson` = s.`id`
+			  LEFT JOIN tb_finance_info fi
+			  ON a.`id` = fi.`id`
+			  LEFT JOIN tb_express_info i 
+			    ON a.`id` = i.`id`
+			  WHERE 1=1
+		 	<if test="num != '' and num != null">
+				and a.num like concat('%', #{num}, '%') 
+			</if>	
+			<if test="fatherName != '' and fatherName != null">
+				and a.fatherName like concat('%', #{fatherName}, '%') 
+			</if>	
+			<if test="motherName != '' and motherName != null">
+				and a.motherName like concat('%', #{motherName}, '%') 
+			</if>
+			<if test="fatherType != '' and fatherType != null">
+				and a.fatherType like concat('%', #{fatherType}, '%') 
+			</if>
+			<if test="client != '' and client != null">
+				and a.client like concat('%', #{client}, '%') 
+			</if>
+			<if test="reportif == 1 ">
+				AND i.`expresstype` IS NOT NULL
+			</if>	
+			<if test="reportif == 2 ">
+				AND i.`expresstype` IS NULL
+			</if>	
+			<if test="invasive_starttime != '' and invasive_starttime != null">
+				and a.date >= #{invasive_starttime}
+			</if>	
+			<if test="invasive_endtime != '' and invasive_endtime != null">
+				and #{invasive_endtime} >= a.date
+			</if>	
+			<if test="cancelif != '' and cancelif != null">
+				and a.cancelif = #{cancelif}
+			</if>	
+			<if test="ownperson != '' and ownperson != null">
+				and s.`username` like concat('%', #{ownperson}, '%') 
+			</if>	
+			<if test="agent != '' and agent != null">
+				and s.`agentname`  like concat('%', #{agent}, '%') 
+			</if>	
+			<if test="areacode != '' and areacode != null">
+				AND s.`areacode`= #{areacode}
+			</if>
+			<if test="consigning_starttime != '' and consigning_starttime != null">
+				and a.consigningDate >= #{consigning_starttime}
+			</if>	
+			<if test="consigning_endtime != '' and consigning_endtime != null">
+				and #{consigning_endtime} >= a.consigningDate
+			</if>	
+			<if test="confirm_flag != '' and confirm_flag != null">
+				and fi.confirm_flag = #{confirm_flag}
+			</if>
+			<if test="paragraphtime_starttime != '' and paragraphtime_starttime != null">
+				AND fi.`paragraphtime` >= #{paragraphtime_starttime}
+			</if>	
+			<if test="paragraphtime_endtime != '' and paragraphtime_endtime != null">
+				and #{paragraphtime_endtime} >= fi.`paragraphtime`
+			</if>
+			<if test="expressnum != '' and expressnum != null">
+				AND i.`expressnum` like concat('%', #{expressnum}, '%') 
+			</if>
+			<if test="express_endtime != '' and express_endtime != null">
+				AND #{express_endtime} >= i.`expresstime`
+			</if>
+			<if test="express_starttime != '' and express_starttime != null">
+				AND i.`expresstime` >= #{express_starttime}
+			</if>	
+	</select>
+	
+	<select id="queryNumExit" parameterType="map" resultType="Integer">
+		select count(1) from tb_invasive_dna where 1=1 
+		<if test="num != '' and num != null">
+			and num = #{num}
+		</if>
+		<if test="id != '' and id != null">
+			and id = #{id}
+		</if>
+	</select>
+	
+	
+	<select id="queryInvasiveNDAFee" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`userid`,u.`username`,b.`fees`,b.`remark` FROM tb_finance_invasivedna b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 LIMIT #{start},#{end}
+	</select>
+	
+	<select id="queryInvasiveNDAFeeCount" parameterType="map" resultType="Integer">
+		select count(b.userid) FROM tb_finance_invasivedna b LEFT JOIN tb_upc_users u ON b.`userid`=u.`userid`
+		WHERE 1=1 and b.delete = 0 and u.delstatus is null 
+		<if test="userid != '' and userid != null">
+		 	and b.`userid`=#{userid} 
+		 </if>
+		 <if test="id != '' and id != null">
+		 	and b.`id`=#{id} 
+		 </if>
+	</select>
+	
+	<insert id="saveInvasiveNDAFee" parameterType="map" >
+		insert into tb_finance_invasivedna
+		(id,userid,fees,inputperson,remark) 
+		values
+		 (#{id},#{userid},#{fees},#{inputperson},#{remark})
+	</insert>
+	
+	<insert id="updateInvasiveNDAFee" parameterType="map" >
+		update tb_finance_invasivedna set
+		userid = #{userid},
+		fees = #{fees},
+		inputperson = #{inputperson},
+		remark = #{remark}
+		where 
+		id=#{id}
+	</insert>
+	
+	<insert id="deleteInvasiveNDAFee" parameterType="map"  >
+		update tb_finance_invasivedna t set
+		t.delete = '1'
+		where t.id=#{id}
+	</insert>
+	
+	<select id="queryInvasiveNDAFeeByRec" parameterType="map" resultType="com.rds.bacera.model.RdsBaceraBoneAgeFeeModel">
+		SELECT b.`id`,b.`fees` FROM tb_finance_invasivedna b LEFT JOIN  tb_upc_area a  ON b.`userid`=a.`userid` 
+		WHERE 1=1 and b.delete = 0 and a.`is_delete`=0
+		<if test="ownperson != '' and ownperson != null">
+		 	and a.`area_id` = #{ownperson} 
+		 </if>
+		 <if test="agentid != '' and agentid != null">
+		 	and a.`userid` = #{agentid} 
+		 </if>
+		 LIMIT 1
+	</select>
+</mapper>

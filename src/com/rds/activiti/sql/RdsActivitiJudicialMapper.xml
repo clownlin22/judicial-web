@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.rds.activiti.mapper.RdsActivitiJudicialMapper">
+    <select id="getCaseTask" parameterType="String" resultType="String">
+        select b.ID_
+        from tb_judicial_case_info a left join ACT_RU_TASK b on a.process_instance_id=b.PROC_INST_ID_
+        where (a.case_code=#{case_code} or a.case_id=#{case_code}) and b.SUSPENSION_STATE_=1
+        limit 1
+    </select>
+    <select id="getCaseTask1" parameterType="String" resultType="String">
+        select b.ID_
+        from tb_invasive_prenatal a left join ACT_RU_TASK b on a.process_instance_id=b.PROC_INST_ID_
+        where (a.id=#{id} or a.num=#{num}) and b.SUSPENSION_STATE_=1
+        limit 1
+    </select>
+     <select id="getChildCaseTask" parameterType="String" resultType="String">
+        select b.ID_
+        from tb_children_case_info a left join ACT_RU_TASK b on a.process_instance_id=b.PROC_INST_ID_
+        where (a.case_code=#{case_code} or a.case_id=#{case_code}) and b.SUSPENSION_STATE_=1
+        limit 1
+    </select>
+    
+    <select id="getCaseProcessInstanceId" parameterType="String" resultType="String">
+        SELECT a.`process_instance_id`
+        FROM tb_judicial_case_info a 
+        WHERE (a.case_code = #{case_code}  or a.case_id=#{case_code})
+        limit 1
+    </select>
+    <select id="getCaseProcessInstanceId1" parameterType="String" resultType="String">
+        SELECT a.`process_instance_id`
+        FROM tb_invasive_prenatal a 
+        WHERE (a.id = #{id}  or a.num=#{num})
+        limit 1
+    </select>
+     <select id="getChildCaseProcessInstanceId" parameterType="String" resultType="String">
+        SELECT a.`process_instance_id`
+        FROM tb_children_case_info a 
+        WHERE (a.case_code = #{case_code}  or a.case_id=#{case_code})
+        limit 1
+    </select>
+</mapper>
